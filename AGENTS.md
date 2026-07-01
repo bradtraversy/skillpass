@@ -1,0 +1,82 @@
+# AGENTS.md
+
+Instructions for AI coding agents working in this project. This is the cross-tool
+entry point: Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Zed, Windsurf, and
+others read `AGENTS.md`. Claude Code reads `CLAUDE.md`, which imports this file, so
+there is a single source of truth.
+
+## What this is
+
+A description of your project and the problem it solves.
+
+This project is built with the **AI Coding Blueprint**, a workflow layer, not an
+app skeleton. To start a new project, scaffold the app first in an empty folder
+(create-next-app, Vite, etc.), then overlay these files on top. Never run a
+framework scaffolder inside a directory that already holds the blueprint files
+(`AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, `blueprint/`); it fails
+because the directory isn't empty.
+
+New here? `README.md` explains the whole workflow.
+
+## Read these for full context
+
+- `blueprint/context/project-overview.md` - the project's source of truth
+- `blueprint/context/coding-standards.md` - conventions to follow
+- `blueprint/context/ai-interaction.md` - how to work with the user on this project
+- `blueprint/context/current-feature.md` - the one feature or fix being built right now
+
+## Workflow
+
+Build one feature or fix at a time, behind review gates. Each step's instructions
+are plain markdown skills any capable agent can read and follow. The workflow is
+exposed through tool-specific adapters:
+
+- Codex: `.agents/skills/<skill>/SKILL.md`
+- Claude Code: `.claude/skills/<skill>/SKILL.md`
+
+Unused adapters can be removed. Codex-only projects can delete `CLAUDE.md` and
+`.claude/`. Claude Code-only projects can delete `.agents/`, but should keep
+`AGENTS.md` because `CLAUDE.md` imports it.
+
+When changing shared workflow behavior, update the matching skill in both
+adapter folders so Codex and Claude Code stay aligned.
+
+Core skills:
+
+- `onboard` - tune commands, standards, ignore rules, and tool adapters after overlaying the Blueprint onto a freshly scaffolded or early project
+- `doctor` - read-only Blueprint health check for setup, adapters, plans, overview freshness, and workflow drift
+- `adopt` - bootstrap the Blueprint into an existing brownfield app with shipped features
+- `overview` - distill the two planning docs into `blueprint/context/project-overview.md`
+- `feature` - turn a build-plan item into a spec in `blueprint/context/current-feature.md`
+- `fix` - document an ad-hoc bug or change into `blueprint/context/current-feature.md`
+- `implement` - build the current spec one small, reviewed step at a time
+- `check` - prove the current spec against the running app
+- `complete` - log it to `blueprint/history/features/` or `blueprint/history/fixes/`, then merge
+- `prototype` - optional, pre-build static mockups to lock the look
+- `status` - read-only progress summary, workflow drift warning, and suggested next action
+
+In Codex, invoke these as skills (`$onboard`, `$overview`, `$feature`,
+`$implement`, and so on) or ask naturally, such as "run the overview." In Claude
+Code, use the slash commands (`/onboard`, `/overview`, `/feature`, and so on). In
+tools without native skills, follow the matching `SKILL.md` manually. The
+conventions in `blueprint/context/` apply however a step is invoked, and the
+review gates are not optional: small steps, and the user approves each diff
+before it lands.
+
+## Commands
+
+pnpm monorepo (pnpm 11.9.0, Node >= 22.12). Run these from the repo root; they
+proxy into `apps/web`.
+
+- Dev server: `pnpm dev` (http://localhost:4321) - file-watch polling on, safe on VM/network filesystems
+- Dev server (native watch): `pnpm dev:native` - faster on a local disk, no polling
+- Dev background control: `pnpm dev:status`, `pnpm dev:stop`, `pnpm dev:logs`
+- Build: `pnpm build`
+- Preview production build: `pnpm preview`
+- Astro CLI passthrough: `pnpm astro <cmd>` (e.g. `pnpm astro add react`)
+
+No lint, typecheck, or test command is configured yet. With no `test` command
+declared here, tests are not a required gate (see the Testing section of
+`blueprint/context/coding-standards.md`); the build is the verification signal.
+Add a runner deliberately, as a build-plan item or via `/fix "add unit testing"`,
+then list its command here to turn the gate on.

@@ -1,0 +1,29 @@
+{
+  "name": "ai-skills-directory",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "CHOKIDAR_USEPOLLING=1 pnpm -C apps/web dev",
+    "dev:native": "pnpm -C apps/web dev",
+    "dev:status": "pnpm -C apps/web astro dev status",
+    "dev:stop": "pnpm -C apps/web astro dev stop",
+    "dev:logs": "pnpm -C apps/web astro dev logs",
+    "build": "pnpm -C apps/web build",
+    "preview": "pnpm -C apps/web preview",
+    "astro": "pnpm -C apps/web astro"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.9.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "private": true
+}

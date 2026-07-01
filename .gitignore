@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.pnp.*
+
+# Build output
+dist/
+build/
+.output/
+.astro/
+.vite/
+
+# Hosting output
+.vercel/
+.netlify/
+
+# Caches
+.cache/
+.turbo/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# Temporary files
+tmp/
+.tmp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# AI tool local state (shared config is committed; per-developer overrides are not)
+.claude/settings.local.json
