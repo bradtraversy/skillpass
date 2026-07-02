@@ -123,3 +123,9 @@ the normal loop.
   before touching them. Never run a scaffolder.
 - **Be honest about testing.** If there's no runner, say testing is opt-in and not
   yet set up; don't describe a gate the project hasn't adopted.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

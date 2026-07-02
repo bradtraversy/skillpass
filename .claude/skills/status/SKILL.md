@@ -86,3 +86,9 @@ drift is half the value of the command.
   contents back unless the user asks for them.
 - **Be honest about gaps.** If a file is missing or the repo is not initialized,
   say that plainly instead of guessing.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

@@ -42,3 +42,9 @@ Then stop. Tell the user to review the fix spec, then run `/implement` to build 
 - Keep it small. If it's really a new feature, use `/feature` and the build plan
   instead.
 - Same conventions as everything else (`blueprint/context/coding-standards.md`).
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

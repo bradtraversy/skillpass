@@ -119,3 +119,9 @@ reset), and merges. This skill does not touch main.
   spec first, do not improvise.
 - Per-step commits are optional checkpoints. The feature-level commit, the merge,
   and any push are `/complete`'s job.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

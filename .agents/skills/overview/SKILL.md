@@ -141,3 +141,9 @@ not modify the main app code.
 Re-run whenever `project-plan.md` or `build-plan.md` changes materially - a new
 feature, a changed data model, a different stack. The overview is downstream of
 the plans and should be regenerated, not patched.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

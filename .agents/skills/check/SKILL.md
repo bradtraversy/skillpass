@@ -89,3 +89,9 @@ Then state the bottom line: are all the feature's done-whens proven, or not yet.
   Faking a pass defeats the entire gate.
 - **Check the spec, not vibes.** Verify against the done-whens in
   `current-feature.md`, so "works" means what the spec said it would do.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

@@ -159,3 +159,9 @@ $overview
 - Reflect the stack that exists, not the stack the default Blueprint mentions.
 - Be honest about tests. No `test` command means no required test gate yet.
 - Keep changes small and explain what changed.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

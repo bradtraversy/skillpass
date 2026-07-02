@@ -12,6 +12,19 @@
 - Don't add features not in the project spec
 - Never delete files without clarification
 
+## Output formatting
+
+Format every response for fast scanning, in whatever tool renders it. The skills
+point at this file for formatting, so tune this to taste and the change applies
+everywhere.
+
+- **Real markdown, not prose walls** - bold field labels, short lines, a blank line between blocks.
+- **Enumerations are lists** - a sequence of steps, options, or findings is a numbered or bulleted list, never an inline `(1)... (2)... (3)...` run crammed into a paragraph.
+- **Tables for matrices** - comparing things across the same fields (status per item, option tradeoffs) goes in a table, not stacked bullets.
+- **Backticks for code things** - identifiers, paths, commands, filenames.
+- **Lead with the answer** - state the result or the state first, supporting detail after.
+- **Don't over-format** - no deep bullet nests or decorative headers on a two-line reply. Concise still wins.
+
 ## Workflow
 
 The loop we use for every feature. The spec for the feature being built lives in

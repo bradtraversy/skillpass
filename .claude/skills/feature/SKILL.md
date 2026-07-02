@@ -159,3 +159,9 @@ Tell the user to review and adjust. This skill plans; it never starts building.
 Check its box in `build-plan.md` (and the parent item once all its sub-items are
 checked), archive the finished `blueprint/context/current-feature.md` to
 `blueprint/history/features/NN-name.md`, then run `/feature` again for the next one.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

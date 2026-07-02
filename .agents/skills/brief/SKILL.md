@@ -92,3 +92,9 @@ plans aren't ready, `/prototype` if it's UI-facing and the look isn't locked, or
 - **Be honest about gaps.** If the plans are a stub, the overview is stale, or a
   dependency isn't built yet, say that plainly - catching a blocker before
   spec'ing is half the value.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

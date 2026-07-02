@@ -71,3 +71,9 @@ Then point the user at `/feature` (or `/fix`) for the next thing.
   a separate explicit yes before any push.
 - One item per completion. If a parent feature still has unchecked sub-features,
   leave the parent unchecked.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

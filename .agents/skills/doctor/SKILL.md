@@ -126,3 +126,9 @@ Choose the repair order in this priority:
 - **Be conservative with stack-specific checks.** If a command or ignore pattern
   is uncertain, mark it for review instead of inventing a hard failure.
 - **Stay concise.** A doctor pass should feel like a checklist, not an audit.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.

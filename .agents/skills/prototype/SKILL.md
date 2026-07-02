@@ -91,3 +91,9 @@ the next feature needs - both must survive a context clear or a switch between
 machines. So do not add `prototypes/` to `.gitignore`; it is short-lived in git
 (born here, discarded at the first UI feature's `/complete`), not throwaway that
 never lands. This skill locks the look, it does not build the app.
+
+## Formatting
+
+Format the output to match the project's conventions in
+`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
+enumerations and tables for matrices rather than dense paragraphs.
