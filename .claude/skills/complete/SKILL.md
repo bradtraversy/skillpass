@@ -39,6 +39,12 @@ Then reset `blueprint/context/current-feature.md` to its stub ("nothing in progr
 commit yet; the next step makes one feature commit covering the code and these doc
 changes. The archive is the build history.
 
+**Discard consumed prototypes.** If this feature built the look from `prototypes/`
+- its Design reference pointed there and an early step ported `prototypes/theme.css`
+into the app - delete the `prototypes/` folder now. The tokens live in the real
+stylesheet and the HTML mockups were always throwaway; fold the deletion into this
+feature's commit. Skip this if the feature didn't consume prototypes.
+
 ## Step 2 - make the feature commit
 
 Stage everything on the branch (any uncommitted step work plus the Step 1 logging

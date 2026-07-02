@@ -27,6 +27,11 @@ planned feature) or `/fix` (for an ad-hoc bug or change) first. Pull the
 conventions from `blueprint/context/coding-standards.md` and the data model from
 `blueprint/context/project-overview.md` so the code matches them.
 
+If the spec's Design reference points at `prototypes/*.html`, those mockups are
+the visual target - build components to match them, and treat `prototypes/theme.css`
+as the token source (the spec's first step ports it into the app's global
+stylesheet before the components are built).
+
 **Resuming?** If the spec already has some build steps checked off (`- [x]`), this
 feature was started earlier and interrupted (often a cleared context). The spec and
 its ticked steps are files, so pick up where it left off: read which steps are done,

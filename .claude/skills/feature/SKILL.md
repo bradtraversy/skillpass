@@ -91,6 +91,17 @@ already provided, save it under `blueprint/reference/` (create the folder if
 needed), and link it from the spec's Design reference section. Don't write a
 visual spec from words alone when an image could exist.
 
+**If `prototypes/` exists, that is your design reference.** When `/prototype` has
+run, the repo holds `prototypes/theme.css` (the locked design tokens) and
+`prototypes/*.html` (the visual mockups). For a UI-facing feature, link the
+relevant mockups from the spec's Design reference section instead of asking for a
+screenshot - they beat a flat image, since they carry the exact tokens. Treat
+`theme.css` as the source of truth for colors, type, and spacing, and make the
+feature's **first build step** port those tokens into the app's global stylesheet
+(`@theme` for Tailwind v4, or the project's equivalent) before building components
+against the mockups. The mockups are throwaway: once the look is built they get
+discarded at `/complete`.
+
 This is a draft. Don't present it yet - critique it first.
 
 ## Step 4 - red-team the draft, then tighten
@@ -105,8 +116,10 @@ code exists. Run the draft against these questions:
   external it calls.
 - **Visual fidelity.** If this is a look-alike or replication feature, is a
   reference image linked in the spec - or are we about to build a design blind
-  from prose? If a real design exists and no image is captured, get one before
-  building, not after the approximation lands.
+  from prose? If `prototypes/` exists, are the relevant mockups linked as the
+  Design reference and is porting `theme.css` into the app the first build step?
+  If a real design exists and nothing is captured, get it before building, not
+  after the approximation lands.
 - **Step size.** Would any step's diff be too big to read in one sitting? If so,
   split it - oversized steps defeat the review gate.
 - **Order.** Does each step leave the app working, and depend only on earlier

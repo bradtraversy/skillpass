@@ -78,7 +78,16 @@ caret; a dashboard with believable stats and history rows; and so on).
 
 ## Then stop
 
-Tell the user to open the files in a browser and iterate on the look. When the
-theme feels right, the variables in `theme.css` carry into `globals.css` `@theme`
-at the first UI feature; the HTML mockups are reference and get discarded. This
-skill locks the look, it does not build the app.
+Tell the user to open the files in a browser and iterate on the look. Point them
+at the concrete next step: run `/feature` on the first UI feature - it detects
+`prototypes/`, links these mockups as the spec's Design reference, and makes
+porting `theme.css` into the app's `@theme` its first build step. When the theme
+feels right the tokens carry into the real stylesheet; the HTML mockups are
+reference and get discarded at that feature's `/complete`.
+
+**Commit `prototypes/`, do not ignore it.** `theme.css` is the durable output and
+until it is ported it lives nowhere else, and the mockups are the build reference
+the next feature needs - both must survive a context clear or a switch between
+machines. So do not add `prototypes/` to `.gitignore`; it is short-lived in git
+(born here, discarded at the first UI feature's `/complete`), not throwaway that
+never lands. This skill locks the look, it does not build the app.
