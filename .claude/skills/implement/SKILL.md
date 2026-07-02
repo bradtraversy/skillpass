@@ -64,7 +64,9 @@ Work through the spec's build steps in order, one at a time. For each step:
    passing test in the same diff, and the suite
    must be green before the step is approved (see the Testing gate in
    `coding-standards.md`); UI and integration-only steps ride on screenshot plus
-   build evidence. Create focused test files next to the source they cover, per
+   build evidence. For UI or integration done-whens, prefer Playwright when it is
+   already installed or declared in `AGENTS.md`; do not add it silently for an
+   unrelated feature. Create focused test files next to the source they cover, per
    `coding-standards.md`. Never install a runner mid-step unless the current spec
    is explicitly the unit-testing setup itself (for example `/fix "add unit
    testing"`). If a step surfaces non-trivial logic the spec didn't foresee, add a

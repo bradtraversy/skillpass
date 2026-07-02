@@ -49,6 +49,7 @@ Core skills:
 - `overview` - distill the two planning docs into `blueprint/context/project-overview.md`
 - `brief` - read-only briefing on an upcoming build-plan feature (scope, dependencies, size) before you spec it
 - `feature` - turn a build-plan item into a spec in `blueprint/context/current-feature.md`
+- `tests` - add or normalize unit testing and turn on the test gate
 - `fix` - document an ad-hoc bug or change into `blueprint/context/current-feature.md`
 - `implement` - build the current spec one small, reviewed step at a time
 - `check` - prove the current spec against the running app
@@ -79,5 +80,6 @@ proxy into `apps/web`.
 No lint, typecheck, or test command is configured yet. With no `test` command
 declared here, tests are not a required gate (see the Testing section of
 `blueprint/context/coding-standards.md`); the build is the verification signal.
-Add a runner deliberately, as a build-plan item or via `/fix "add unit testing"`,
-then list its command here to turn the gate on.
+Add a runner deliberately by running `/tests` (or `$tests`), which picks the
+stack-native runner, adds an example test, and lists its command here to turn the
+gate on.

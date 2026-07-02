@@ -309,6 +309,7 @@ Then continue with `/implement`, `/check`, and `/complete`. Fixes are logged to
 | **/brief** | before spec'ing, or when deciding what's next | Read-only briefing on an upcoming build-plan feature - scope, dependencies, what it touches, size, likely split - without writing anything. |
 | **/feature** | for each planned feature | Specs the next unchecked feature, or a selected feature, into `current-feature.md`. |
 | **/fix** | for an unplanned bug or small change | Specs an ad-hoc fix into `current-feature.md`. |
+| **/tests** | when you want unit tests added | Adds or normalizes the stack-native unit test setup, adds one example test, updates `AGENTS.md`, and runs build plus tests. |
 | **/implement** | after reviewing a spec | Builds the current spec one small, reviewed step at a time. |
 | **/check** | before wrapping up, or any time you want proof | Runs the real app and reports pass/fail against the spec's done-whens. |
 | **/complete** | when work is built and reviewed | Archives the spec, commits the finished work, and merges with your approval. |
@@ -328,26 +329,30 @@ your stack, but adding one is a normal workflow task.
 > Tests become a required gate only after you add a real `test` command to the
 > Commands section of `AGENTS.md`.
 
-You can make it a build-plan item, or ask for it directly:
+To add unit testing, run:
 
 ```text
-/fix "add unit testing"
+/tests
 ```
 
-The agent should pick the stack-native runner, wire the scripts or commands, add
-a small example test, and update the **Commands** section of `AGENTS.md`. For a
-TypeScript app that usually means Vitest; Python might use pytest, and Go already
-has `go test`.
+The agent should pick the stack-native runner, reuse an existing runner if one is
+already present, wire the scripts or commands, add a small example test, and
+update the **Commands** section of `AGENTS.md`. For a TypeScript app that usually
+means Vitest; Python might use pytest, and Go already has `go test`.
 
-That work happens in `/implement`, just like any other change. The `/fix` or
-`/feature` step writes the spec, then `/implement` creates the test files, updates
-the project config, runs the build, runs the test command, and iterates until both
-pass.
+`/tests` is a setup command, not a product feature. It should not try to write a
+broad test suite for existing code. It proves the runner works, documents the
+command, and turns on the testing gate for future logic-bearing work.
 
 Once a runner is configured, tests become a gate for logic-bearing steps:
 parsers, validators, server actions, formatters, and similar work should include
 a passing test in the same diff. UI and integration work can ride on screenshot,
 browser, build, or API evidence from `/implement` and `/check`.
+
+For browser-heavy work, Playwright is preferred when the project already has it
+installed or declares a Playwright command. The blueprint does not install it by
+default; adding browser automation is a normal setup task when a project wants
+that level of verification.
 
 ## Picking up where you left off
 
@@ -380,8 +385,10 @@ step in `current-feature.md`.
 │       ├── doctor/            ($doctor: read-only Blueprint health check)
 │       ├── onboard/           ($onboard: finish fresh-project setup)
 │       ├── overview/          ($overview: plans to project-overview.md)
+│       ├── brief/             ($brief: preview a build-plan feature)
 │       ├── feature/           ($feature: build-plan item to current-feature.md)
 │       ├── fix/               ($fix: document an ad-hoc fix)
+│       ├── tests/             ($tests: add unit testing)
 │       ├── implement/         ($implement: build the current spec)
 │       ├── check/             ($check: prove the done-whens)
 │       ├── complete/          ($complete: commit, merge, and log)
@@ -393,8 +400,10 @@ step in `current-feature.md`.
 │       ├── doctor/            (/doctor: read-only Blueprint health check)
 │       ├── onboard/           (/onboard: finish fresh-project setup)
 │       ├── overview/          (/overview: plans to project-overview.md)
+│       ├── brief/             (/brief: preview a build-plan feature)
 │       ├── feature/           (/feature: build-plan item to current-feature.md)
 │       ├── fix/               (/fix: document an ad-hoc fix)
+│       ├── tests/             (/tests: add unit testing)
 │       ├── implement/         (/implement: build the current spec)
 │       ├── check/             (/check: prove the done-whens)
 │       ├── complete/          (/complete: commit, merge, and log)
@@ -455,10 +464,10 @@ between tools.
 
 Use the native invocation style for your tool:
 
-- Codex: `$onboard`, `$overview`, `$feature`, `$implement`, `$check`, `$complete`,
-  or plain language like "run the overview."
-- Claude Code: `/onboard`, `/overview`, `/feature`, `/implement`, `/check`,
-  `/complete`.
+- Codex: `$onboard`, `$overview`, `$feature`, `$tests`, `$implement`, `$check`,
+  `$complete`, or plain language like "run the overview."
+- Claude Code: `/onboard`, `/overview`, `/feature`, `/tests`, `/implement`,
+  `/check`, `/complete`.
 - Other tools: ask the agent to follow the matching `SKILL.md`.
 
 ```text

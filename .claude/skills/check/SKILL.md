@@ -44,7 +44,10 @@ type:
 
 - **Web app** - start (or reuse) the dev/preview server, then drive a real browser
   to the relevant routes. Prefer reusing an already-running server over starting a
-  duplicate.
+  duplicate. If Playwright is already installed or declared in `AGENTS.md`, prefer
+  it for browser driving, screenshots, console errors, and failed request checks.
+  If it is not installed, do not add it from `/check`; use another real-browser
+  evidence path and report what you used.
 - **CLI** - run the actual command(s) with representative inputs.
 - **Server/API** - start it and hit the endpoints.
 - **Library** - exercise the public API through an example or the test command.
