@@ -1,0 +1,73 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+/* Ported from prototypes/theme.css. Tailwind v4 CSS-first: these tokens both
+   emit as CSS custom properties and generate utilities (bg-bg, text-accent,
+   text-pass, rounded-lg, font-mono, ...). Color is reserved for the verdict. */
+@theme {
+  --font-sans: "Geist Variable", "Inter Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  /* base - warm graphite, faint iris cast */
+  --color-bg: #0f0e13;
+  --color-bg-well: #0b0a0e;
+  --color-surface: #16151d;
+  --color-surface-2: #1b1a24;
+  --color-hover: #201e2a;
+  --color-border: #262433;
+  --color-border-2: #332f43;
+
+  --color-text: #ece9f3;
+  --color-muted: #9a94a8;
+  --color-faint: #615c70;
+
+  /* brand accent - iris, used sparingly (links, active, focus, primary) */
+  --color-accent: #8f7bfb;
+  --color-accent-hover: #a998ff;
+  --color-accent-ink: #0c0a15;
+  --color-accent-soft: rgba(143, 123, 251, 0.13);
+  --color-accent-line: rgba(143, 123, 251, 0.34);
+
+  /* verdict - the only other color on the page, always meaningful */
+  --color-pass: #46d3a0;
+  --color-pass-soft: rgba(70, 211, 160, 0.12);
+  --color-pass-line: rgba(70, 211, 160, 0.3);
+  --color-warn: #f2b43c;
+  --color-warn-soft: rgba(242, 180, 60, 0.12);
+  --color-warn-line: rgba(242, 180, 60, 0.3);
+  --color-fail: #f0656a;
+  --color-fail-soft: rgba(240, 101, 106, 0.12);
+  --color-fail-line: rgba(240, 101, 106, 0.32);
+  --color-unv: #8b8598;
+  --color-unv-soft: rgba(139, 133, 152, 0.12);
+  --color-unv-line: rgba(139, 133, 152, 0.28);
+
+  /* risk ramp - low -> critical */
+  --color-risk-low: #46d3a0;
+  --color-risk-med: #f2b43c;
+  --color-risk-high: #f2823c;
+  --color-risk-crit: #f0656a;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* page content width - drives the max-w-page container utility */
+  --container-page: 1080px;
+}
+
+/* effect values that don't map onto a Tailwind utility scale */
+:root {
+  --ring: rgba(143, 123, 251, 0.45);
+  --shadow: 0 12px 44px -20px rgba(0, 0, 0, 0.85);
+}
+
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}

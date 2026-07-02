@@ -1,0 +1,74 @@
+---
+import type { RiskLevel, Skill } from '../../lib/skills';
+import { formatInstalls, monogram } from '../../lib/format';
+import Stamp from './Stamp.astro';
+
+interface Props {
+	skill: Skill;
+	rank: number;
+}
+
+const { skill, rank } = Astro.props;
+
+const RISK_LABEL: Record<RiskLevel, string> = {
+	low: 'low risk',
+	medium: 'medium',
+	high: 'high',
+	critical: 'critical',
+};
+
+const RISK_DOT: Record<RiskLevel, string> = {
+	low: 'bg-risk-low',
+	medium: 'bg-risk-med',
+	high: 'bg-risk-high',
+	critical: 'bg-risk-crit',
+};
+
+const failed = skill.verdict === 'failed';
+---
+
+<a
+	href={`/skills/${skill.slug}`}
+	data-slug={skill.slug}
+	class="grid cursor-pointer grid-cols-[30px_34px_1fr_auto_auto] items-center gap-4 rounded-md border-b border-border px-3 py-[15px] hover:bg-surface"
+>
+	<span class="text-right font-mono text-[13px] text-faint">{String(rank).padStart(2, '0')}</span>
+
+	<span
+		class:list={[
+			'grid size-[34px] place-items-center rounded-[9px] border bg-surface-2 font-mono text-[13px] font-semibold',
+			failed ? 'border-fail-line text-fail' : 'border-border-2 text-muted',
+		]}
+	>
+		{monogram(skill.name)}
+	</span>
+
+	<div class="min-w-0">
+		<div class="flex items-center gap-[10px]">
+			<b class="font-semibold tracking-[-0.01em]">{skill.name}</b>
+			<span class="flex gap-[5px]">
+				{
+					skill.targets.map((target) => (
+						<span class="rounded-[4px] border border-border px-[6px] py-px font-mono text-[10.5px] text-muted">
+							{target}
+						</span>
+					))
+				}
+			</span>
+		</div>
+		<div class="mt-[3px] max-w-[46ch] truncate text-[12.5px] text-muted">{skill.summary}</div>
+	</div>
+
+	<div class="flex items-center gap-3">
+		<Stamp verdict={skill.verdict} />
+		<span class="inline-flex w-[82px] items-center gap-[6px] text-[11.5px] text-muted">
+			<span class:list={['size-[7px] rounded-full', RISK_DOT[skill.riskLevel]]}></span>
+			{RISK_LABEL[skill.riskLevel]}
+		</span>
+	</div>
+
+	<div class="w-24 text-right font-mono text-[11.5px] text-faint">
+		<b class="block text-[13px] font-semibold text-muted">{formatInstalls(skill.installs)}</b>
+		{skill.lastValidated}
+	</div>
+</a>

@@ -73,7 +73,8 @@ proxy into `apps/web`.
 - Dev server: `pnpm dev` (http://localhost:4321) - file-watch polling on, safe on VM/network filesystems
 - Dev server (native watch): `pnpm dev:native` - faster on a local disk, no polling
 - Dev background control: `pnpm dev:status`, `pnpm dev:stop`, `pnpm dev:logs`
-- Build: `pnpm build`
+- Typecheck: `pnpm typecheck` (runs `astro check`)
+- Build: `pnpm build` (runs `astro check && astro build`, so the build type-checks first)
 - Preview production build: `pnpm preview`
 - Astro CLI passthrough: `pnpm astro <cmd>` (e.g. `pnpm astro add react`)
 - Test (Vitest, run once): `pnpm test`
@@ -85,4 +86,10 @@ step that adds logic-bearing code must ship a passing test in the same diff, and
 `pnpm test` must be green before a checkpoint commit and before `/complete`
 merges (see the Testing section of `blueprint/context/coding-standards.md`). UI
 (Astro pages, React islands) and integration steps are exempt and ride on the
-build plus a screenshot. No lint or typecheck command is configured yet.
+build plus a screenshot.
+
+**Types are a gate too.** `pnpm build` runs `astro check` before `astro build`, so
+a type error fails the build locally and on any deploy that runs the build command
+(e.g. Vercel). Keep the `Skill` contract and component props type-clean; run
+`pnpm typecheck` for a fast types-only pass without the full build. No lint command
+is configured yet.

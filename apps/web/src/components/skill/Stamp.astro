@@ -1,0 +1,30 @@
+---
+import type { Verdict } from '../../lib/skills';
+
+interface Props {
+	verdict: Verdict;
+}
+
+const { verdict } = Astro.props;
+
+const LABEL: Record<Verdict, string> = {
+	passed: 'PASS',
+	warning: 'WARN',
+	failed: 'FAIL',
+};
+
+const TINT: Record<Verdict, string> = {
+	passed: 'text-pass border-pass-line bg-pass-soft',
+	warning: 'text-warn border-warn-line bg-warn-soft',
+	failed: 'text-fail border-fail-line bg-fail-soft',
+};
+---
+
+<span
+	class:list={[
+		'rounded-[5px] border px-[9px] py-1 font-mono text-[11px] font-bold tracking-[0.1em]',
+		TINT[verdict],
+	]}
+>
+	{LABEL[verdict]}
+</span>
