@@ -11,7 +11,9 @@
     "dev:logs": "pnpm -C apps/web astro dev logs",
     "build": "pnpm -C apps/web build",
     "preview": "pnpm -C apps/web preview",
-    "astro": "pnpm -C apps/web astro"
+    "astro": "pnpm -C apps/web astro",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -25,5 +27,8 @@
   },
   "type": "module",
   "packageManager": "pnpm@11.9.0",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "vitest": "^4.1.9"
+  }
 }

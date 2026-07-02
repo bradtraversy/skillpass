@@ -76,10 +76,13 @@ proxy into `apps/web`.
 - Build: `pnpm build`
 - Preview production build: `pnpm preview`
 - Astro CLI passthrough: `pnpm astro <cmd>` (e.g. `pnpm astro add react`)
+- Test (Vitest, run once): `pnpm test`
+- Test (watch): `pnpm test:watch`
 
-No lint, typecheck, or test command is configured yet. With no `test` command
-declared here, tests are not a required gate (see the Testing section of
-`blueprint/context/coding-standards.md`); the build is the verification signal.
-Add a runner deliberately by running `/tests` (or `$tests`), which picks the
-stack-native runner, adds an example test, and lists its command here to turn the
-gate on.
+`pnpm test` runs Vitest across the monorepo (`apps/*`, `packages/*`) via the root
+`vitest.config.ts`. **The `test` command is declared, so tests are a gate:** a
+step that adds logic-bearing code must ship a passing test in the same diff, and
+`pnpm test` must be green before a checkpoint commit and before `/complete`
+merges (see the Testing section of `blueprint/context/coding-standards.md`). UI
+(Astro pages, React islands) and integration steps are exempt and ride on the
+build plus a screenshot. No lint or typecheck command is configured yet.
