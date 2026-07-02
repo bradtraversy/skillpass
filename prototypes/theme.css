@@ -1,0 +1,53 @@
+/* AI Skills Directory - theme tokens (the durable output of /prototype).
+
+   Direction: validation-native. Referenced cursor.directory's restraint and
+   density (centered hero, one search, dense ranked list) and deliberately moved
+   away from stackmaven.io (dark green-black, emerald accent, card grid, editor
+   sidebar). Own identity: monochrome warm-graphite base + a sparing iris accent,
+   with color reserved for the verdict (PASS/WARN/FAIL). Port into apps/web
+   globals.css @theme at feature 1. */
+
+:root {
+  /* base - warm graphite, faint iris cast. Not cursor's cool black, not
+     stackmaven's green-black. */
+  --bg: #0f0e13;
+  --bg-well: #0b0a0e;        /* deeper wells, code blocks   */
+  --surface: #16151d;        /* raised surfaces             */
+  --surface-2: #1b1a24;      /* rows/cards on surface       */
+  --hover: #201e2a;
+  --border: #262433;         /* hairlines                   */
+  --border-2: #332f43;       /* inputs, stronger dividers   */
+
+  --text: #ece9f3;
+  --muted: #9a94a8;
+  --faint: #615c70;
+
+  /* brand accent - iris/indigo, used sparingly (links, active, focus, primary) */
+  --accent: #8f7bfb;
+  --accent-hover: #a998ff;
+  --accent-ink: #0c0a15;
+  --accent-soft: rgba(143, 123, 251, 0.13);
+  --accent-line: rgba(143, 123, 251, 0.34);
+  --ring: rgba(143, 123, 251, 0.45);
+
+  /* verdict - the only other color on the page, always meaningful */
+  --pass: #46d3a0;  --pass-soft: rgba(70, 211, 160, 0.12);  --pass-line: rgba(70, 211, 160, 0.30);
+  --warn: #f2b43c;  --warn-soft: rgba(242, 180, 60, 0.12);  --warn-line: rgba(242, 180, 60, 0.30);
+  --fail: #f0656a;  --fail-soft: rgba(240, 101, 106, 0.12); --fail-line: rgba(240, 101, 106, 0.32);
+  --unv:  #8b8598;  --unv-soft: rgba(139, 133, 152, 0.12);  --unv-line: rgba(139, 133, 152, 0.28);
+
+  /* risk ramp - low -> critical */
+  --risk-low: #46d3a0;
+  --risk-med: #f2b43c;
+  --risk-high: #f2823c;
+  --risk-crit: #f0656a;
+
+  --font-sans: "Geist", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 16px;
+  --shadow: 0 12px 44px -20px rgba(0, 0, 0, 0.85);
+  --maxw: 1080px;
+}

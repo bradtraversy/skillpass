@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Skills Directory - mockup</title>
+<link rel="stylesheet" href="theme.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: var(--font-mono); }
+
+  /* nav - sparse, like the reference */
+  header.nav { border-bottom: 1px solid var(--border); }
+  .nav-inner { display: flex; align-items: center; height: 60px; gap: 20px; }
+  .mark { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -0.01em; }
+  .mark .stamp-ico { width: 26px; height: 26px; border: 1.5px solid var(--accent); border-radius: 7px;
+    display: grid; place-items: center; color: var(--accent); transform: rotate(-4deg); }
+  .mark .stamp-ico svg { width: 15px; height: 15px; }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 22px; color: var(--muted); font-weight: 500; }
+  .nav-right a:hover { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; gap: 7px; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; padding: 8px 14px; cursor: pointer; border: 1px solid transparent; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); } .btn-primary:hover { background: var(--accent-hover); }
+  .btn-ghost { border-color: var(--border-2); color: var(--text); } .btn-ghost:hover { background: var(--hover); }
+
+  /* hero - centered */
+  .hero { text-align: center; padding: 76px 0 40px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono);
+    font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; }
+  .eyebrow b { color: var(--accent); font-weight: 600; }
+  h1 { font-size: 52px; line-height: 1.04; letter-spacing: -0.03em; font-weight: 620; margin-top: 22px; }
+  h1 .g { color: var(--faint); }
+  .lede { color: var(--muted); font-size: 16px; max-width: 60ch; margin: 18px auto 0; line-height: 1.55; }
+
+  .search { max-width: 620px; margin: 30px auto 0; display: flex; align-items: center; gap: 12px;
+    background: var(--surface); border: 1px solid var(--border-2); border-radius: 999px; padding: 14px 20px; text-align: left; }
+  .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--ring); }
+  .search svg { color: var(--faint); flex: none; }
+  .search input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: var(--font-sans); font-size: 15.5px; }
+  .search input::placeholder { color: var(--faint); }
+  .search kbd { font-family: var(--font-mono); font-size: 11px; color: var(--muted); border: 1px solid var(--border-2); border-radius: 5px; padding: 2px 6px; }
+
+  .runline { margin-top: 20px; font-family: var(--font-mono); font-size: 12px; color: var(--faint); }
+  .runline b { color: var(--muted); font-weight: 500; }
+  .runline .sep { color: var(--border-2); margin: 0 10px; }
+
+  /* directory */
+  .bar { display: flex; align-items: center; gap: 26px; border-bottom: 1px solid var(--border); padding-bottom: 0; margin-top: 46px; }
+  .tab { padding: 0 0 13px; color: var(--muted); font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-color: var(--accent); }
+  .bar .spacer { margin-left: auto; }
+  .selects { display: flex; gap: 8px; padding-bottom: 8px; }
+  .sel { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); border: 1px solid var(--border-2); border-radius: var(--r-sm); padding: 6px 11px; cursor: pointer; }
+  .sel:hover { color: var(--text); background: var(--hover); }
+  .sel svg { color: var(--faint); }
+
+  /* inspection log rows */
+  .log { margin-top: 6px; }
+  .row { display: grid; grid-template-columns: 30px 34px 1fr auto auto; gap: 16px; align-items: center;
+    padding: 15px 12px; border-bottom: 1px solid var(--border); cursor: pointer; border-radius: var(--r); }
+  .row:hover { background: var(--surface); }
+  .rank { font-family: var(--font-mono); font-size: 13px; color: var(--faint); text-align: right; }
+  .mono-tile { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border-2);
+    background: var(--surface-2); display: grid; place-items: center; font-family: var(--font-mono);
+    font-size: 13px; font-weight: 600; color: var(--muted); }
+  .rmain { min-width: 0; }
+  .rname { display: flex; align-items: center; gap: 10px; }
+  .rname b { font-weight: 600; letter-spacing: -0.01em; }
+  .tags { display: flex; gap: 5px; }
+  .tag { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+  .rdesc { color: var(--muted); font-size: 12.5px; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46ch; }
+
+  /* verdict stamp - the anchor */
+  .verdict { display: flex; align-items: center; gap: 12px; }
+  .stamp { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    padding: 4px 9px; border-radius: 5px; border: 1px solid; }
+  .stamp.pass { color: var(--pass); border-color: var(--pass-line); background: var(--pass-soft); }
+  .stamp.warn { color: var(--warn); border-color: var(--warn-line); background: var(--warn-soft); }
+  .stamp.fail { color: var(--fail); border-color: var(--fail-line); background: var(--fail-soft); }
+  .risk { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); width: 82px; }
+  .rdot { width: 7px; height: 7px; border-radius: 50%; }
+  .r-low { background: var(--risk-low); } .r-med { background: var(--risk-med); }
+  .r-high { background: var(--risk-high); } .r-crit { background: var(--risk-crit); }
+  .rmeta { text-align: right; font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); width: 96px; }
+  .rmeta b { display: block; color: var(--muted); font-size: 13px; font-weight: 600; }
+
+  footer { text-align: center; color: var(--faint); font-size: 12.5px; padding: 50px 0 40px; }
+  footer .mono { color: var(--muted); }
+  @media (max-width: 760px) { h1 { font-size: 38px; } .rdesc, .risk { display: none; } .row { grid-template-columns: 24px 30px 1fr auto; } }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="mark" href="#">
+      <span class="stamp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      AI Skills Directory
+    </a>
+    <div class="nav-right">
+      <a href="#">Browse</a>
+      <a href="#">Validator</a>
+      <a href="#">Docs</a>
+      <a href="#" class="mono" style="font-size:13px;">CLI</a>
+      <a href="upload.html" class="btn btn-ghost">Submit a skill</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <span class="eyebrow"><b>//</b> never trust a skill blindly</span>
+    <h1>Validated skills<br />for AI agents.</h1>
+    <p class="lede">Discover skills for Codex, Claude Code, Cursor, Cowork and more. Every one is inspected, permission-mapped, and stamped with a Skill Passport before it reaches your machine.</p>
+    <div class="search">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input placeholder="Search skills, tools, permissions, or maintainers..." />
+      <kbd>/</kbd>
+    </div>
+    <div class="runline"><b>312</b> skills <span class="sep">·</span> <b>1,041</b> versions inspected <span class="sep">·</span> <b>27</b> flagged &amp; held <span class="sep">·</span> same engine in the <span style="color:var(--accent)">aiskills</span> CLI</div>
+  </section>
+
+  <div class="bar">
+    <span class="tab active">Trending</span>
+    <span class="tab">New</span>
+    <span class="tab">Verified</span>
+    <span class="tab">Workflow packs</span>
+    <span class="spacer"></span>
+    <div class="selects">
+      <span class="sel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg> Filter</span>
+      <span class="sel">Tool</span>
+      <span class="sel">Verdict</span>
+    </div>
+  </div>
+
+  <div class="log">
+    <div class="row" onclick="location.href='skill-detail.html'">
+      <span class="rank">01</span>
+      <span class="mono-tile">CW</span>
+      <div class="rmain">
+        <div class="rname"><b>Commit Message Writer</b> <span class="tags"><span class="tag">codex</span><span class="tag">cursor</span></span></div>
+        <div class="rdesc">Writes conventional commit messages from the staged diff. No network, no shell.</div>
+      </div>
+      <div class="verdict"><span class="stamp pass">PASS</span><span class="risk"><span class="rdot r-low"></span>low risk</span></div>
+      <div class="rmeta"><b>5.9k</b>1d ago</div>
+    </div>
+
+    <div class="row" onclick="location.href='skill-detail.html'">
+      <span class="rank">02</span>
+      <span class="mono-tile" style="color:var(--accent);border-color:var(--accent-line);">AB</span>
+      <div class="rmain">
+        <div class="rname"><b>AI Coding Blueprint</b> <span class="tags"><span class="tag">claude-code</span><span class="tag">codex</span></span></div>
+        <div class="rdesc">Spec-driven feature workflow with reviewed steps behind gates. Reads and writes project files.</div>
+      </div>
+      <div class="verdict"><span class="stamp pass">PASS</span><span class="risk"><span class="rdot r-low"></span>low risk</span></div>
+      <div class="rmeta"><b>4.2k</b>2d ago</div>
+    </div>
+
+    <div class="row" onclick="location.href='skill-detail.html'">
+      <span class="rank">03</span>
+      <span class="mono-tile">RT</span>
+      <div class="rmain">
+        <div class="rname"><b>Repo Triage</b> <span class="tags"><span class="tag">claude-code</span><span class="tag">codex</span></span></div>
+        <div class="rdesc">Scans a repo, groups issues, and drafts a triage plan. Reads files and runs read-only git.</div>
+      </div>
+      <div class="verdict"><span class="stamp pass">PASS</span><span class="risk"><span class="rdot r-med"></span>medium</span></div>
+      <div class="rmeta"><b>3.6k</b>2d ago</div>
+    </div>
+
+    <div class="row" onclick="location.href='skill-detail.html'">
+      <span class="rank">04</span>
+      <span class="mono-tile">PR</span>
+      <div class="rmain">
+        <div class="rname"><b>PR Review Bot</b> <span class="tags"><span class="tag">codex</span><span class="tag">claude-code</span></span></div>
+        <div class="rdesc">Summarizes diffs and posts review notes. Requests network access to the GitHub API.</div>
+      </div>
+      <div class="verdict"><span class="stamp warn">WARN</span><span class="risk"><span class="rdot r-med"></span>medium</span></div>
+      <div class="rmeta"><b>1.1k</b>review</div>
+    </div>
+
+    <div class="row" onclick="location.href='skill-detail.html'">
+      <span class="rank">05</span>
+      <span class="mono-tile">GS</span>
+      <div class="rmain">
+        <div class="rname"><b>Gmail Sweep</b> <span class="tags"><span class="tag">cowork</span></span></div>
+        <div class="rdesc">Weekly inbox triage and labeling. Requests connector write access to Gmail.</div>
+      </div>
+      <div class="verdict"><span class="stamp warn">WARN</span><span class="risk"><span class="rdot r-high"></span>high</span></div>
+      <div class="rmeta"><b>870</b>review</div>
+    </div>
+
+    <div class="row" onclick="location.href='skill-detail.html'">
+      <span class="rank">06</span>
+      <span class="mono-tile">MC</span>
+      <div class="rmain">
+        <div class="rname"><b>Memcrate Context Vault</b> <span class="tags"><span class="tag">claude-code</span><span class="tag">cursor</span><span class="tag">aider</span></span></div>
+        <div class="rdesc">Portable, local-first context vault. Three verbs any agent can read. No network.</div>
+      </div>
+      <div class="verdict"><span class="stamp pass">PASS</span><span class="risk"><span class="rdot r-low"></span>low risk</span></div>
+      <div class="rmeta"><b>2.8k</b>4d ago</div>
+    </div>
+
+    <div class="row" onclick="location.href='skill-detail.html'">
+      <span class="rank">07</span>
+      <span class="mono-tile" style="color:var(--fail);border-color:var(--fail-line);">AD</span>
+      <div class="rmain">
+        <div class="rname"><b>Auto Deploy Runner</b> <span class="tags"><span class="tag">aider</span></span></div>
+        <div class="rdesc">Runs build and deploy on merge. Executes shell and deploys with no explicit gate.</div>
+      </div>
+      <div class="verdict"><span class="stamp fail">FAIL</span><span class="risk"><span class="rdot r-crit"></span>critical</span></div>
+      <div class="rmeta"><b>held</b>blocked</div>
+    </div>
+
+    <div class="row" onclick="location.href='skill-detail.html'">
+      <span class="rank">08</span>
+      <span class="mono-tile">CA</span>
+      <div class="rmain">
+        <div class="rname"><b>Course Author</b> <span class="tags"><span class="tag">claude-code</span></span></div>
+        <div class="rdesc">Generates lessons, challenges, and tests from a course outline.</div>
+      </div>
+      <div class="verdict"><span class="stamp pass">PASS</span><span class="risk"><span class="rdot r-low"></span>low risk</span></div>
+      <div class="rmeta"><b>640</b>5d ago</div>
+    </div>
+  </div>
+
+  <footer>The same validator runs on upload, on download pre-flight, and in the <span class="mono">aiskills</span> CLI. &nbsp;·&nbsp; Prototype - throwaway mockup.</footer>
+</div>
+
+</body>
+</html>

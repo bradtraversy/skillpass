@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Submit a skill - inspection - mockup</title>
+<link rel="stylesheet" href="theme.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  .mono { font-family: var(--font-mono); }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .col { max-width: 660px; margin: 0 auto; }
+
+  header.nav { border-bottom: 1px solid var(--border); }
+  .nav-inner { display: flex; align-items: center; height: 60px; gap: 20px; }
+  .mark { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -0.01em; }
+  .mark .stamp-ico { width: 26px; height: 26px; border: 1.5px solid var(--accent); border-radius: 7px; display: grid; place-items: center; color: var(--accent); transform: rotate(-4deg); }
+  .mark .stamp-ico svg { width: 15px; height: 15px; }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 22px; color: var(--muted); font-weight: 500; }
+  .nav-right a:hover { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; gap: 7px; border-radius: var(--r-sm); font-weight: 600; font-size: 13px; padding: 11px 17px; cursor: pointer; border: 1px solid transparent; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); } .btn-primary:hover { background: var(--accent-hover); }
+
+  .stage { padding: 56px 0 60px; }
+  h1 { font-size: 30px; letter-spacing: -0.02em; font-weight: 640; }
+  .sub { color: var(--muted); margin-top: 8px; font-size: 15px; }
+
+  .tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--border); margin-top: 28px; }
+  .tab { padding: 0 0 12px; color: var(--muted); font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 8px; }
+  .tab.active { color: var(--text); border-color: var(--accent); }
+  .tab:hover { color: var(--text); }
+
+  .field { display: flex; gap: 11px; margin-top: 22px; }
+  .input { flex: 1; display: flex; align-items: center; gap: 11px; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r); padding: 13px 15px; }
+  .input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--ring); }
+  .input svg { color: var(--faint); flex: none; }
+  .input .mono { color: var(--muted); font-size: 13px; }
+  .input input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: var(--font-mono); font-size: 13.5px; }
+  .hint { color: var(--faint); font-size: 12.5px; margin-top: 10px; }
+
+  /* inspection readout */
+  .readout { margin-top: 28px; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
+  .ro-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px dashed var(--border-2);
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .ro-head .l { display: flex; align-items: center; gap: 9px; } .ro-head .l svg { color: var(--accent); }
+  .ro-head .src { color: var(--faint); text-transform: none; letter-spacing: 0; }
+  .replay { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11.5px; cursor: pointer; border: 1px solid var(--border-2); border-radius: var(--r-sm); padding: 5px 10px; text-transform: none; letter-spacing: 0; }
+  .replay:hover { color: var(--text); background: var(--hover); }
+
+  .steps { padding: 8px 0; }
+  .step { display: grid; grid-template-columns: 22px 1fr auto 54px; gap: 13px; align-items: center; padding: 10px 18px;
+    font-family: var(--font-mono); font-size: 13px; opacity: 0; transform: translateY(3px); animation: rev .3s ease forwards; }
+  .step:nth-child(1){animation-delay:.1s}.step:nth-child(2){animation-delay:.55s}.step:nth-child(3){animation-delay:1s}
+  .step:nth-child(4){animation-delay:1.45s}.step:nth-child(5){animation-delay:1.9s}.step:nth-child(6){animation-delay:2.35s}.step:nth-child(7){animation-delay:2.9s}
+  @keyframes rev { to { opacity: 1; transform: none; } }
+  .gi { display: grid; place-items: center; }
+  .gi.ok { color: var(--pass); } .gi.wn { color: var(--warn); }
+  .step .lbl { color: var(--text); font-family: var(--font-sans); font-weight: 500; }
+  .step .res { color: var(--muted); font-size: 12px; } .step .res.w { color: var(--warn); }
+  .step .t { color: var(--faint); font-size: 11px; text-align: right; }
+
+  .verdict { display: flex; align-items: center; gap: 16px; padding: 18px; border-top: 1px solid var(--border); background: var(--warn-soft);
+    opacity: 0; animation: rev .4s ease forwards; animation-delay: 3.45s; }
+  .verdict .stamp { font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.12em; font-size: 14px; color: var(--warn);
+    border: 2px solid var(--warn-line); border-radius: 8px; padding: 9px 13px; transform: rotate(-3deg); flex: none; text-align: center; line-height: 1.2; }
+  .verdict .stamp small { display: block; font-size: 8px; letter-spacing: 0.15em; opacity: .8; }
+  .verdict .vt { font-weight: 640; color: var(--text); } .verdict .vd { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .verdict .btn { margin-left: auto; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="mark" href="homepage.html">
+      <span class="stamp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      AI Skills Directory
+    </a>
+    <div class="nav-right"><a href="homepage.html">Browse</a><a href="#">Validator</a><a href="#">Docs</a><a href="#" class="mono" style="font-size:13px;">CLI</a></div>
+  </div>
+</header>
+
+<div class="wrap col stage">
+  <h1>Submit a skill</h1>
+  <p class="sub">Paste a GitHub URL (repo or subfolder). We resolve the commit, snapshot the source, and run the inspection before anything lists.</p>
+
+  <div class="tabs">
+    <span class="tab active"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49l-.01-1.7c-2.78.62-3.37-1.37-3.37-1.37-.46-1.18-1.11-1.5-1.11-1.5-.9-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9l-.01 2.82c0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/></svg> GitHub URL</span>
+    <span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg> Zip upload</span>
+  </div>
+
+  <div class="field">
+    <div class="input">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+      <input value="github.com/aria-dev/pr-review-bot" spellcheck="false" />
+    </div>
+    <button class="btn btn-primary" onclick="replay()">Inspect</button>
+  </div>
+  <div class="hint">Full repo or a subfolder path. The same engine runs in the <span class="mono" style="color:var(--accent)">aiskills</span> CLI.</div>
+
+  <div class="readout">
+    <div class="ro-head">
+      <span class="l"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg> Inspecting <span class="src">aria-dev/pr-review-bot @ e4b1d09</span></span>
+      <span class="replay" onclick="replay()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> Replay</span>
+    </div>
+
+    <div class="steps" id="steps">
+      <div class="step"><span class="gi ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lbl">Reading package</span><span class="res">12 files · 38 KB</span><span class="t">0.4s</span></div>
+      <div class="step"><span class="gi ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lbl">Checking manifest</span><span class="res">skill.json valid</span><span class="t">0.2s</span></div>
+      <div class="step"><span class="gi ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lbl">Parsing SKILL.md</span><span class="res">4.8 KB parsed</span><span class="t">0.3s</span></div>
+      <div class="step"><span class="gi ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lbl">Detecting compatibility</span><span class="res">codex, claude-code</span><span class="t">0.2s</span></div>
+      <div class="step"><span class="gi ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lbl">Mapping permissions</span><span class="res">3 requested</span><span class="t">0.3s</span></div>
+      <div class="step"><span class="gi wn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><span class="lbl">Scanning risky actions</span><span class="res w">1 undeclared host</span><span class="t">0.6s</span></div>
+      <div class="step"><span class="gi ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lbl">Stamping Skill Passport</span><span class="res">hash a3f9c7e1</span><span class="t">0.2s</span></div>
+    </div>
+
+    <div class="verdict">
+      <span class="stamp">WARNING<small>REVIEW REQ'D</small></span>
+      <div><div class="vt">Passport stamped - review before publishing</div><div class="vd">1 finding needs a maintainer decision before this can list.</div></div>
+      <a href="skill-detail.html" class="btn btn-primary">View Passport</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function replay() {
+    var s = document.getElementById('steps');
+    s.querySelectorAll('.step').forEach(function (el) { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; });
+    var v = document.querySelector('.verdict');
+    v.style.animation = 'none'; void v.offsetWidth; v.style.animation = '';
+  }
+</script>
+</body>
+</html>
