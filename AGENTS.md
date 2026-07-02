@@ -47,6 +47,7 @@ Core skills:
 - `doctor` - read-only Blueprint health check for setup, adapters, plans, overview freshness, and workflow drift
 - `adopt` - bootstrap the Blueprint into an existing brownfield app with shipped features
 - `overview` - distill the two planning docs into `blueprint/context/project-overview.md`
+- `brief` - read-only briefing on an upcoming build-plan feature (scope, dependencies, size) before you spec it
 - `feature` - turn a build-plan item into a spec in `blueprint/context/current-feature.md`
 - `fix` - document an ad-hoc bug or change into `blueprint/context/current-feature.md`
 - `implement` - build the current spec one small, reviewed step at a time

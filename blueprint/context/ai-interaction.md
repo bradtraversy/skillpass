@@ -28,9 +28,10 @@ rules below still apply (small steps, you approve each diff, the conventions in
 want the repeatable loop and the logging; prompt directly when you just want
 something done.
 
-1. **Spec** - Run `/feature` (no number = the next unchecked item in
-   `build-plan.md`) to generate @blueprint/context/current-feature.md, then review it
-   together before any code.
+1. **Spec** - Optionally run `/brief` first for a read-only preview of the next
+   feature (scope, dependencies, size); it writes nothing. Then run `/feature`
+   (no number = the next unchecked item in `build-plan.md`) to generate
+   @blueprint/context/current-feature.md, then review it together before any code.
 2. **Branch** - Create a new branch for the feature/fix.
 3. **Implement** - Build one small step from the spec at a time, not the whole
    feature at once.

@@ -207,6 +207,8 @@ flowchart TD
     OV --> POV["project-overview.md<br/>source of truth"]
     POV -.->|optional| PT(["/prototype"])
     PT -.-> PRO["prototypes/"]
+    POV -.->|understand, read-only| BR(["/brief"])
+    BR -.-> FT
 
     POV --> FT(["/feature"])
     POV --> FX(["/fix"])
@@ -220,7 +222,7 @@ flowchart TD
     AR -.->|next| FT
 
     classDef skill fill:#2563eb,stroke:#1e40af,color:#ffffff;
-    class OV,PT,FT,FX,IM,CP,CK skill;
+    class OV,PT,BR,FT,FX,IM,CP,CK skill;
 ```
 
 ## The two files you own
@@ -269,8 +271,10 @@ the build loop stands, run `/status`.
 
 Then repeat the build loop for each feature:
 
-1. Run **`/feature`** to spec the next unchecked build-plan item. You can also
-   pass a number or name, such as `/feature 3` or `/feature "login"`.
+1. Optionally run **`/brief`** first to preview what the next feature involves -
+   scope, dependencies, size - without writing anything. Then run **`/feature`**
+   to spec the next unchecked build-plan item. You can also pass a number or name,
+   such as `/feature 3` or `/feature "login"`.
 2. Review `blueprint/context/current-feature.md` before code is written.
 3. Run **`/implement`**. It branches, builds one step, shows the diff, proves the
    done-when, and waits for approval before moving on.
@@ -302,6 +306,7 @@ Then continue with `/implement`, `/check`, and `/complete`. Fixes are logged to
 | **/doctor** | any time, especially after `/onboard` or when setup feels off | Runs a read-only health check for Blueprint files, adapters, commands, ignore rules, planning readiness, overview freshness, workflow drift, and git state. |
 | **/adopt** | once, for an existing codebase | Surveys the repo and generates the planning docs and coding standards from what already exists. |
 | **/overview** | after writing or editing the plans | Checks plan quality, normalizes rough build-plan bullets when approved, and generates `blueprint/context/project-overview.md`. |
+| **/brief** | before spec'ing, or when deciding what's next | Read-only briefing on an upcoming build-plan feature - scope, dependencies, what it touches, size, likely split - without writing anything. |
 | **/feature** | for each planned feature | Specs the next unchecked feature, or a selected feature, into `current-feature.md`. |
 | **/fix** | for an unplanned bug or small change | Specs an ad-hoc fix into `current-feature.md`. |
 | **/implement** | after reviewing a spec | Builds the current spec one small, reviewed step at a time. |
@@ -359,8 +364,9 @@ item. Mid-feature, run `/implement` again and it resumes from the first unchecke
 step in `current-feature.md`.
 
 > [!TIP]
-> If you are unsure what to do next, run `/status`. If you are unsure whether the
-> Blueprint is set up correctly, run `/doctor`. Both are read-only.
+> If you are unsure what to do next, run `/status`. To understand what a specific
+> upcoming feature involves before spec'ing it, run `/brief`. If you are unsure
+> whether the Blueprint is set up correctly, run `/doctor`. All three are read-only.
 
 ## File map
 
