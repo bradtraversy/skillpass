@@ -30,6 +30,16 @@ The two planning docs, already written:
 If either is missing or still has placeholder text, stop and tell the user to
 fill it in first. This skill distills plans; it does not invent them.
 
+Placeholder text means the blueprint template's own scaffolding, not real
+content: checklist items like `Feature one` / `Feature two`, a trailing
+`- description`, `TODO`, `TBD`, or the template's example bullets left in place.
+Watch for the masking trap in particular: `build-plan.md` can still be the stub
+while `project-plan.md` §3 already lists the real features. When that happens the
+overview can be synthesized from `project-plan.md` alone and come out looking
+complete, hiding the empty checklist that `/feature` actually reads. A rich
+`project-plan.md` must not paper over a stub `build-plan.md` - reconcile the
+checklist first (Step 2) rather than generating over the gap.
+
 ## Step 1 - read both plans
 
 Read `project-plan.md` and `build-plan.md` in full. Note where they disagree - a
@@ -58,6 +68,16 @@ Flag these as plan-shape problems:
 - giant items that bundle many features together
 - implementation chores instead of user-visible or system-visible outcomes
 - feature lists in `project-plan.md` that do not match `build-plan.md`
+
+**Stub build plan, real project plan (hard stop).** If `build-plan.md` is still
+the template stub or otherwise placeholder-only while `project-plan.md` §3 lists
+real features, do not generate the overview from `project-plan.md` alone. Derive
+the ordered checklist from `project-plan.md`'s feature list, show it, and on
+approval write it into `build-plan.md` before continuing. This is faithful, not
+invented scope - the features are already the user's, they were just never
+transcribed into the tracked checklist. The overview is generated from
+`build-plan.md`, so `build-plan.md` must hold the real feature checklist first;
+never leave it a stub sitting behind a complete-looking overview.
 
 If the build plan is rough but understandable, propose a cleaned-up checkbox
 version and stop for user approval before editing the plan or generating the
@@ -105,7 +125,10 @@ not modify the main app code.
   `build-plan.md`. Propose normalized plan text and stop for approval unless the
   user explicitly asked you to clean up the plans.
 - **Build plan must be trackable.** Prefer a numbered checkbox list. If the build
-  plan is raw bullets, normalize it before generating the overview.
+  plan is raw bullets, or still a stub while `project-plan.md` lists the features,
+  normalize it and write the reconciled checklist back into `build-plan.md` before
+  generating the overview. The real feature list must never live only in the
+  overview - `/feature` reads `build-plan.md`, not the overview.
 - **No new scope.** Everything in the overview must trace back to one of the two
   plans. Invented scope is the main failure mode here.
 - **Concrete over vague.** Field-level data models and named routes beat
