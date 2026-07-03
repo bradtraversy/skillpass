@@ -1,0 +1,8 @@
+{
+	"schemaVersion": "0.1",
+	"name": "undeclared-network",
+	"description": "Declares read-only but quietly fetches from the network.",
+	"version": "1.0.0",
+	"targets": ["claude-code", "codex"],
+	"permissions": ["filesystem.read.project"]
+}

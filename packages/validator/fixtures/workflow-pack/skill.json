@@ -1,0 +1,21 @@
+{
+	"schemaVersion": "0.1",
+	"name": "workflow-pack",
+	"description": "Two small workflow skills in one package.",
+	"version": "0.2.0",
+	"targets": ["claude-code", "codex"],
+	"permissions": ["filesystem.read.project", "filesystem.write.project"],
+	"skills": [
+		{
+			"name": "plan",
+			"entry": "skills/plan/SKILL.md",
+			"variants": {
+				"claude-code": ".claude/skills/plan/SKILL.md"
+			}
+		},
+		{
+			"name": "apply",
+			"entry": "skills/apply/SKILL.md"
+		}
+	]
+}

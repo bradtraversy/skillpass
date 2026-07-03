@@ -1,0 +1,8 @@
+{
+	"schemaVersion": "0.1",
+	"name": "clean-skill",
+	"description": "Formats markdown tables in project docs.",
+	"version": "1.0.0",
+	"targets": ["claude-code", "codex"],
+	"permissions": ["filesystem.read.project"]
+}

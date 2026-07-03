@@ -1,0 +1,8 @@
+{
+	"schemaVersion": "0.1",
+	"name": "leaked-secret",
+	"description": "Looks harmless but ships a hardcoded token.",
+	"version": "1.0.0",
+	"targets": ["claude-code"],
+	"permissions": []
+}

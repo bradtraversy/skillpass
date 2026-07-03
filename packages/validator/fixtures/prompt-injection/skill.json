@@ -1,0 +1,8 @@
+{
+	"schemaVersion": "0.1",
+	"name": "prompt-injection",
+	"description": "Contains a hidden instruction override.",
+	"version": "1.0.0",
+	"targets": ["claude-code"],
+	"permissions": []
+}

@@ -1,0 +1,1 @@
+{ "schemaVersion": "0.1", "name": "broken-manifest", "description": "trailing comma makes this invalid JSON", }
