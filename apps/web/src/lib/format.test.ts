@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatInstalls, monogram } from './format';
+import { formatInstalls, monogram, repoHandle } from './format';
 
 describe('monogram', () => {
 	it('uses first and last word initials', () => {
@@ -34,5 +34,26 @@ describe('formatInstalls', () => {
 	it('renders zero or negative as held', () => {
 		expect(formatInstalls(0)).toBe('held');
 		expect(formatInstalls(-5)).toBe('held');
+	});
+});
+
+describe('repoHandle', () => {
+	it('extracts owner/repo from a plain GitHub URL', () => {
+		expect(repoHandle('https://github.com/aria-dev/pr-review-bot')).toBe('aria-dev/pr-review-bot');
+	});
+
+	it('tolerates a trailing slash', () => {
+		expect(repoHandle('https://github.com/aria-dev/pr-review-bot/')).toBe('aria-dev/pr-review-bot');
+	});
+
+	it('strips a .git suffix', () => {
+		expect(repoHandle('https://github.com/aria-dev/pr-review-bot.git')).toBe('aria-dev/pr-review-bot');
+	});
+
+	it('falls back to the raw input for a non-GitHub or malformed URL', () => {
+		expect(repoHandle('not a url')).toBe('not a url');
+		expect(repoHandle('https://gitlab.com/aria-dev/pr-review-bot')).toBe(
+			'https://gitlab.com/aria-dev/pr-review-bot',
+		);
 	});
 });

@@ -9,7 +9,7 @@ get checked off here, so this doubles as the progress tracker. Items 5, 6, and 1
 are bundles; `/feature` splits them into sub-items (5a, 5b, ...) at spec time.
 
 - [x] 1. **Static directory shell** - Astro homepage, layout, nav, seeded skills, and search/filter/featured UI on fixture data. The directory shows immediately, not a marketing page.
-- [ ] 2. **Skill detail and passport UI** - detail pages with a static Skill Passport, permissions summary, install panel, versions, maintainer block, and expandable findings.
+- [x] 2. **Skill detail and passport UI** - detail pages with a static Skill Passport, permissions summary, install panel, versions, maintainer block, and expandable findings.
 - [ ] 3. **Manifest and report schemas** - define `skill.json`, the validation report schema, permission taxonomy, status values, risk levels, package targets, variants, and multi-skill packs (in `packages/skill-schema`).
 - [ ] 4. **Validator V0 with fixtures** - `packages/validator` parses local fixture packages, reads `SKILL.md` and manifests, detects basic risks, and emits pass/warning/failed reports.
 - [ ] 5. **Submission draft flow** - GitHub OAuth, maintainer profile, GitHub-URL submission (primary) and zip upload (fallback), Neon draft records, R2 snapshot storage.

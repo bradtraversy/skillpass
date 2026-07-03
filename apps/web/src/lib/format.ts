@@ -13,3 +13,9 @@ export function formatInstalls(installs: number): string {
 	if (installs >= 1000) return `${(installs / 1000).toFixed(1)}k`;
 	return String(installs);
 }
+
+// Falls back to the raw input for a non-GitHub/malformed URL instead of throwing.
+export function repoHandle(url: string): string {
+	const match = url.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/i);
+	return match ? `${match[1]}/${match[2]}` : url;
+}

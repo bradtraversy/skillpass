@@ -1,0 +1,130 @@
+---
+import type { Skill } from '../../lib/skills';
+import type { SkillDetail } from '../../lib/skill-details';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/nav/Nav.astro';
+import DetailHeader from '../../components/skill/DetailHeader.astro';
+import InstallBar from '../../components/skill/InstallBar.astro';
+import Passport from '../../components/skill/Passport.astro';
+import Stamp from '../../components/skill/Stamp.astro';
+import { skills } from '../../lib/skills';
+import { getSkillDetail } from '../../lib/skill-details';
+
+export function getStaticPaths() {
+	return skills.map((skill) => {
+		const detail = getSkillDetail(skill.slug);
+		if (!detail) throw new Error(`No skillDetails entry for "${skill.slug}"`);
+		return { params: { slug: skill.slug }, props: { skill, detail } };
+	});
+}
+
+interface Props {
+	skill: Skill;
+	detail: SkillDetail;
+}
+
+const { skill, detail } = Astro.props;
+const { maintainerInfo } = detail;
+
+const sectionHeading = 'mb-[13px] font-mono text-[11px] uppercase tracking-[0.12em] text-faint';
+---
+
+<BaseLayout title={`${skill.name} - Skill Passport`}>
+	<Nav />
+	<main class="mx-auto max-w-[760px] px-6">
+		<a
+			href="/"
+			class="inline-flex items-center gap-[7px] pt-[26px] text-[13px] text-muted hover:text-text"
+		>
+			<svg
+				width="15"
+				height="15"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="m15 18-6-6 6-6"></path>
+			</svg>
+			Skills
+		</a>
+
+		<DetailHeader skill={skill} detail={detail} />
+		<InstallBar slug={skill.slug} />
+		<Passport skill={skill} detail={detail} />
+
+		<section class="mt-[26px]">
+			<h2 class={sectionHeading}>Usage</h2>
+			<p class="text-[14px] text-muted">{detail.usage}</p>
+		</section>
+
+		<section class="mt-[26px]">
+			<h2 class={sectionHeading}>Files</h2>
+			<div class="divide-y divide-border">
+				{
+					detail.files.map((file) => (
+						<div class="flex items-center gap-[11px] py-[11px] text-[13px]">
+							<svg
+								class="flex-none text-faint"
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z" />
+								<path d="M14 2v6h6" />
+							</svg>
+							<span class="font-mono text-text">{file.name}</span>
+							<span class="ml-auto text-[12px] text-faint">{file.size}</span>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="mt-[26px]">
+			<h2 class={sectionHeading}>Versions</h2>
+			<div class="divide-y divide-border">
+				{
+					detail.versions.map((version) => (
+						<div class="flex items-center gap-[11px] py-[11px] text-[13px]">
+							<span class="font-mono text-text">{version.version}</span>
+							<Stamp verdict={version.verdict} />
+							<span class="ml-auto text-[12px] text-faint">{version.date}</span>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="mt-[26px]">
+			<h2 class={sectionHeading}>Maintainer</h2>
+			<div class="flex items-center gap-[12px]">
+				<span
+					class="size-[38px] flex-none rounded-full bg-[linear-gradient(135deg,var(--color-accent),#5b5470)]"
+				></span>
+				<div>
+					<div class="font-semibold">{maintainerInfo.username}</div>
+					<div class="mt-[2px] text-[12px] text-faint">
+						Reputation {maintainerInfo.reputation} · {maintainerInfo.skillCount} skills · joined {
+							maintainerInfo.joined
+						}
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<footer class="py-[46px] text-center text-[12.5px] text-faint">
+			Passport is immutable and pinned to source hash <span class="font-mono">{detail.sourceHash}</span
+			>.
+		</footer>
+	</main>
+</BaseLayout>
