@@ -16,7 +16,7 @@ framework scaffolder inside a directory that already holds the blueprint files
 (`AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, `blueprint/`); it fails
 because the directory isn't empty.
 
-New here? `README.md` explains the whole workflow.
+New here? `blueprint/README.md` explains the whole workflow.
 
 ## Read these for full context
 
