@@ -1,10 +1,11 @@
-// Fixture dataset for the static directory. The Skill shape is load-bearing:
-// feature 2 (detail + passport) reuses it, so treat it as a contract. It aligns
-// with, and is superseded by, packages/skill-schema at feature 3.
+// Fixture dataset for the static directory. Core enums come from the shared
+// skill-schema package; the display-only fields stay fixture-shaped until real
+// data feeds them (features 7-8).
 
-export type Verdict = 'passed' | 'warning' | 'failed';
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
-export type Target = 'codex' | 'claude-code' | 'cursor' | 'cowork' | 'aider';
+import type { RiskLevel, Target, ValidationStatus } from 'skill-schema';
+
+export type Verdict = ValidationStatus; // display alias used by the UI
+export type { RiskLevel, Target };
 
 export interface Skill {
 	slug: string;

@@ -127,7 +127,7 @@ the static front end.
 
 - `id`, `skillVersionId` -> SkillVersion (or Submission pre-publish)
 - `status` (enum: `passed` | `warning` | `failed`)
-- `riskLevel` (enum: `none` | `low` | `medium` | `high`)
+- `riskLevel` (enum: `low` | `medium` | `high` | `critical`)
 - `sourceHash` (string)
 - `createdAt` (datetime)
 - Relationships: has many **Permission** (detected), many **Warning**, many
