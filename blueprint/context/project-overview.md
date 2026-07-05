@@ -53,7 +53,8 @@ list.
    wired to real jobs.
 7. **Publishable skill flow** - passed submissions publish, failed stay private,
    warnings route to draft/review, and each published version gets a public
-   immutable Skill Passport.
+   immutable Skill Passport plus a readable source view (SKILL.md and package
+   files rendered from the validated snapshot, pinned to the source hash).
 8. **Download pre-flight** - endpoint + UI showing current validation, source
    hash, permissions, permission diffs, and blocking of failed versions.
 9. **CLI scan and report** - `packages/cli` with `aiskills scan` and
@@ -212,7 +213,8 @@ Static Astro pages (`apps/web`, names indicative):
 
 - `/` - directory homepage: search, filters, featured/trending cards, result rows
 - `/skills/[slug]` - skill detail: Skill Passport, permissions summary, install
-  panel, versions, maintainer block, expandable findings
+  panel, versions, maintainer block, expandable findings, and a source view
+  (SKILL.md rendered, other package files viewable) from the validated snapshot
 - `/skills/[slug]/[version]` - version-pinned passport permalink
 - `/submit` - submission flow (GitHub URL primary, zip fallback) with the inline
   validation progress panel

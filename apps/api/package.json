@@ -1,0 +1,27 @@
+{
+	"name": "apps-api",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"scripts": {
+		"dev": "node --env-file=.env --watch --import tsx src/index.ts",
+		"start": "node --env-file=.env --import tsx src/index.ts",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "node --env-file=.env --import tsx src/db/migrate.ts"
+	},
+	"dependencies": {
+		"@hono/node-server": "^1.14.0",
+		"@neondatabase/serverless": "^1.1.0",
+		"drizzle-orm": "^0.45.2",
+		"hono": "^4.7.0",
+		"zod": "^4.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"drizzle-kit": "^0.31.10",
+		"tsx": "^4.19.0"
+	}
+}
