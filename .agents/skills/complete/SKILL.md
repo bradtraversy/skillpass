@@ -62,6 +62,10 @@ or `fix: <name>`). Build and tests must pass first.
 
 Then point the user at `/feature` (or `/fix`) for the next thing.
 
+Finish with a concise **How to try it** note for the completed feature. If the
+manual path is more than a couple of steps, tell the user to run `/try latest`;
+that command can read the archived feature after `current-feature.md` is reset.
+
 ## Rules
 
 - The feature is the unit of history: one squashed feature commit on main, even if

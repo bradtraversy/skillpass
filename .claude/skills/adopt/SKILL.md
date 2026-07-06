@@ -38,6 +38,17 @@ Look at `blueprint/project-plan.md` and `blueprint/build-plan.md`.
 Never overwrite a filled-in plan without explicit confirmation. Never run a
 framework scaffolder (the blueprint is an overlay, never a generator).
 
+Protect the project README:
+
+- If the root `README.md` already looks like a real project README, leave it
+  alone.
+- If the root `README.md` is the copied Blueprint workflow doc (for example it
+  starts with `# AI Coding Blueprint`), move it to `blueprint/README.md` unless a
+  different `blueprint/README.md` already exists.
+- Do not create or overwrite a root project README for a brownfield app unless
+  the user explicitly asks. The existing project face belongs to the app, not the
+  workflow.
+
 ## Step 1 - survey the codebase (read-only)
 
 Read the repo to establish the facts. Change nothing in this step. Establish:

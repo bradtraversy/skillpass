@@ -53,6 +53,8 @@ Core skills:
 - `fix` - document an ad-hoc bug or change into `blueprint/context/current-feature.md`
 - `implement` - build the current spec one small, reviewed step at a time
 - `check` - prove the current spec against the running app
+- `try` - read-only manual review guide: where to go, what to click, what to expect
+- `audit` - read-only code quality review for duplication, dead code, standards drift, and maintainability risks
 - `complete` - log it to `blueprint/history/features/` or `blueprint/history/fixes/`, then merge
 - `prototype` - optional, pre-build static mockups to lock the look
 - `status` - read-only progress summary, workflow drift warning, and suggested next action
@@ -61,9 +63,12 @@ In Codex, invoke these as skills (`$onboard`, `$overview`, `$feature`,
 `$implement`, and so on) or ask naturally, such as "run the overview." In Claude
 Code, use the slash commands (`/onboard`, `/overview`, `/feature`, and so on). In
 tools without native skills, follow the matching `SKILL.md` manually. The
-conventions in `blueprint/context/` apply however a step is invoked, and the
-review gates are not optional: small steps, and the user approves each diff
-before it lands.
+conventions in `blueprint/context/` apply however a step is invoked.
+
+Optional explicit-only skill: `autopilot` can run one bounded spec/build/check
+pass when directly invoked. It may create checkpoint commits on the feature or
+fix branch after passing steps. It stops before `/complete`, merge, push, deploy,
+or destructive actions.
 
 ## Commands
 

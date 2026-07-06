@@ -66,7 +66,8 @@ End with a single suggested next action, chosen in this order:
 - The overview is missing or stale and no feature is in progress -> `/overview`.
 - A spec is in progress with unchecked steps -> `/implement` and name the step.
 - A spec is in progress and all implementation steps are checked -> `/check` if
-  proof is not recorded, otherwise `/complete`.
+  proof is not recorded, `/try` if the user wants a manual review path, otherwise
+  `/complete`.
 - `current-feature.md` is the reset stub and unchecked build-plan items remain ->
   `/feature` and name the next build-plan item.
 - All build-plan items are checked -> say so; suggest the next milestone, such as

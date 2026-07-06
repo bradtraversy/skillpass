@@ -57,7 +57,8 @@ Work through the spec's build steps in order, one at a time. For each step:
    one line per changed file on what it does and why, then confirm the step's
    "done when" is met with evidence (build output, a screenshot, a passing
    assertion). This summary is the comprehension gate, so keep it concrete, not
-   ceremonial.
+   ceremonial. Include a short **How to try it** note when the step has a manual
+   path: the command, URL, click, endpoint, or output the user can check.
 4. **Build, and test if the project tests.** Run the project's build command (see
    Commands in `AGENTS.md`). If the project declares a `test` command in
    `AGENTS.md` (the opt-in switch), run it: a step that adds logic must ship a
@@ -107,7 +108,8 @@ split it. Build and tests must pass before any commit.
 When every step is built and the build and tests pass (committed as checkpoints or
 not), stop. Tell the user it's done on its branch and to run `/complete`, which
 makes the one feature-level commit, logs it (archive, check off if it's a feature,
-reset), and merges. This skill does not touch main.
+reset), and merges. Include a short **How to try it** section, or tell the user
+to run `/try` for the full manual walkthrough. This skill does not touch main.
 
 ## Rules
 

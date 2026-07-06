@@ -44,6 +44,13 @@ Gather these, then summarize. Do not dump file contents.
    - If `CLAUDE.md` exists and still starts with `# Project Name`, flag that
      `/onboard` probably has not finished.
 3. **Commands and project setup**
+   - Check whether root `README.md` is still the copied Blueprint workflow doc
+     by looking for `# AI Coding Blueprint` or opening text that describes the
+     Blueprint workflow instead of the app. If so, warn that `/onboard` should
+     move it to `blueprint/README.md` and create a project README before
+     publishing.
+   - If `blueprint/README.md` exists, treat that as the expected home for the
+     copied workflow doc inside a consumer project.
    - Check whether `AGENTS.md` has a `## Commands` section with dev and build
      commands.
    - Report missing lint or test commands as informational unless the project has
@@ -104,6 +111,8 @@ Choose the repair order in this priority:
 - No tool adapter -> restore `.agents/skills/` or `.claude/skills/` for the tool
   being used.
 - Onboarding incomplete -> run `/onboard`.
+- Root README is still the Blueprint workflow doc -> run `/onboard` or move it
+  to `blueprint/README.md` before publishing.
 - Commands or ignore rules need review -> update the files or run `/onboard` if
   this is an early project.
 - Plans are placeholders -> fill `blueprint/project-plan.md` and

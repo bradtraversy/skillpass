@@ -1,6 +1,6 @@
 ---
 name: onboard
-description: Set up the Blueprint after overlaying it onto a freshly scaffolded or early project. Detects the stack, updates AGENTS.md commands, sets the CLAUDE.md project title when present, tunes coding-standards.md, checks ai-interaction.md and .gitignore, confirms which tool adapters to keep, and tells the user exactly what to fill in before /overview or $overview. Use when the user runs /onboard, invokes $onboard, just copied the Blueprint into a new project, or asks what to do after overlaying the Blueprint. For an existing app with meaningful shipped features, use adopt instead.
+description: Set up the Blueprint after overlaying it onto a freshly scaffolded or early project. Detects the stack, relocates the copied Blueprint README when needed, updates AGENTS.md commands, sets the CLAUDE.md project title when present, tunes coding-standards.md, checks ai-interaction.md and .gitignore, confirms which tool adapters to keep, and tells the user exactly what to fill in before /overview or $overview. Use when the user runs /onboard, invokes $onboard, just copied the Blueprint into a new project, or asks what to do after overlaying the Blueprint. For an existing app with meaningful shipped features, use adopt instead.
 ---
 
 # onboard - finish the Blueprint overlay setup
@@ -57,6 +57,23 @@ Do not infer more than the files support. Mark uncertain items as `> TODO` in th
 summary rather than inventing a convention.
 
 ## Step 2 - update project entry files
+
+If the root `README.md` is the copied Blueprint workflow document, move it out of
+the product README slot:
+
+- Detect it conservatively: the first heading is `# AI Coding Blueprint`, or the
+  opening section clearly describes the Blueprint workflow rather than this app.
+- Move that workflow document to `blueprint/README.md`.
+- Do not overwrite an existing different `blueprint/README.md`; stop and report
+  the conflict instead.
+- Create a small root `README.md` stub for the actual project using the detected
+  project name, one-line purpose when known, and the Commands from `AGENTS.md`.
+  Keep it minimal if the project plan is not filled yet.
+- Update any `AGENTS.md` pointer that says the root `README.md` explains the
+  workflow so it points to `blueprint/README.md` instead.
+
+If the root `README.md` already looks like a real project README, leave it alone.
+Never replace a project README with Blueprint documentation.
 
 Update the Commands section of `AGENTS.md` to match real scripts and commands.
 Include only commands that exist or are intentionally available:
@@ -130,6 +147,7 @@ Stop with a concise onboarding report:
 
 - stack and package manager detected
 - project name used for entry files
+- README handling, especially if the copied Blueprint README was moved
 - files changed
 - commands now available
 - testing gate status
