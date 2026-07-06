@@ -4,6 +4,7 @@ packages:
 
 allowBuilds:
   esbuild: true
+  msgpackr-extract: set this to true or false
 
 minimumReleaseAgeExclude:
   - astro@7.0.4

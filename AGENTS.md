@@ -78,6 +78,7 @@ proxy into `apps/web`.
 - Dev server: `pnpm dev` (http://localhost:4321) - file-watch polling on, safe on VM/network filesystems
 - Dev server (native watch): `pnpm dev:native` - faster on a local disk, no polling
 - API dev server: `pnpm dev:api` (http://localhost:8787, Hono in `apps/api`) - needs `apps/api/.env` (see `apps/api/.env.example`)
+- Validation worker: `pnpm dev:worker` (BullMQ worker for submission validation) - needs `apps/api/.env` and a running Redis (`REDIS_URL`)
 - Dev background control: `pnpm dev:status`, `pnpm dev:stop`, `pnpm dev:logs`
 - Typecheck: `pnpm typecheck` (runs `astro check`)
 - Build: `pnpm build` (runs `astro check && astro build`, so the build type-checks first)

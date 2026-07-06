@@ -11,7 +11,13 @@ import {
 	listSubmissionsForUser,
 	publicSubmission,
 } from '../db/submissions';
+import {
+	createValidationJob,
+	markValidationJobError,
+	setValidationJobBullId,
+} from '../db/validation';
 import type { Env } from '../env';
+import { enqueueValidation, type ValidationQueue } from '../queue/queue';
 import type { SourceErrorCode } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
@@ -44,7 +50,23 @@ function nameFromFilename(filename: string): string {
 	return base || 'upload';
 }
 
-export function submissionRoutes(env: Env, db: Db) {
+// A Redis outage must not fail the submission: the job row records the error
+// and the draft still returns 201.
+async function queueValidation(db: Db, queue: ValidationQueue, submissionId: number) {
+	try {
+		const job = await createValidationJob(db, submissionId);
+		const enqueued = await enqueueValidation(queue, submissionId);
+		if (!enqueued.success) {
+			await markValidationJobError(db, job.id, enqueued.error);
+		} else if (enqueued.data) {
+			await setValidationJobBullId(db, job.id, enqueued.data);
+		}
+	} catch (err) {
+		console.error('queueValidation failed', err);
+	}
+}
+
+export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
 	const routes = new Hono<{ Variables: AuthVariables }>();
 	routes.use('*', requireAuth(env, db));
 
@@ -98,6 +120,7 @@ export function submissionRoutes(env: Env, db: Db) {
 			sourceHash: pkg.sourceHash,
 			snapshotKey: key,
 		});
+		await queueValidation(db, queue, row.id);
 		return c.json({ success: true, data: publicSubmission(row) }, 201);
 	});
 
@@ -146,6 +169,7 @@ export function submissionRoutes(env: Env, db: Db) {
 			sourceHash: pkg.sourceHash,
 			snapshotKey: key,
 		});
+		await queueValidation(db, queue, row.id);
 		return c.json({ success: true, data: publicSubmission(row) }, 201);
 	});
 

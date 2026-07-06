@@ -248,6 +248,8 @@ CLI (not a route): `aiskills scan`, `aiskills report`.
 - **Maintainer profile modeling** - project-plan lists "users and maintainer
   profiles" separately; modeled here as fields on User. Split into a 1:1
   `MaintainerProfile` only if it grows.
-- **Redis for the validation queue** - feature 6 needs a Redis instance (BullMQ).
-  Pick the dev setup (local install or container) and the production provider
-  before or during that feature.
+- **Redis for the validation queue** - dev is a local `redis-server`; the
+  production provider is decided at deploy time alongside the API's host.
+  Candidates: Upstash (proven with BullMQ on Vidpipe; watch idle-polling
+  command costs) vs Redis colocated with the API host. Only `REDIS_URL`
+  changes either way.

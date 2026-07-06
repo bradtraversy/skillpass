@@ -8,6 +8,7 @@
 	},
 	"scripts": {
 		"dev": "node --env-file=.env --watch --import tsx src/index.ts",
+		"dev:worker": "node --env-file=.env --watch --import tsx src/worker.ts",
 		"start": "node --env-file=.env --import tsx src/index.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "node --env-file=.env --import tsx src/db/migrate.ts"
@@ -16,6 +17,7 @@
 		"@hono/node-server": "^1.14.0",
 		"@neondatabase/serverless": "^1.1.0",
 		"aws4fetch": "^1.0.20",
+		"bullmq": "^5.79.2",
 		"drizzle-orm": "^0.45.2",
 		"fflate": "^0.8.3",
 		"hono": "^4.7.0",

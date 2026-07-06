@@ -25,6 +25,11 @@ describe('loadEnv', () => {
 		expect(() => loadEnv(rest)).toThrow();
 	});
 
+	it('rejects a missing REDIS_URL', () => {
+		const { REDIS_URL: _redis, ...rest } = valid;
+		expect(() => loadEnv(rest)).toThrow();
+	});
+
 	it('accepts an optional GITHUB_TOKEN', () => {
 		expect(loadEnv(valid).GITHUB_TOKEN).toBeUndefined();
 		expect(loadEnv({ ...valid, GITHUB_TOKEN: 'ghp_x' }).GITHUB_TOKEN).toBe('ghp_x');

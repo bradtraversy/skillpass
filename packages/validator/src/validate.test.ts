@@ -1,9 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { parseReport } from 'skill-schema';
-import { validatePackage } from './validate';
+import { loadPackage, loadPackageFromFiles, type PackageFile } from './load';
+import { buildReport, RULES, validateLoadedPackage, validatePackage } from './validate';
 
 const fixture = (name: string) => join(import.meta.dirname, '..', 'fixtures', name);
 const NOW = new Date('2026-07-03T12:00:00Z');
@@ -26,6 +27,40 @@ describe('fixture matrix', () => {
 		const allCodes = [...report.warnings, ...report.failures].map((f) => f.code);
 		for (const code of codes) {
 			expect(allCodes).toContain(code);
+		}
+	});
+});
+
+function readFixtureFiles(dir: string): PackageFile[] {
+	return readdirSync(dir, { recursive: true, encoding: 'utf8' })
+		.map((p) => p.split(sep).join('/'))
+		.filter((p) => statSync(join(dir, p)).isFile())
+		.map((p) => ({ path: p, content: readFileSync(join(dir, p), 'utf8') }));
+}
+
+describe('in-memory validation', () => {
+	it.each(MATRIX)('$name: in-memory report equals the dir-loaded report', async ({ name }) => {
+		const dir = fixture(name);
+		const fromDir = await validatePackage(dir, { now: NOW });
+		const fromMemory = await validateLoadedPackage(loadPackageFromFiles(readFixtureFiles(dir), dir), {
+			now: NOW,
+		});
+		expect(fromMemory).toEqual(fromDir);
+	});
+
+	it('stepwise RULES + buildReport produces the same report as validateLoadedPackage', async () => {
+		const pkg = loadPackage(fixture('undeclared-network'));
+		const findings = RULES.flatMap((rule) => rule.run(pkg));
+		expect(buildReport(pkg, findings, { now: NOW })).toEqual(
+			await validateLoadedPackage(pkg, { now: NOW }),
+		);
+	});
+
+	it('RULES exposes unique keys and labels for progress rendering', () => {
+		expect(new Set(RULES.map((r) => r.key)).size).toBe(RULES.length);
+		for (const rule of RULES) {
+			expect(rule.key).not.toBe('');
+			expect(rule.label).not.toBe('');
 		}
 	});
 });

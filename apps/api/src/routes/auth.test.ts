@@ -3,6 +3,7 @@ import { createApp } from '../app';
 import type { Db } from '../db/client';
 import type { UserRow } from '../db/schema';
 import { loadEnv } from '../env';
+import type { ValidationQueue } from '../queue/queue';
 import { RAW_TEST_ENV } from '../testing/env';
 import { exchangeCode, fetchGithubUser } from '../auth/github';
 import { findById, upsertFromGithub } from '../db/users';
@@ -32,7 +33,7 @@ const userRow: UserRow = {
 	createdAt: new Date('2026-07-04T10:00:00Z'),
 };
 
-const app = createApp(env, {} as Db);
+const app = createApp(env, {} as Db, {} as ValidationQueue);
 
 function mockHappyGithub() {
 	vi.mocked(exchangeCode).mockResolvedValue({ success: true, data: 'gho_token' });

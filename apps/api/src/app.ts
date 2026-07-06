@@ -4,10 +4,11 @@ import { requireAuth, type AuthVariables } from './auth/middleware';
 import type { Db } from './db/client';
 import { publicUser } from './db/users';
 import type { Env } from './env';
+import type { ValidationQueue } from './queue/queue';
 import { authRoutes } from './routes/auth';
 import { submissionRoutes } from './routes/submissions';
 
-export function createApp(env: Env, db: Db) {
+export function createApp(env: Env, db: Db, queue: ValidationQueue) {
 	const app = new Hono<{ Variables: AuthVariables }>();
 
 	app.onError((err, c) => {
@@ -20,7 +21,7 @@ export function createApp(env: Env, db: Db) {
 	app.get('/health', (c) => c.json({ success: true, data: { status: 'ok' } }));
 
 	app.route('/auth', authRoutes(env, db));
-	app.route('/submissions', submissionRoutes(env, db));
+	app.route('/submissions', submissionRoutes(env, db, queue));
 
 	app.get('/me', requireAuth(env, db), (c) =>
 		c.json({ success: true, data: publicUser(c.get('user')) }),

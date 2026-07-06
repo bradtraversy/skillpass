@@ -7,6 +7,7 @@
     "dev": "CHOKIDAR_USEPOLLING=1 pnpm -C apps/web dev",
     "dev:native": "pnpm -C apps/web dev",
     "dev:api": "pnpm -C apps/api dev",
+    "dev:worker": "pnpm -C apps/api dev:worker",
     "dev:status": "pnpm -C apps/web astro dev status",
     "dev:stop": "pnpm -C apps/web astro dev stop",
     "dev:logs": "pnpm -C apps/web astro dev logs",

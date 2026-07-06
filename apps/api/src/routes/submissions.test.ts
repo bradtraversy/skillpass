@@ -7,10 +7,16 @@ import { loadPackageFromFiles } from 'validator';
 import { createApp } from '../app';
 import { SESSION_COOKIE } from '../auth/middleware';
 import type { Db } from '../db/client';
-import type { SubmissionRow, UserRow } from '../db/schema';
+import type { SubmissionRow, UserRow, ValidationJobRow } from '../db/schema';
 import { createSubmission, findSubmissionForUser, listSubmissionsForUser } from '../db/submissions';
 import { findById } from '../db/users';
+import {
+	createValidationJob,
+	markValidationJobError,
+	setValidationJobBullId,
+} from '../db/validation';
 import { loadEnv } from '../env';
+import { enqueueValidation, type ValidationQueue } from '../queue/queue';
 import { sourceError } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
@@ -27,6 +33,16 @@ vi.mock('../db/submissions', async (importOriginal) => ({
 	createSubmission: vi.fn(),
 	listSubmissionsForUser: vi.fn(),
 	findSubmissionForUser: vi.fn(),
+}));
+vi.mock('../db/validation', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../db/validation')>()),
+	createValidationJob: vi.fn(),
+	setValidationJobBullId: vi.fn(),
+	markValidationJobError: vi.fn(),
+}));
+vi.mock('../queue/queue', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../queue/queue')>()),
+	enqueueValidation: vi.fn(),
 }));
 vi.mock('../github/ownership', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../github/ownership')>()),
@@ -47,7 +63,7 @@ vi.mock('../storage/r2', async (importOriginal) => ({
 }));
 
 const env = loadEnv(RAW_TEST_ENV);
-const app = createApp(env, {} as Db);
+const app = createApp(env, {} as Db, {} as ValidationQueue);
 
 const userRow: UserRow = {
 	id: 7,
@@ -87,6 +103,18 @@ async function sessionCookie(id: number): Promise<string> {
 	return res.headers.getSetCookie()[0].split(';')[0];
 }
 
+const jobRow: ValidationJobRow = {
+	id: 55,
+	submissionId: 1,
+	state: 'queued',
+	progress: [],
+	bullJobId: null,
+	error: null,
+	startedAt: null,
+	finishedAt: null,
+	createdAt: new Date('2026-07-06T09:00:00Z'),
+};
+
 function mockHappyPath() {
 	vi.mocked(findById).mockResolvedValue(userRow);
 	vi.mocked(verifySubmitPermission).mockResolvedValue({ success: true, data: null });
@@ -95,6 +123,8 @@ function mockHappyPath() {
 	vi.mocked(putJson).mockResolvedValue({ success: true, data: null });
 	vi.mocked(putBytes).mockResolvedValue({ success: true, data: null });
 	vi.mocked(createSubmission).mockResolvedValue(submissionRow);
+	vi.mocked(createValidationJob).mockResolvedValue(jobRow);
+	vi.mocked(enqueueValidation).mockResolvedValue({ success: true, data: 'bull-1' });
 }
 
 async function post(body: unknown, cookie?: string): Promise<Response> {
@@ -201,6 +231,33 @@ describe('POST /submissions', () => {
 		expect(vi.mocked(createSubmission)).not.toHaveBeenCalled();
 	});
 
+	it('creates a queued job row and enqueues validation after the draft', async () => {
+		mockHappyPath();
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		expect(res.status).toBe(201);
+		expect(vi.mocked(createValidationJob)).toHaveBeenCalledWith(expect.anything(), 1);
+		expect(vi.mocked(enqueueValidation)).toHaveBeenCalledWith(expect.anything(), 1);
+		expect(vi.mocked(setValidationJobBullId)).toHaveBeenCalledWith(expect.anything(), 55, 'bull-1');
+		expect(vi.mocked(markValidationJobError)).not.toHaveBeenCalled();
+	});
+
+	it('still 201s when Redis is down, recording the error on the job row', async () => {
+		mockHappyPath();
+		vi.mocked(enqueueValidation).mockResolvedValue({
+			success: false,
+			error: 'enqueue failed: connect ECONNREFUSED',
+		});
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		expect(res.status).toBe(201);
+		expect((await res.json()) as { success: boolean }).toMatchObject({ success: true });
+		expect(vi.mocked(markValidationJobError)).toHaveBeenCalledWith(
+			expect.anything(),
+			55,
+			'enqueue failed: connect ECONNREFUSED',
+		);
+		expect(vi.mocked(setValidationJobBullId)).not.toHaveBeenCalled();
+	});
+
 	it('500s with the standard shape when the insert throws', async () => {
 		mockHappyPath();
 		vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -274,6 +331,35 @@ describe('POST /submissions/zip', () => {
 			sourceHash: HASH,
 			snapshotKey: KEY,
 		});
+	});
+
+	it('creates a queued job row and enqueues validation after the zip draft', async () => {
+		mockHappyPath();
+		vi.mocked(createSubmission).mockResolvedValue(zipRow);
+		vi.mocked(createValidationJob).mockResolvedValue({ ...jobRow, submissionId: 3 });
+		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7));
+		expect(res.status).toBe(201);
+		expect(vi.mocked(createValidationJob)).toHaveBeenCalledWith(expect.anything(), 3);
+		expect(vi.mocked(enqueueValidation)).toHaveBeenCalledWith(expect.anything(), 3);
+		expect(vi.mocked(setValidationJobBullId)).toHaveBeenCalledWith(expect.anything(), 55, 'bull-1');
+	});
+
+	it('still 201s a zip when Redis is down, recording the error on the job row', async () => {
+		mockHappyPath();
+		vi.mocked(createSubmission).mockResolvedValue(zipRow);
+		vi.mocked(createValidationJob).mockResolvedValue({ ...jobRow, submissionId: 3 });
+		vi.mocked(enqueueValidation).mockResolvedValue({
+			success: false,
+			error: 'enqueue failed: connect ECONNREFUSED',
+		});
+		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7));
+		expect(res.status).toBe(201);
+		expect(vi.mocked(markValidationJobError)).toHaveBeenCalledWith(
+			expect.anything(),
+			55,
+			'enqueue failed: connect ECONNREFUSED',
+		);
+		expect(vi.mocked(setValidationJobBullId)).not.toHaveBeenCalled();
 	});
 
 	it('400s when the file field is missing', async () => {
