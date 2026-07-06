@@ -17,7 +17,9 @@
 		"@neondatabase/serverless": "^1.1.0",
 		"aws4fetch": "^1.0.20",
 		"drizzle-orm": "^0.45.2",
+		"fflate": "^0.8.3",
 		"hono": "^4.7.0",
+		"skill-schema": "workspace:*",
 		"tar-stream": "^3.2.0",
 		"validator": "workspace:*",
 		"zod": "^4.0.0"

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { loadPackageFromFiles } from 'validator';
@@ -16,7 +17,9 @@ import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { parseGithubUrl } from '../github/url';
-import { putJson, snapshotDocument, snapshotKey } from '../storage/r2';
+import { MAX_ZIP_BYTES } from 'skill-schema';
+import { putBytes, putJson, snapshotDocument, snapshotKey, uploadKey } from '../storage/r2';
+import { extractZip } from '../uploads/zip';
 
 const SOURCE_ERROR_STATUS: Record<SourceErrorCode, ContentfulStatusCode> = {
 	'bad-url': 400,
@@ -30,6 +33,16 @@ const SOURCE_ERROR_STATUS: Record<SourceErrorCode, ContentfulStatusCode> = {
 };
 
 const createBody = z.object({ githubUrl: z.string().min(1) });
+
+// Fallback skill name for manifest-less zips; the filename is user input.
+function nameFromFilename(filename: string): string {
+	const base = filename
+		.replace(/\.zip$/i, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9-]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+	return base || 'upload';
+}
 
 export function submissionRoutes(env: Env, db: Db) {
 	const routes = new Hono<{ Variables: AuthVariables }>();
@@ -82,6 +95,54 @@ export function submissionRoutes(env: Env, db: Db) {
 			sourceType: 'github_url',
 			githubUrl: body.data.githubUrl.trim(),
 			resolvedCommitSha: pinned.data,
+			sourceHash: pkg.sourceHash,
+			snapshotKey: key,
+		});
+		return c.json({ success: true, data: publicSubmission(row) }, 201);
+	});
+
+	// Zip uploads have no repo owner to verify; they are honor-system under the
+	// ToS ("own or have permission"), with abuse reports as the backstop.
+	routes.post('/zip', async (c) => {
+		let form: Record<string, unknown>;
+		try {
+			form = await c.req.parseBody();
+		} catch {
+			return c.json({ success: false, error: 'expected a multipart body with a "file" zip' }, 400);
+		}
+		const file = form.file;
+		if (!(file instanceof File)) {
+			return c.json({ success: false, error: 'expected a multipart body with a "file" zip' }, 400);
+		}
+		if (file.size > MAX_ZIP_BYTES) {
+			return c.json(
+				{ success: false, error: `zip exceeds ${MAX_ZIP_BYTES / 1024 / 1024} MB` },
+				413,
+			);
+		}
+
+		const bytes = new Uint8Array(await file.arrayBuffer());
+		const extracted = extractZip(bytes);
+		if (!extracted.success) {
+			return c.json({ success: false, error: extracted.error }, SOURCE_ERROR_STATUS[extracted.code]);
+		}
+
+		const pkg = loadPackageFromFiles(extracted.data, nameFromFilename(file.name));
+		const zipKey = uploadKey(createHash('sha256').update(bytes).digest('hex'));
+		const storedZip = await putBytes(env, zipKey, bytes, 'application/zip');
+		if (!storedZip.success) {
+			return c.json({ success: false, error: 'could not store the upload; try again' }, 502);
+		}
+		const key = snapshotKey(pkg.sourceHash);
+		const storedSnapshot = await putJson(env, key, snapshotDocument(pkg.files));
+		if (!storedSnapshot.success) {
+			return c.json({ success: false, error: 'could not store the snapshot; try again' }, 502);
+		}
+
+		const row = await createSubmission(db, {
+			userId: c.get('user').id,
+			sourceType: 'zip',
+			uploadedZipKey: zipKey,
 			sourceHash: pkg.sourceHash,
 			snapshotKey: key,
 		});

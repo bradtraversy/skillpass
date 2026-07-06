@@ -1,4 +1,5 @@
 import { integer, pgEnum, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { SUBMISSION_SOURCE_TYPES, SUBMISSION_STATUSES } from 'skill-schema';
 
 export const userRole = pgEnum('user_role', ['user', 'maintainer', 'admin']);
 
@@ -15,15 +16,8 @@ export const users = pgTable('users', {
 
 export type UserRow = typeof users.$inferSelect;
 
-export const sourceType = pgEnum('source_type', ['github_url', 'zip']);
-export const submissionStatus = pgEnum('submission_status', [
-	'draft',
-	'validating',
-	'passed',
-	'warning',
-	'failed',
-	'published',
-]);
+export const sourceType = pgEnum('source_type', SUBMISSION_SOURCE_TYPES);
+export const submissionStatus = pgEnum('submission_status', SUBMISSION_STATUSES);
 
 // resolvedCommitSha and githubUrl are null for zip submissions (feature 5c);
 // sourceHash/snapshotKey are always set - a row exists only after a snapshot does.

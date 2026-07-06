@@ -242,16 +242,12 @@ CLI (not a route): `aiskills scan`, `aiskills report`.
 
 > Resolve in the plans, then re-run /overview. Delete this section when empty.
 
-- **`apps/api` not scaffolded** - the Node API/backend (Hono) is a new app that
-  doesn't exist yet. Stand it up before feature 5, the first feature that needs it.
 - **Static data freshness** - a fully static directory won't show newly published
   skills until a rebuild. Decide the strategy before feature 7: rebuild-on-publish
   (webhook/CI), client-fetch the listing from the API, or a hybrid.
-- **Tailwind not installed** - the plan specifies Tailwind + shadcn/ui but the
-  scaffold has neither. Add before styling work (`pnpm astro add tailwind`).
 - **Maintainer profile modeling** - project-plan lists "users and maintainer
   profiles" separately; modeled here as fields on User. Split into a 1:1
   `MaintainerProfile` only if it grows.
-- **Targets vs variants** - the boundary between a skill's `targets` (which tools)
-  and `variants` (per-tool/per-mode packaging), and how multi-skill packs map onto
-  SkillVersion, is underspecified. Nail down in feature 3 (schemas).
+- **Redis for the validation queue** - feature 6 needs a Redis instance (BullMQ).
+  Pick the dev setup (local install or container) and the production provider
+  before or during that feature.

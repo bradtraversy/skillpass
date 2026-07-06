@@ -20,11 +20,21 @@ export function snapshotKey(sourceHash: string): string {
 	return `snapshots/${sourceHash.replace(/^sha256:/, '')}.json`;
 }
 
+// Original uploaded zips, content-addressed by the sha256 of the zip bytes.
+export function uploadKey(zipSha256Hex: string): string {
+	return `uploads/${zipSha256Hex}.zip`;
+}
+
 function objectUrl(env: Env, key: string): string {
 	return `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${env.R2_BUCKET}/${key}`;
 }
 
-export async function putJson(env: Env, key: string, value: unknown): Promise<Result<null>> {
+async function putObject(
+	env: Env,
+	key: string,
+	body: string | Uint8Array<ArrayBuffer>,
+	contentType: string,
+): Promise<Result<null>> {
 	const client = new AwsClient({
 		accessKeyId: env.R2_ACCESS_KEY_ID,
 		secretAccessKey: env.R2_SECRET_ACCESS_KEY,
@@ -34,8 +44,8 @@ export async function putJson(env: Env, key: string, value: unknown): Promise<Re
 	try {
 		const res = await client.fetch(objectUrl(env, key), {
 			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(value),
+			headers: { 'Content-Type': contentType },
+			body,
 			signal: AbortSignal.timeout(R2_TIMEOUT_MS),
 		});
 		if (!res.ok) {
@@ -45,4 +55,17 @@ export async function putJson(env: Env, key: string, value: unknown): Promise<Re
 	} catch (err) {
 		return { success: false, error: `r2 put errored: ${(err as Error).message}` };
 	}
+}
+
+export async function putJson(env: Env, key: string, value: unknown): Promise<Result<null>> {
+	return putObject(env, key, JSON.stringify(value), 'application/json');
+}
+
+export async function putBytes(
+	env: Env,
+	key: string,
+	bytes: Uint8Array<ArrayBuffer>,
+	contentType: string,
+): Promise<Result<null>> {
+	return putObject(env, key, bytes, contentType);
 }

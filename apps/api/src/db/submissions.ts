@@ -1,19 +1,9 @@
 import { and, desc, eq } from 'drizzle-orm';
+import type { PublicSubmission } from 'skill-schema';
 import type { Db } from './client';
 import { submissions, type SubmissionRow } from './schema';
 
 export type NewSubmission = typeof submissions.$inferInsert;
-
-// The locked API shape 5c's island consumes; snapshotKey and userId stay internal.
-export interface PublicSubmission {
-	id: number;
-	sourceType: SubmissionRow['sourceType'];
-	githubUrl: string | null;
-	status: SubmissionRow['status'];
-	resolvedCommitSha: string | null;
-	sourceHash: string;
-	createdAt: string;
-}
 
 export function publicSubmission(row: SubmissionRow): PublicSubmission {
 	return {

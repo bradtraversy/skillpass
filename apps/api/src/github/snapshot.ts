@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { createGunzip } from 'node:zlib';
 import { extract } from 'tar-stream';
 import { byPath, type PackageFile } from 'validator';
@@ -48,7 +49,8 @@ export async function extractTarball(
 	subpath?: string,
 	maxDownloadBytes = MAX_DOWNLOAD_BYTES,
 ): Promise<SourceResult<PackageFile[]>> {
-	const source = Readable.fromWeb(body);
+	// Bridges the DOM-vs-node web-stream generic mismatch; same runtime object.
+	const source = Readable.fromWeb(body as NodeReadableStream<Uint8Array>);
 	const untar = extract();
 	let pumpError: Error | undefined;
 	const pump = pipeline(source, createGunzip(), untar).catch((err: Error) => {

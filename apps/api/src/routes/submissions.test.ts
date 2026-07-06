@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { strToU8, zipSync } from 'fflate';
 import { Hono } from 'hono';
 import { setSignedCookie } from 'hono/cookie';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,7 +15,7 @@ import { sourceError } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
-import { putJson } from '../storage/r2';
+import { putBytes, putJson } from '../storage/r2';
 import { RAW_TEST_ENV } from '../testing/env';
 
 vi.mock('../db/users', async (importOriginal) => ({
@@ -41,6 +43,7 @@ vi.mock('../github/snapshot', async (importOriginal) => ({
 vi.mock('../storage/r2', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../storage/r2')>()),
 	putJson: vi.fn(),
+	putBytes: vi.fn(),
 }));
 
 const env = loadEnv(RAW_TEST_ENV);
@@ -90,6 +93,7 @@ function mockHappyPath() {
 	vi.mocked(resolveCommit).mockResolvedValue({ success: true, data: 'abc123' });
 	vi.mocked(fetchSnapshot).mockResolvedValue({ success: true, data: FILES });
 	vi.mocked(putJson).mockResolvedValue({ success: true, data: null });
+	vi.mocked(putBytes).mockResolvedValue({ success: true, data: null });
 	vi.mocked(createSubmission).mockResolvedValue(submissionRow);
 }
 
@@ -204,6 +208,101 @@ describe('POST /submissions', () => {
 		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
 		expect(res.status).toBe(500);
 		expect(await res.json()).toEqual({ success: false, error: 'internal error' });
+	});
+});
+
+describe('POST /submissions/zip', () => {
+	const ZIP_BYTES = zipSync({ 'demo-skill/SKILL.md': strToU8('# Demo\n') });
+	const ZIP_KEY = `uploads/${createHash('sha256').update(ZIP_BYTES).digest('hex')}.zip`;
+
+	const zipRow: SubmissionRow = {
+		id: 3,
+		userId: 7,
+		sourceType: 'zip',
+		githubUrl: null,
+		uploadedZipKey: ZIP_KEY,
+		status: 'draft',
+		resolvedCommitSha: null,
+		sourceHash: HASH,
+		snapshotKey: KEY,
+		createdAt: new Date('2026-07-06T09:00:00Z'),
+	};
+
+	async function postZip(file: File | undefined, cookie?: string): Promise<Response> {
+		const form = new FormData();
+		if (file) form.set('file', file);
+		return app.request('/submissions/zip', {
+			method: 'POST',
+			headers: cookie ? { Cookie: cookie } : {},
+			body: form,
+		});
+	}
+
+	it('401s without a session', async () => {
+		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'));
+		expect(res.status).toBe(401);
+	});
+
+	it('creates a zip draft through the real extractor', async () => {
+		mockHappyPath();
+		vi.mocked(createSubmission).mockResolvedValue(zipRow);
+		const res = await postZip(new File([ZIP_BYTES], 'Demo Skill.zip'), await sessionCookie(7));
+		expect(res.status).toBe(201);
+		expect(await res.json()).toEqual({
+			success: true,
+			data: {
+				id: 3,
+				sourceType: 'zip',
+				githubUrl: null,
+				status: 'draft',
+				resolvedCommitSha: null,
+				sourceHash: HASH,
+				createdAt: '2026-07-06T09:00:00.000Z',
+			},
+		});
+		expect(vi.mocked(putBytes)).toHaveBeenCalledWith(
+			env,
+			ZIP_KEY,
+			expect.any(Uint8Array),
+			'application/zip',
+		);
+		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, KEY, { version: 1, files: FILES });
+		expect(vi.mocked(createSubmission)).toHaveBeenCalledWith(expect.anything(), {
+			userId: 7,
+			sourceType: 'zip',
+			uploadedZipKey: ZIP_KEY,
+			sourceHash: HASH,
+			snapshotKey: KEY,
+		});
+	});
+
+	it('400s when the file field is missing', async () => {
+		mockHappyPath();
+		const res = await postZip(undefined, await sessionCookie(7));
+		expect(res.status).toBe(400);
+	});
+
+	it('413s an over-cap zip without buffering or storing it', async () => {
+		mockHappyPath();
+		const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'big.zip');
+		const res = await postZip(big, await sessionCookie(7));
+		expect(res.status).toBe(413);
+		expect(vi.mocked(putBytes)).not.toHaveBeenCalled();
+	});
+
+	it('422s a corrupt zip', async () => {
+		mockHappyPath();
+		const res = await postZip(new File([strToU8('not a zip')], 'bad.zip'), await sessionCookie(7));
+		expect(res.status).toBe(422);
+		expect(vi.mocked(putBytes)).not.toHaveBeenCalled();
+	});
+
+	it('502s when the zip cannot be stored and never inserts', async () => {
+		mockHappyPath();
+		vi.mocked(putBytes).mockResolvedValue({ success: false, error: 'r2 put failed (500)' });
+		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7));
+		expect(res.status).toBe(502);
+		expect(vi.mocked(createSubmission)).not.toHaveBeenCalled();
 	});
 });
 
