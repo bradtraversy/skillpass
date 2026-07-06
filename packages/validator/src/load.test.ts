@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { loadPackage, PackageReadError } from './load';
+import { loadPackage, loadPackageFromFiles, PackageReadError } from './load';
 
 const fixture = (name: string) => join(import.meta.dirname, '..', 'fixtures', name);
 
@@ -59,6 +59,24 @@ describe('source hash', () => {
 
 		writeFileSync(join(dir, 'SKILL.md'), '# temp skill, edited\n');
 		expect(loadPackage(dir).sourceHash).not.toBe(first);
+	});
+});
+
+describe('loadPackageFromFiles', () => {
+	it('matches the fs load exactly, regardless of input order', () => {
+		const fromDisk = loadPackage(fixture('workflow-pack'));
+		const reversed = [...fromDisk.files].reverse();
+		const fromMemory = loadPackageFromFiles(reversed, fixture('workflow-pack'));
+
+		expect(fromMemory.sourceHash).toBe(fromDisk.sourceHash);
+		expect(fromMemory.files).toEqual(fromDisk.files);
+		expect(fromMemory.entries).toEqual(fromDisk.entries);
+	});
+
+	it('falls back to the given name for a manifest-less package', () => {
+		const pkg = loadPackageFromFiles([{ path: 'SKILL.md', content: '# hi\n' }], 'my-skill');
+		expect(pkg.manifest.state).toBe('missing');
+		expect(pkg.entries).toEqual([{ skillName: 'my-skill', path: 'SKILL.md', exists: true }]);
 	});
 });
 

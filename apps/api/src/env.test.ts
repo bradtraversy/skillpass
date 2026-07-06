@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadEnv } from './env';
+import { RAW_TEST_ENV } from './testing/env';
 
-const valid = {
-	DATABASE_URL: 'postgres://user:pass@host/db',
-	GITHUB_CLIENT_ID: 'abc',
-	GITHUB_CLIENT_SECRET: 'def',
-	SESSION_SECRET: 'x'.repeat(32),
-};
+const valid = RAW_TEST_ENV;
 
 describe('loadEnv', () => {
 	it('parses a valid source and applies defaults', () => {
@@ -22,6 +18,16 @@ describe('loadEnv', () => {
 	it('rejects a missing required var', () => {
 		const { DATABASE_URL: _url, ...rest } = valid;
 		expect(() => loadEnv(rest)).toThrow();
+	});
+
+	it('rejects a missing R2 var', () => {
+		const { R2_BUCKET: _bucket, ...rest } = valid;
+		expect(() => loadEnv(rest)).toThrow();
+	});
+
+	it('accepts an optional GITHUB_TOKEN', () => {
+		expect(loadEnv(valid).GITHUB_TOKEN).toBeUndefined();
+		expect(loadEnv({ ...valid, GITHUB_TOKEN: 'ghp_x' }).GITHUB_TOKEN).toBe('ghp_x');
 	});
 
 	it('rejects a short SESSION_SECRET', () => {

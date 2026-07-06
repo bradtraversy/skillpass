@@ -15,12 +15,16 @@
 	"dependencies": {
 		"@hono/node-server": "^1.14.0",
 		"@neondatabase/serverless": "^1.1.0",
+		"aws4fetch": "^1.0.20",
 		"drizzle-orm": "^0.45.2",
 		"hono": "^4.7.0",
+		"tar-stream": "^3.2.0",
+		"validator": "workspace:*",
 		"zod": "^4.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",
+		"@types/tar-stream": "^3.1.4",
 		"drizzle-kit": "^0.31.10",
 		"tsx": "^4.19.0"
 	}

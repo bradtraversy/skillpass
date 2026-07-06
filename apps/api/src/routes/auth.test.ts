@@ -3,6 +3,7 @@ import { createApp } from '../app';
 import type { Db } from '../db/client';
 import type { UserRow } from '../db/schema';
 import { loadEnv } from '../env';
+import { RAW_TEST_ENV } from '../testing/env';
 import { exchangeCode, fetchGithubUser } from '../auth/github';
 import { findById, upsertFromGithub } from '../db/users';
 
@@ -18,13 +19,7 @@ vi.mock('../db/users', async (importOriginal) => ({
 	findById: vi.fn(),
 }));
 
-const env = loadEnv({
-	DATABASE_URL: 'postgres://unused',
-	GITHUB_CLIENT_ID: 'client-id',
-	GITHUB_CLIENT_SECRET: 'client-secret',
-	SESSION_SECRET: 's'.repeat(32),
-	WEB_ORIGIN: 'http://localhost:4321',
-});
+const env = loadEnv({ ...RAW_TEST_ENV, WEB_ORIGIN: 'http://localhost:4321' });
 
 const userRow: UserRow = {
 	id: 7,

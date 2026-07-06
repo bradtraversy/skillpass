@@ -14,3 +14,32 @@ export const users = pgTable('users', {
 });
 
 export type UserRow = typeof users.$inferSelect;
+
+export const sourceType = pgEnum('source_type', ['github_url', 'zip']);
+export const submissionStatus = pgEnum('submission_status', [
+	'draft',
+	'validating',
+	'passed',
+	'warning',
+	'failed',
+	'published',
+]);
+
+// resolvedCommitSha and githubUrl are null for zip submissions (feature 5c);
+// sourceHash/snapshotKey are always set - a row exists only after a snapshot does.
+export const submissions = pgTable('submissions', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id),
+	sourceType: sourceType('source_type').notNull(),
+	githubUrl: text('github_url'),
+	uploadedZipKey: text('uploaded_zip_key'),
+	status: submissionStatus('status').notNull().default('draft'),
+	resolvedCommitSha: text('resolved_commit_sha'),
+	sourceHash: text('source_hash').notNull(),
+	snapshotKey: text('snapshot_key').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SubmissionRow = typeof submissions.$inferSelect;

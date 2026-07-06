@@ -8,6 +8,13 @@
       "when": 1783169702667,
       "tag": "0000_even_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783257720766,
+      "tag": "0001_silly_dreaming_celestial",
+      "breakpoints": true
     }
   ]
 }

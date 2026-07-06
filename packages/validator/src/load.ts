@@ -105,6 +105,22 @@ function resolveEntries(dir: string, manifest: ManifestState, files: PackageFile
 	]);
 }
 
+const byPath = (a: PackageFile, b: PackageFile) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+
+// Canonical load path for both fs and in-memory sources (API snapshots, feature 6's
+// worker); the flat path sort here defines the file order the source hash is built on.
+export function loadPackageFromFiles(files: PackageFile[], name = 'package'): LoadedPackage {
+	const sorted = [...files].sort(byPath);
+	const manifest = readManifest(sorted);
+	return {
+		dir: name,
+		files: sorted,
+		manifest,
+		entries: resolveEntries(name, manifest, sorted),
+		sourceHash: hashFiles(sorted),
+	};
+}
+
 export function loadPackage(dir: string): LoadedPackage {
 	let files: PackageFile[];
 	try {
@@ -112,12 +128,5 @@ export function loadPackage(dir: string): LoadedPackage {
 	} catch (err) {
 		throw new PackageReadError(dir, err);
 	}
-	const manifest = readManifest(files);
-	return {
-		dir,
-		files,
-		manifest,
-		entries: resolveEntries(dir, manifest, files),
-		sourceHash: hashFiles(files),
-	};
+	return loadPackageFromFiles(files, dir);
 }
