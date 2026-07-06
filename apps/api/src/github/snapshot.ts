@@ -2,7 +2,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createGunzip } from 'node:zlib';
 import { extract } from 'tar-stream';
-import type { PackageFile } from 'validator';
+import { byPath, type PackageFile } from 'validator';
 import type { Env } from '../env';
 import { sourceError, type SourceResult } from './errors';
 import { GITHUB_TIMEOUT_MS, githubHeaders } from './pin';
@@ -11,8 +11,9 @@ import type { RepoTarget } from './url';
 export const MAX_FILES = 500;
 export const MAX_FILE_BYTES = 1024 * 1024;
 export const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
-
-const byPath = (a: PackageFile, b: PackageFile) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+// Abuse ceiling on everything streamed, kept or skipped - a monorepo subpath
+// submission legitimately skips far more than the 10 MB kept-files cap allows.
+export const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 
 export async function fetchSnapshot(
 	env: Env,
@@ -45,6 +46,7 @@ export async function fetchSnapshot(
 export async function extractTarball(
 	body: ReadableStream<Uint8Array>,
 	subpath?: string,
+	maxDownloadBytes = MAX_DOWNLOAD_BYTES,
 ): Promise<SourceResult<PackageFile[]>> {
 	const source = Readable.fromWeb(body);
 	const untar = extract();
@@ -55,6 +57,7 @@ export async function extractTarball(
 
 	const files: PackageFile[] = [];
 	let totalBytes = 0;
+	let downloadBytes = 0;
 
 	try {
 		for await (const entry of untar) {
@@ -71,18 +74,24 @@ export async function extractTarball(
 					: rel.startsWith(`${subpath}/`)
 						? rel.slice(subpath.length + 1)
 						: '';
-			if (entry.header.type !== 'file' || path === '') {
-				entry.resume();
-				continue;
-			}
-
-			if (files.length >= MAX_FILES) {
+			const keep = entry.header.type === 'file' && path !== '';
+			if (keep && files.length >= MAX_FILES) {
 				return sourceError('too-large', `package exceeds ${MAX_FILES} files`);
 			}
 
 			const chunks: Buffer[] = [];
 			let bytes = 0;
 			for await (const chunk of entry as AsyncIterable<Buffer>) {
+				downloadBytes += chunk.length;
+				if (downloadBytes > maxDownloadBytes) {
+					return sourceError(
+						'too-large',
+						`archive exceeds the ${Math.round(maxDownloadBytes / 1024 / 1024)} MB download budget`,
+					);
+				}
+				if (!keep) {
+					continue;
+				}
 				bytes += chunk.length;
 				totalBytes += chunk.length;
 				if (bytes > MAX_FILE_BYTES) {
@@ -96,7 +105,9 @@ export async function extractTarball(
 				}
 				chunks.push(chunk);
 			}
-			files.push({ path, content: Buffer.concat(chunks).toString('utf8') });
+			if (keep) {
+				files.push({ path, content: Buffer.concat(chunks).toString('utf8') });
+			}
 		}
 		await pump;
 	} catch (err) {

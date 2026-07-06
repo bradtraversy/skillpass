@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import type { GithubProfile } from '../db/users';
+import { USER_AGENT } from '../lib/http';
 import type { Result } from '../lib/result';
 
 const AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 const TOKEN_URL = 'https://github.com/login/oauth/access_token';
 const USER_URL = 'https://api.github.com/user';
-const USER_AGENT = 'ai-skills-directory';
 
 export function buildAuthorizeUrl(clientId: string, state: string): string {
 	const url = new URL(AUTHORIZE_URL);

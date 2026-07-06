@@ -105,7 +105,8 @@ function resolveEntries(dir: string, manifest: ManifestState, files: PackageFile
 	]);
 }
 
-const byPath = (a: PackageFile, b: PackageFile) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+export const byPath = (a: PackageFile, b: PackageFile) =>
+	a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
 
 // Canonical load path for both fs and in-memory sources (API snapshots, feature 6's
 // worker); the flat path sort here defines the file order the source hash is built on.

@@ -112,6 +112,27 @@ describe('extractTarball', () => {
 		expect(result).toMatchObject({ success: false, code: 'too-large' });
 	});
 
+	it('rejects when skipped entries blow the download budget', async () => {
+		const tar = await makeTarGz([
+			{ name: 'repo-abc/skills/x/SKILL.md', content: '# Keep' },
+			{ name: 'repo-abc/huge-ignored.bin', content: 'z'.repeat(5 * 1024) },
+		]);
+		const result = await extractTarball(asBody(tar), 'skills/x', 1024);
+		expect(result).toMatchObject({ success: false, code: 'too-large' });
+		if (!result.success) {
+			expect(result.error).toContain('download budget');
+		}
+	});
+
+	it('keeps working when skipped entries fit the budget', async () => {
+		const tar = await makeTarGz([
+			{ name: 'repo-abc/skills/x/SKILL.md', content: '# Keep' },
+			{ name: 'repo-abc/ignored.md', content: 'z'.repeat(512) },
+		]);
+		const result = await extractTarball(asBody(tar), 'skills/x', 1024 * 1024);
+		expect(result).toEqual({ success: true, data: [{ path: 'SKILL.md', content: '# Keep' }] });
+	});
+
 	it('rejects an empty repository', async () => {
 		const tar = await makeTarGz([{ name: 'repo-abc', type: 'directory' }]);
 		const result = await extractTarball(asBody(tar));

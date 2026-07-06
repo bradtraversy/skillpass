@@ -15,7 +15,7 @@ are bundles; `/feature` splits them into sub-items (5a, 5b, ...) at spec time.
 - [ ] 5. **Submission draft flow** - GitHub OAuth, maintainer profile, GitHub-URL submission (primary) and zip upload (fallback), Neon draft records, R2 snapshot storage.
   - [x] 5a. **API scaffold + GitHub sign-in** - stand up `apps/api` (Hono) with Drizzle + Neon, the `User` table, GitHub OAuth login/callback, a session cookie, and `GET /me`.
   - [x] 5b. **GitHub-URL submission to draft** - authed `POST /submissions`: validate the URL, pin the commit, snapshot to R2 with a source hash, create the draft record, read endpoints.
-  - [ ] 5c. **Zip upload + submit page** - zip fallback through the same snapshot path, plus the `/submit` static shell and React island form wired to the API.
+  - [ ] 5c. **Zip upload + submit page** - zip fallback through the same snapshot path with hardened archive entry-name validation (reject `..` and backslash paths in user zips - audit follow-up), plus the `/submit` static shell and React island form wired to the API.
 - [ ] 6. **Queue-backed upload validation** - Redis + BullMQ + a worker service, job progress records, a job-status API, and the inline validation progress panel wired to real jobs.
 - [ ] 7. **Publishable skill flow** - passed submissions publish, failed stay private, warnings route to draft/review, and each published version gets a public immutable Skill Passport plus a readable source view (SKILL.md and package files rendered from the validated snapshot, pinned to the source hash).
 - [ ] 8. **Download pre-flight** - endpoint + UI showing current validation, source hash, permissions, permission diffs, and blocking of failed versions.

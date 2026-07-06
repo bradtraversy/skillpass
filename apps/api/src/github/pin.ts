@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import type { Env } from '../env';
+import { USER_AGENT } from '../lib/http';
 import { sourceError, type SourceResult } from './errors';
 import type { RepoTarget } from './url';
 
-const USER_AGENT = 'ai-skills-directory';
 export const GITHUB_TIMEOUT_MS = 30_000;
 
 export function githubHeaders(env: Env): Record<string, string> {
@@ -35,7 +35,12 @@ export async function resolveCommit(env: Env, target: RepoTarget): Promise<Sourc
 	if (res.status === 404) {
 		return sourceError('not-found', 'repository or ref not found, or the repository is private');
 	}
-	if (res.status === 403 || res.status === 429) {
+	// A 403 is only rate limiting when the quota is actually exhausted; other
+	// 403s (SAML-gated org, blocked token) fall through to the upstream message.
+	if (
+		res.status === 429 ||
+		(res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0')
+	) {
 		return sourceError('rate-limited', 'github rate limit hit; try again shortly');
 	}
 	if (!res.ok) {
