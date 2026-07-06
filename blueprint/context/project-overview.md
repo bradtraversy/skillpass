@@ -19,10 +19,13 @@ reviewable safety summary (a Skill Passport) rather than asking for blind trust.
   and similar) - the primary audience; browse, search, inspect passports, and
   install. Anonymous by default.
 - **Skill authors / maintainers** - sign in with GitHub to submit skills, manage
-  listings, and build reputation.
+  listings, and build reputation. May only submit repositories they own or org
+  repositories where their GitHub org membership is public.
 - **Tool maintainers and teams** - want a reviewable way to adopt shared AI
   workflows.
-- **Admins** - triage failed or flagged submissions in a holding queue.
+- **Admins** - triage failed or flagged submissions in a holding queue; may
+  submit any repository as a curated listing (attribution to the source repo
+  owner lands with feature 7).
 
 Access tiers: anonymous (browse, search, inspect, download pre-flight), signed-in
 maintainer (submit, manage, profile), admin (review queue, manual states).

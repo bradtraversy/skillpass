@@ -12,6 +12,7 @@ import {
 } from '../db/submissions';
 import type { Env } from '../env';
 import type { SourceErrorCode } from '../github/errors';
+import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { parseGithubUrl } from '../github/url';
@@ -19,6 +20,7 @@ import { putJson, snapshotDocument, snapshotKey } from '../storage/r2';
 
 const SOURCE_ERROR_STATUS: Record<SourceErrorCode, ContentfulStatusCode> = {
 	'bad-url': 400,
+	forbidden: 403,
 	'not-found': 404,
 	'rate-limited': 429,
 	upstream: 502,
@@ -48,6 +50,14 @@ export function submissionRoutes(env: Env, db: Db) {
 		const parsed = parseGithubUrl(body.data.githubUrl);
 		if (!parsed.success) {
 			return c.json({ success: false, error: parsed.error }, SOURCE_ERROR_STATUS[parsed.code]);
+		}
+
+		const permitted = await verifySubmitPermission(env, c.get('user'), parsed.data);
+		if (!permitted.success) {
+			return c.json(
+				{ success: false, error: permitted.error },
+				SOURCE_ERROR_STATUS[permitted.code],
+			);
 		}
 
 		const pinned = await resolveCommit(env, parsed.data);

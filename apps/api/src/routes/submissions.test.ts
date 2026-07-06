@@ -10,6 +10,7 @@ import { createSubmission, findSubmissionForUser, listSubmissionsForUser } from 
 import { findById } from '../db/users';
 import { loadEnv } from '../env';
 import { sourceError } from '../github/errors';
+import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { putJson } from '../storage/r2';
@@ -24,6 +25,10 @@ vi.mock('../db/submissions', async (importOriginal) => ({
 	createSubmission: vi.fn(),
 	listSubmissionsForUser: vi.fn(),
 	findSubmissionForUser: vi.fn(),
+}));
+vi.mock('../github/ownership', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../github/ownership')>()),
+	verifySubmitPermission: vi.fn(),
 }));
 vi.mock('../github/pin', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../github/pin')>()),
@@ -81,6 +86,7 @@ async function sessionCookie(id: number): Promise<string> {
 
 function mockHappyPath() {
 	vi.mocked(findById).mockResolvedValue(userRow);
+	vi.mocked(verifySubmitPermission).mockResolvedValue({ success: true, data: null });
 	vi.mocked(resolveCommit).mockResolvedValue({ success: true, data: 'abc123' });
 	vi.mocked(fetchSnapshot).mockResolvedValue({ success: true, data: FILES });
 	vi.mocked(putJson).mockResolvedValue({ success: true, data: null });
@@ -147,6 +153,16 @@ describe('POST /submissions', () => {
 		mockHappyPath();
 		const res = await post({ githubUrl: 'https://gitlab.com/octocat/hello' }, await sessionCookie(7));
 		expect(res.status).toBe(400);
+		expect(vi.mocked(resolveCommit)).not.toHaveBeenCalled();
+	});
+
+	it("403s a repo the user doesn't own and never pins it", async () => {
+		mockHappyPath();
+		vi.mocked(verifySubmitPermission).mockResolvedValue(
+			sourceError('forbidden', 'you can only submit repositories you own'),
+		);
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		expect(res.status).toBe(403);
 		expect(vi.mocked(resolveCommit)).not.toHaveBeenCalled();
 	});
 

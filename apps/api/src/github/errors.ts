@@ -1,5 +1,6 @@
 export type SourceErrorCode =
 	| 'bad-url'
+	| 'forbidden'
 	| 'not-found'
 	| 'rate-limited'
 	| 'upstream'
