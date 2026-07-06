@@ -48,6 +48,10 @@ export function submitZip(file: File): Promise<ApiEnvelope<PublicSubmission>> {
 	return request('/submissions/zip', { method: 'POST', body: form });
 }
 
+export function logout(): Promise<ApiEnvelope<{ loggedOut: boolean }>> {
+	return request('/auth/logout', { method: 'POST' });
+}
+
 export function signInUrl(): string {
 	return `${API_URL}/auth/github`;
 }

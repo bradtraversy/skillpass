@@ -1,5 +1,8 @@
 ---
-// Top navigation, matching prototypes/homepage.html. Zero client JS.
+// Top navigation, matching prototypes/homepage.html. Static except the
+// account slot, which hydrates lazily.
+import AccountMenu from './AccountMenu';
+
 const links = [
 	{ label: 'Browse', href: '#' },
 	{ label: 'Validator', href: '#' },
@@ -41,6 +44,7 @@ const links = [
 			>
 				Submit a skill
 			</a>
+			<AccountMenu client:idle />
 		</nav>
 	</div>
 </header>
