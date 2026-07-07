@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { riskLevelSchema, validationStatusSchema } from './enums';
+import { reportFindingSchema } from './report';
 import { submissionStatusSchema } from './submission';
 
 // Job lifecycle + progress rows, shared by the API's job records (6a) and the
@@ -21,8 +22,10 @@ export const progressStepSchema = z.object({
 
 export type ProgressStep = z.infer<typeof progressStepSchema>;
 
-// What GET /submissions/:id/validation returns. The report collapses to a
-// status/risk summary - findings stay private until feature 7's publish gate.
+// What GET /submissions/:id/validation returns. Owner-scoped: the report
+// carries its findings so authors can fix failures (snippets are redacted
+// before storage); internal fields (sourceHash, engineVersion, permissions)
+// stay off the wire.
 export const publicValidationSchema = z.object({
 	job: z
 		.object({
@@ -36,6 +39,8 @@ export const publicValidationSchema = z.object({
 		.object({
 			status: validationStatusSchema,
 			riskLevel: riskLevelSchema,
+			warnings: z.array(reportFindingSchema),
+			failures: z.array(reportFindingSchema),
 		})
 		.nullable(),
 });

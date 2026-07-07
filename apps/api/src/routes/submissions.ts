@@ -206,8 +206,15 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
 		const data: PublicValidation = {
 			job: job ? { state: job.state, progress: job.progress, error: job.error } : null,
 			submissionStatus: row.status,
-			// Summary only - findings stay private until feature 7's publish gate.
-			report: report ? { status: report.status, riskLevel: report.riskLevel } : null,
+			// Owner-visible findings; sourceHash/engineVersion/permissions stay internal.
+			report: report
+				? {
+						status: report.status,
+						riskLevel: report.riskLevel,
+						warnings: report.report.warnings,
+						failures: report.report.failures,
+					}
+				: null,
 		};
 		return c.json({ success: true, data });
 	});

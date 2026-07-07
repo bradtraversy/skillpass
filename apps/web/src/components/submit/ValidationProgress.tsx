@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ProgressStep, ProgressStepState, PublicValidation } from 'skill-schema';
+import type { ProgressStep, ProgressStepState, PublicValidation, ReportFinding } from 'skill-schema';
 import { getValidation } from '../../lib/api';
 
 const POLL_MS = 2000;
@@ -103,10 +103,63 @@ function Outcome({ validation, stopped }: PanelState) {
 	const status = validation.submissionStatus;
 	const tone = status === 'passed' ? 'text-pass' : status === 'warning' ? 'text-warn' : 'text-fail';
 	return (
-		<p className={`mt-3 text-[13px] font-semibold ${tone}`}>
-			Validation {status}
-			{validation.report ? ` - ${validation.report.riskLevel} risk` : ''}
-		</p>
+		<>
+			<p className={`mt-3 text-[13px] font-semibold ${tone}`}>
+				Validation {status}
+				{validation.report ? ` - ${validation.report.riskLevel} risk` : ''}
+			</p>
+			{validation.report && <Findings report={validation.report} />}
+		</>
+	);
+}
+
+type TonedFinding = ReportFinding & { tone: 'fail' | 'warn' };
+
+function Findings({ report }: { report: NonNullable<PublicValidation['report']> }) {
+	const findings: TonedFinding[] = [
+		...report.failures.map((f) => ({ ...f, tone: 'fail' as const })),
+		...report.warnings.map((f) => ({ ...f, tone: 'warn' as const })),
+	];
+	const [open, setOpen] = useState(findings.length <= 3);
+
+	if (findings.length === 0) {
+		return null;
+	}
+	if (!open) {
+		return (
+			<button
+				type="button"
+				onClick={() => setOpen(true)}
+				className="mt-2 cursor-pointer text-[12px] text-muted underline underline-offset-2 hover:text-text"
+			>
+				Show {findings.length} findings
+			</button>
+		);
+	}
+	return (
+		<ul className="mt-2 flex flex-col gap-2">
+			{findings.map((f, i) => (
+				<li
+					key={i}
+					className={`rounded-sm border px-3 py-2 text-[12.5px] ${
+						f.tone === 'fail' ? 'border-fail-line bg-fail-soft' : 'border-warn-line bg-warn-soft'
+					}`}
+				>
+					<p className={f.tone === 'fail' ? 'text-fail' : 'text-warn'}>{f.message}</p>
+					{f.location && (
+						<p className="mt-1 font-mono text-[11.5px] text-muted">
+							{f.location.path}
+							{f.location.line != null ? `:${f.location.line}` : ''}
+						</p>
+					)}
+					{f.location?.snippet && (
+						<pre className="mt-1 overflow-x-auto rounded-[4px] bg-bg-well px-2 py-1 font-mono text-[11.5px] text-muted">
+							{f.location.snippet}
+						</pre>
+					)}
+				</li>
+			))}
+		</ul>
 	);
 }
 

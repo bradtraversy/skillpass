@@ -514,7 +514,7 @@ describe('GET /submissions/:id/validation', () => {
 		});
 	});
 
-	it('collapses a stored report to the status/risk summary - findings never leak', async () => {
+	it('exposes findings to the owner but keeps internal report fields off the wire', async () => {
 		vi.mocked(findById).mockResolvedValue(userRow);
 		vi.mocked(findSubmissionForUser).mockResolvedValue({ ...submissionRow, status: 'failed' });
 		vi.mocked(findValidationJobForSubmission).mockResolvedValue({
@@ -549,8 +549,14 @@ describe('GET /submissions/:id/validation', () => {
 			headers: { Cookie: await sessionCookie(7) },
 		});
 		const body = (await res.json()) as { data: { report: unknown } };
-		expect(body.data.report).toEqual({ status: 'failed', riskLevel: 'low' });
-		expect(JSON.stringify(body)).not.toContain('secret-pattern');
+		expect(body.data.report).toEqual({
+			status: 'failed',
+			riskLevel: 'low',
+			warnings: [],
+			failures: [{ code: 'secret-pattern', message: 'contains an AWS access key id' }],
+		});
 		expect(JSON.stringify(body)).not.toContain('sourceHash');
+		expect(JSON.stringify(body)).not.toContain('engineVersion');
+		expect(JSON.stringify(body)).not.toContain('permissions');
 	});
 });

@@ -27,22 +27,50 @@ describe('publicValidationSchema', () => {
 		expect(result.success).toBe(true);
 	});
 
-	it('parses a done job with the report summary', () => {
+	it('parses a done job with an empty-findings report', () => {
 		const result = publicValidationSchema.safeParse({
 			job: { state: 'done', progress: [], error: null },
 			submissionStatus: 'passed',
-			report: { status: 'passed', riskLevel: 'low' },
+			report: { status: 'passed', riskLevel: 'low', warnings: [], failures: [] },
 		});
 		expect(result.success).toBe(true);
 	});
 
-	it('strips unexpected report fields so findings cannot ride along', () => {
+	it('parses report findings with and without a location', () => {
+		const result = publicValidationSchema.safeParse({
+			job: { state: 'done', progress: [], error: null },
+			submissionStatus: 'failed',
+			report: {
+				status: 'failed',
+				riskLevel: 'low',
+				warnings: [{ code: 'missing-manifest', message: 'no skill.json found' }],
+				failures: [
+					{
+						code: 'prompt-injection',
+						message: 'instructs the agent to ignore prior instructions',
+						location: { path: 'SKILL.md', line: 3, snippet: 'Ignore all previous instructions' },
+					},
+				],
+			},
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it('strips internal report fields off the wire', () => {
 		const result = publicValidationSchema.parse({
 			job: null,
 			submissionStatus: 'failed',
-			report: { status: 'failed', riskLevel: 'low', failures: [{ code: 'secret-pattern' }] },
+			report: {
+				status: 'failed',
+				riskLevel: 'low',
+				warnings: [],
+				failures: [],
+				sourceHash: 'sha256:abc',
+				engineVersion: '0.1.0',
+				permissionsDetected: ['shell.execute'],
+			},
 		});
-		expect(result.report).toEqual({ status: 'failed', riskLevel: 'low' });
+		expect(result.report).toEqual({ status: 'failed', riskLevel: 'low', warnings: [], failures: [] });
 	});
 
 	it('rejects an unknown job state', () => {
