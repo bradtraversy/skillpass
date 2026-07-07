@@ -1,12 +1,22 @@
-import { integer, jsonb, pgEnum, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+	integer,
+	jsonb,
+	pgEnum,
+	pgTable,
+	text,
+	timestamp,
+	type AnyPgColumn,
+} from 'drizzle-orm/pg-core';
 import {
 	PROGRESS_STEP_STATES,
 	RISK_LEVELS,
+	SOURCE_TYPES,
 	SUBMISSION_SOURCE_TYPES,
 	SUBMISSION_STATUSES,
 	VALIDATION_JOB_STATES,
 	VALIDATION_STATUSES,
 	type ProgressStep,
+	type SkillPassport,
 	type ValidationReport,
 } from 'skill-schema';
 
@@ -88,3 +98,62 @@ export const validationReports = pgTable('validation_reports', {
 });
 
 export type ValidationReportRow = typeof validationReports.$inferSelect;
+
+export const skillStatus = pgEnum('skill_status', ['published', 'draft', 'private', 'flagged']);
+export const versionSourceType = pgEnum('version_source_type', SOURCE_TYPES);
+
+// latestVersionId is set after the version insert (circular with skill_versions);
+// attributedTo credits the source repo owner when an admin curates someone else's repo.
+export const skills = pgTable('skills', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	slug: text('slug').notNull().unique(),
+	name: text('name').notNull(),
+	summary: text('summary').notNull(),
+	maintainerId: integer('maintainer_id')
+		.notNull()
+		.references(() => users.id),
+	attributedTo: text('attributed_to'),
+	status: skillStatus('status').notNull(),
+	latestVersionId: integer('latest_version_id').references((): AnyPgColumn => skillVersions.id),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SkillRow = typeof skills.$inferSelect;
+
+// submissionId is unique: a submission publishes at most once, retries 409 here.
+export const skillVersions = pgTable('skill_versions', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	skillId: integer('skill_id')
+		.notNull()
+		.references(() => skills.id),
+	version: text('version').notNull(),
+	sourceType: versionSourceType('source_type').notNull(),
+	githubRepoUrl: text('github_repo_url'),
+	resolvedCommitSha: text('resolved_commit_sha'),
+	sourceHash: text('source_hash').notNull(),
+	snapshotKey: text('snapshot_key').notNull(),
+	submissionId: integer('submission_id')
+		.notNull()
+		.unique()
+		.references(() => submissions.id),
+	publishedAt: timestamp('published_at', { withTimezone: true }),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SkillVersionRow = typeof skillVersions.$inferSelect;
+
+// Immutable by omission: no update path exists for passports.
+export const skillPassports = pgTable('skill_passports', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	skillVersionId: integer('skill_version_id')
+		.notNull()
+		.unique()
+		.references(() => skillVersions.id),
+	passport: jsonb('passport').$type<SkillPassport>().notNull(),
+	validationStatus: validationStatus('validation_status').notNull(),
+	riskLevel: riskLevel('risk_level').notNull(),
+	generatedAt: timestamp('generated_at', { withTimezone: true }).notNull(),
+});
+
+export type SkillPassportRow = typeof skillPassports.$inferSelect;

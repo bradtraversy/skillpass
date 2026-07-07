@@ -5,6 +5,8 @@ import { loadPackageFromFiles } from 'validator';
 import { z } from 'zod';
 import { requireAuth, type AuthVariables } from '../auth/middleware';
 import type { Db } from '../db/client';
+import type { SubmissionRow, UserRow } from '../db/schema';
+import { findVersionBySubmission } from '../db/skills';
 import {
 	createSubmission,
 	findSubmissionForUser,
@@ -26,7 +28,15 @@ import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { parseGithubUrl } from '../github/url';
 import { MAX_ZIP_BYTES, type PublicValidation } from 'skill-schema';
-import { putBytes, putJson, snapshotDocument, snapshotKey, uploadKey } from '../storage/r2';
+import { publishSubmission, type PublishOutcome } from '../publish/publish';
+import {
+	getSnapshotDocument,
+	putBytes,
+	putJson,
+	snapshotDocument,
+	snapshotKey,
+	uploadKey,
+} from '../storage/r2';
 import { extractZip } from '../uploads/zip';
 
 const SOURCE_ERROR_STATUS: Record<SourceErrorCode, ContentfulStatusCode> = {
@@ -41,6 +51,30 @@ const SOURCE_ERROR_STATUS: Record<SourceErrorCode, ContentfulStatusCode> = {
 };
 
 const createBody = z.object({ githubUrl: z.string().min(1) });
+
+const PUBLISH_REFUSALS: Record<Exclude<SubmissionRow['status'], 'passed'>, string> = {
+	draft: 'submission has not been validated yet',
+	validating: 'validation is still running; wait for it to finish',
+	warning: 'validation finished with warnings; warned submissions stay in draft',
+	failed: 'failed validation cannot be published',
+	published: 'already published',
+};
+
+const ALREADY_PUBLISHED = 'already published; contact support if the listing looks incomplete';
+
+// Curation credit comes from the stored URL, never from client input; zip
+// curation gets no attribution (no owner to verify).
+function attributionFor(user: UserRow, submission: SubmissionRow): string | null {
+	if (user.role !== 'admin' || submission.sourceType !== 'github_url' || !submission.githubUrl) {
+		return null;
+	}
+	const parsed = parseGithubUrl(submission.githubUrl);
+	if (!parsed.success) {
+		return null;
+	}
+	const owner = parsed.data.owner;
+	return owner.toLowerCase() === user.username.toLowerCase() ? null : owner;
+}
 
 // Fallback skill name for manifest-less zips; the filename is user input.
 function nameFromFilename(filename: string): string {
@@ -217,6 +251,84 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
 				: null,
 		};
 		return c.json({ success: true, data });
+	});
+
+	routes.post('/:id/publish', async (c) => {
+		const id = Number(c.req.param('id'));
+		if (!Number.isInteger(id)) {
+			return c.json({ success: false, error: 'not found' }, 404);
+		}
+		const submission = await findSubmissionForUser(db, c.get('user').id, id);
+		if (!submission) {
+			return c.json({ success: false, error: 'not found' }, 404);
+		}
+		if (submission.status !== 'passed') {
+			return c.json({ success: false, error: PUBLISH_REFUSALS[submission.status] }, 409);
+		}
+
+		// Partial-failure guard: a version row with a non-published submission
+		// means an earlier publish crashed mid-sequence.
+		const existingVersion = await findVersionBySubmission(db, id);
+		if (existingVersion) {
+			console.error(
+				`publish: submission ${id} has version ${existingVersion.id} but status "${submission.status}"`,
+			);
+			return c.json({ success: false, error: ALREADY_PUBLISHED }, 409);
+		}
+
+		// Defense in depth alongside the submission status check.
+		const report = await findValidationReportForSubmission(db, id);
+		if (!report || report.status !== 'passed') {
+			return c.json(
+				{ success: false, error: 'no passed validation report on record; re-run validation' },
+				409,
+			);
+		}
+
+		const snapshot = await getSnapshotDocument(env, submission.snapshotKey);
+		if (!snapshot.success) {
+			console.error(`publish: snapshot fetch failed for submission ${id}: ${snapshot.error}`);
+			return c.json(
+				{ success: false, error: 'could not fetch the validated snapshot; try again' },
+				502,
+			);
+		}
+
+		const pkg = loadPackageFromFiles(snapshot.data.files, `submission-${id}`);
+		if (pkg.manifest.state !== 'ok') {
+			// Passed validation implies a valid manifest; this is stored-state corruption.
+			console.error(
+				`publish: submission ${id} passed validation but its manifest is ${pkg.manifest.state}`,
+			);
+			return c.json({ success: false, error: 'stored snapshot is inconsistent; contact support' }, 500);
+		}
+
+		let outcome: PublishOutcome;
+		try {
+			outcome = await publishSubmission(db, {
+				submission,
+				report,
+				name: pkg.manifest.data.name,
+				summary: pkg.manifest.data.description,
+				attributedTo: attributionFor(c.get('user'), submission),
+			});
+		} catch (err) {
+			// Concurrent publish race: the unique constraints are the backstop.
+			const pgErr = err as { code?: string; constraint?: string };
+			if (pgErr.code === '23505') {
+				console.error(`publish: unique conflict for submission ${id}`, err);
+				const error =
+					pgErr.constraint === 'skills_slug_unique'
+						? 'that skill name is already taken'
+						: ALREADY_PUBLISHED;
+				return c.json({ success: false, error }, 409);
+			}
+			throw err;
+		}
+		if (!outcome.success) {
+			return c.json({ success: false, error: 'that skill name is already taken' }, 409);
+		}
+		return c.json({ success: true, data: outcome.data }, 201);
 	});
 
 	return routes;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ProgressStep, ProgressStepState, PublicValidation, ReportFinding } from 'skill-schema';
-import { getValidation } from '../../lib/api';
+import { getValidation, publishSubmission } from '../../lib/api';
 
 const POLL_MS = 2000;
 const MAX_POLLS = 60;
@@ -73,12 +73,12 @@ export default function ValidationProgress({ submissionId }: { submissionId: num
 					</li>
 				))}
 			</ul>
-			<Outcome validation={validation} stopped={stopped} />
+			<Outcome validation={validation} stopped={stopped} submissionId={submissionId} />
 		</div>
 	);
 }
 
-function Outcome({ validation, stopped }: PanelState) {
+function Outcome({ validation, stopped, submissionId }: PanelState & { submissionId: number }) {
 	if (stopped === 'unreachable') {
 		return <p className="mt-3 text-[13px] text-fail">Can't reach the API - is it running?</p>;
 	}
@@ -108,8 +108,51 @@ function Outcome({ validation, stopped }: PanelState) {
 				Validation {status}
 				{validation.report ? ` - ${validation.report.riskLevel} risk` : ''}
 			</p>
+			{status === 'passed' && <PublishButton submissionId={submissionId} />}
 			{validation.report && <Findings report={validation.report} />}
 		</>
+	);
+}
+
+type PublishState =
+	| { phase: 'idle'; error: string | null }
+	| { phase: 'publishing' }
+	| { phase: 'published'; slug: string; version: string };
+
+function PublishButton({ submissionId }: { submissionId: number }) {
+	const [state, setState] = useState<PublishState>({ phase: 'idle', error: null });
+
+	async function onPublish() {
+		setState({ phase: 'publishing' });
+		const res = await publishSubmission(submissionId);
+		if (res.success) {
+			setState({ phase: 'published', slug: res.data.slug, version: res.data.version });
+		} else {
+			setState({ phase: 'idle', error: res.error });
+		}
+	}
+
+	if (state.phase === 'published') {
+		return (
+			<p className="mt-3 text-[13px] font-semibold text-pass">
+				Published as {state.slug} v{state.version}
+			</p>
+		);
+	}
+	return (
+		<div className="mt-3">
+			<button
+				type="button"
+				onClick={onPublish}
+				disabled={state.phase === 'publishing'}
+				className="rounded-sm bg-accent px-4 py-[9px] text-[13.5px] font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
+			>
+				{state.phase === 'publishing' ? 'Publishing...' : 'Publish skill'}
+			</button>
+			{state.phase === 'idle' && state.error && (
+				<p className="mt-2 text-[13px] text-fail">{state.error}</p>
+			)}
+		</div>
 	);
 }
 

@@ -24,8 +24,8 @@ reviewable safety summary (a Skill Passport) rather than asking for blind trust.
 - **Tool maintainers and teams** - want a reviewable way to adopt shared AI
   workflows.
 - **Admins** - triage failed or flagged submissions in a holding queue; may
-  submit any repository as a curated listing (attribution to the source repo
-  owner lands with feature 7).
+  submit any repository as a curated listing (attributed to the source repo
+  owner via `skills.attributedTo`).
 
 Access tiers: anonymous (browse, search, inspect, download pre-flight), signed-in
 maintainer (submit, manage, profile), admin (review queue, manual states).
@@ -94,6 +94,8 @@ the static front end.
 - `slug` (string, unique) - from the id/slug builder
 - `name` (string), `summary` (string)
 - `maintainerId` -> User
+- `attributedTo` (string, nullable) - GitHub login of the source repo owner when
+  an admin curates someone else's repo
 - `categoryId` -> Category
 - `latestVersionId` -> SkillVersion
 - `status` (enum: `published` | `draft` | `private` | `flagged`)
@@ -110,11 +112,15 @@ the static front end.
 - `githubRepoUrl` (string, nullable)
 - `resolvedCommitSha` (string, nullable) - pinned GitHub commit
 - `sourceHash` (string) - hash of the normalized source snapshot
-- `snapshotKey` (string) - R2 object key for the normalized source
-- `status` (enum: `passed` | `warning` | `failed`)
+- `snapshotKey` (string) - R2 object key for the normalized source (copies the
+  submission's; source view and downloads read the object the validator saw)
+- `submissionId` -> Submission (unique - one version per submission, ever; the
+  publish idempotency anchor)
 - `publishedAt` (datetime, nullable)
+- Validation status and risk live on the version's **ValidationReport** and
+  **SkillPassport**, not as a column here; only passed submissions publish.
 - Relationships: has one **Manifest**, one **ValidationReport**, one
-  **SkillPassport**; belongs to **Skill**.
+  **SkillPassport**; belongs to **Skill** and **Submission**.
 
 ### Manifest (parsed `skill.json`) - locked shape, feature 3 defines it
 
@@ -159,7 +165,8 @@ the static front end.
 - **Submission** - `id`, `userId`, `sourceType` (`github_url` | `zip`),
   `githubUrl` (nullable), `uploadedZipKey` (R2, nullable), `status`
   (`draft` | `validating` | `passed` | `warning` | `failed` | `published`),
-  `skillVersionId` (nullable, set on publish), `createdAt`.
+  `createdAt`. The publish link lives on `skill_versions.submissionId`
+  (immutable side), not here.
 - **ValidationJob** - `id`, `submissionId`, `state`
   (`queued` | `running` | `done` | `error`), `progress` (json: step rows for the
   inline panel), `bullJobId`, `reportId` (nullable), `startedAt`, `finishedAt`.

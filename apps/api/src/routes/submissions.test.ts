@@ -7,8 +7,16 @@ import { loadPackageFromFiles } from 'validator';
 import { createApp } from '../app';
 import { SESSION_COOKIE } from '../auth/middleware';
 import type { Db } from '../db/client';
-import type { SubmissionRow, UserRow, ValidationJobRow } from '../db/schema';
+import type {
+	SkillVersionRow,
+	SubmissionRow,
+	UserRow,
+	ValidationJobRow,
+	ValidationReportRow,
+} from '../db/schema';
+import { findVersionBySubmission } from '../db/skills';
 import { createSubmission, findSubmissionForUser, listSubmissionsForUser } from '../db/submissions';
+import { publishSubmission } from '../publish/publish';
 import { findById } from '../db/users';
 import {
 	createValidationJob,
@@ -23,7 +31,7 @@ import { sourceError } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
-import { putBytes, putJson } from '../storage/r2';
+import { getSnapshotDocument, putBytes, putJson } from '../storage/r2';
 import { RAW_TEST_ENV } from '../testing/env';
 
 vi.mock('../db/users', async (importOriginal) => ({
@@ -64,6 +72,15 @@ vi.mock('../storage/r2', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../storage/r2')>()),
 	putJson: vi.fn(),
 	putBytes: vi.fn(),
+	getSnapshotDocument: vi.fn(),
+}));
+vi.mock('../db/skills', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../db/skills')>()),
+	findVersionBySubmission: vi.fn(),
+}));
+vi.mock('../publish/publish', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../publish/publish')>()),
+	publishSubmission: vi.fn(),
 }));
 
 const env = loadEnv(RAW_TEST_ENV);
@@ -558,5 +575,214 @@ describe('GET /submissions/:id/validation', () => {
 		expect(JSON.stringify(body)).not.toContain('sourceHash');
 		expect(JSON.stringify(body)).not.toContain('engineVersion');
 		expect(JSON.stringify(body)).not.toContain('permissions');
+	});
+});
+
+describe('POST /submissions/:id/publish', () => {
+	const passedSubmission: SubmissionRow = { ...submissionRow, status: 'passed' };
+
+	const passedReport: ValidationReportRow = {
+		id: 9,
+		submissionId: 1,
+		status: 'passed',
+		riskLevel: 'low',
+		sourceHash: HASH,
+		engineVersion: 'validator-0.1.0',
+		report: {
+			schemaVersion: '0.1',
+			status: 'passed',
+			riskLevel: 'low',
+			sourceHash: HASH,
+			engineVersion: 'validator-0.1.0',
+			permissionsDeclared: [],
+			permissionsDetected: [],
+			warnings: [],
+			failures: [],
+			createdAt: '2026-07-07T09:00:10.000Z',
+		},
+		createdAt: new Date('2026-07-07T09:00:10Z'),
+	};
+
+	const versionRow: SkillVersionRow = {
+		id: 11,
+		skillId: 3,
+		version: '1.0.0',
+		sourceType: 'github',
+		githubRepoUrl: 'https://github.com/octocat/hello',
+		resolvedCommitSha: 'abc123',
+		sourceHash: HASH,
+		snapshotKey: KEY,
+		submissionId: 1,
+		publishedAt: new Date('2026-07-07T10:00:00Z'),
+		createdAt: new Date('2026-07-07T10:00:00Z'),
+	};
+
+	const MANIFEST_FILES = [
+		{
+			path: 'skill.json',
+			content: JSON.stringify({
+				schemaVersion: '0.1',
+				name: 'clean-skill',
+				description: 'A tidy demo skill.',
+				targets: ['claude-code'],
+				permissions: [],
+			}),
+		},
+		{ path: 'SKILL.md', content: '# clean-skill\n\nDo tidy things.\n' },
+	];
+
+	function mockPublishPath() {
+		vi.mocked(findById).mockResolvedValue(userRow);
+		vi.mocked(findSubmissionForUser).mockResolvedValue(passedSubmission);
+		vi.mocked(findVersionBySubmission).mockResolvedValue(undefined);
+		vi.mocked(findValidationReportForSubmission).mockResolvedValue(passedReport);
+		vi.mocked(getSnapshotDocument).mockResolvedValue({
+			success: true,
+			data: { version: 1, files: MANIFEST_FILES },
+		});
+		vi.mocked(publishSubmission).mockResolvedValue({
+			success: true,
+			data: { slug: 'clean-skill', version: '1.0.0' },
+		});
+	}
+
+	async function publish(id: number | string, cookie?: string): Promise<Response> {
+		return app.request(`/submissions/${id}/publish`, {
+			method: 'POST',
+			headers: cookie ? { Cookie: cookie } : {},
+		});
+	}
+
+	it('401s without a session', async () => {
+		mockPublishPath();
+		const res = await publish(1);
+		expect(res.status).toBe(401);
+		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
+	});
+
+	it("404s another user's submission without leaking anything", async () => {
+		mockPublishPath();
+		vi.mocked(findSubmissionForUser).mockResolvedValue(undefined);
+		const res = await publish(2, await sessionCookie(7));
+		expect(res.status).toBe(404);
+		expect(vi.mocked(findVersionBySubmission)).not.toHaveBeenCalled();
+	});
+
+	it.each(['draft', 'validating', 'warning', 'failed', 'published'] as const)(
+		'409s a %s submission with a state-specific message',
+		async (status) => {
+			mockPublishPath();
+			vi.mocked(findSubmissionForUser).mockResolvedValue({ ...submissionRow, status });
+			const res = await publish(1, await sessionCookie(7));
+			expect(res.status).toBe(409);
+			const body = (await res.json()) as { success: boolean; error: string };
+			expect(body.success).toBe(false);
+			expect(body.error.length).toBeGreaterThan(0);
+			expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
+		},
+	);
+
+	it('409s when a version row already exists (crashed earlier publish)', async () => {
+		mockPublishPath();
+		vi.mocked(findVersionBySubmission).mockResolvedValue(versionRow);
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(409);
+		expect(await res.json()).toEqual({
+			success: false,
+			error: 'already published; contact support if the listing looks incomplete',
+		});
+		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
+	});
+
+	it('409s when the stored report is not passed, despite the submission status', async () => {
+		mockPublishPath();
+		vi.mocked(findValidationReportForSubmission).mockResolvedValue({
+			...passedReport,
+			status: 'warning',
+		});
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(409);
+		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
+	});
+
+	it('502s when the snapshot cannot be fetched, writing nothing', async () => {
+		mockPublishPath();
+		vi.mocked(getSnapshotDocument).mockResolvedValue({
+			success: false,
+			error: 'r2 get failed (500)',
+		});
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(502);
+		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
+	});
+
+	it('409s a slug owned by another maintainer', async () => {
+		mockPublishPath();
+		vi.mocked(publishSubmission).mockResolvedValue({ success: false, error: 'slug_taken' });
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(409);
+		expect(await res.json()).toEqual({
+			success: false,
+			error: 'that skill name is already taken',
+		});
+	});
+
+	it('publishes a passed submission with the manifest name and summary', async () => {
+		mockPublishPath();
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(201);
+		expect(await res.json()).toEqual({
+			success: true,
+			data: { slug: 'clean-skill', version: '1.0.0' },
+		});
+		expect(vi.mocked(publishSubmission)).toHaveBeenCalledWith(expect.anything(), {
+			submission: passedSubmission,
+			report: passedReport,
+			name: 'clean-skill',
+			summary: 'A tidy demo skill.',
+			attributedTo: null,
+		});
+	});
+
+	it('attributes an admin-curated github repo to its owner', async () => {
+		mockPublishPath();
+		vi.mocked(findById).mockResolvedValue({ ...userRow, role: 'admin' });
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(201);
+		expect(vi.mocked(publishSubmission)).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ attributedTo: 'octocat' }),
+		);
+	});
+
+	it("gives an admin's own repo no attribution", async () => {
+		mockPublishPath();
+		vi.mocked(findById).mockResolvedValue({ ...userRow, role: 'admin' });
+		vi.mocked(findSubmissionForUser).mockResolvedValue({
+			...passedSubmission,
+			githubUrl: 'https://github.com/bradtraversy/hello',
+		});
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(201);
+		expect(vi.mocked(publishSubmission)).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ attributedTo: null }),
+		);
+	});
+
+	it('maps a submissionId unique-constraint race to the already-published 409', async () => {
+		mockPublishPath();
+		vi.mocked(publishSubmission).mockRejectedValue(
+			Object.assign(new Error('duplicate key value violates unique constraint'), {
+				code: '23505',
+				constraint: 'skill_versions_submission_id_unique',
+			}),
+		);
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(409);
+		expect(await res.json()).toEqual({
+			success: false,
+			error: 'already published; contact support if the listing looks incomplete',
+		});
 	});
 });

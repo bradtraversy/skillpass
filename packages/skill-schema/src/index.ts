@@ -6,3 +6,4 @@ export * from './report';
 export * from './passport';
 export * from './submission';
 export * from './validation';
+export * from './publish';
