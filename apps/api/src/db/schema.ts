@@ -1,9 +1,12 @@
 import { integer, jsonb, pgEnum, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import {
+	PROGRESS_STEP_STATES,
 	RISK_LEVELS,
 	SUBMISSION_SOURCE_TYPES,
 	SUBMISSION_STATUSES,
+	VALIDATION_JOB_STATES,
 	VALIDATION_STATUSES,
+	type ProgressStep,
 	type ValidationReport,
 } from 'skill-schema';
 
@@ -44,18 +47,9 @@ export const submissions = pgTable('submissions', {
 
 export type SubmissionRow = typeof submissions.$inferSelect;
 
-export const VALIDATION_JOB_STATES = ['queued', 'running', 'done', 'error'] as const;
-export type ValidationJobState = (typeof VALIDATION_JOB_STATES)[number];
-
-export const PROGRESS_STEP_STATES = ['pending', 'running', 'ok', 'warn', 'fail'] as const;
-export type ProgressStepState = (typeof PROGRESS_STEP_STATES)[number];
-
-// 6b renders these rows in the /submit progress panel.
-export interface ProgressStep {
-	key: string;
-	label: string;
-	state: ProgressStepState;
-}
+// Job/progress enums and the ProgressStep shape live in skill-schema (6b put
+// them on the wire); re-exported so API-internal consumers keep one import.
+export type { ProgressStep, ProgressStepState, ValidationJobState } from 'skill-schema';
 
 export const validationJobState = pgEnum('validation_job_state', VALIDATION_JOB_STATES);
 

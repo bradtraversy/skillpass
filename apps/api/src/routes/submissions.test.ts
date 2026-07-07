@@ -12,6 +12,8 @@ import { createSubmission, findSubmissionForUser, listSubmissionsForUser } from 
 import { findById } from '../db/users';
 import {
 	createValidationJob,
+	findValidationJobForSubmission,
+	findValidationReportForSubmission,
 	markValidationJobError,
 	setValidationJobBullId,
 } from '../db/validation';
@@ -39,6 +41,8 @@ vi.mock('../db/validation', async (importOriginal) => ({
 	createValidationJob: vi.fn(),
 	setValidationJobBullId: vi.fn(),
 	markValidationJobError: vi.fn(),
+	findValidationJobForSubmission: vi.fn(),
+	findValidationReportForSubmission: vi.fn(),
 }));
 vi.mock('../queue/queue', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../queue/queue')>()),
@@ -443,5 +447,110 @@ describe('GET /submissions/:id', () => {
 		const res = await app.request('/submissions/abc', { headers: { Cookie: await sessionCookie(7) } });
 		expect(res.status).toBe(404);
 		expect(vi.mocked(findSubmissionForUser)).not.toHaveBeenCalled();
+	});
+});
+
+describe('GET /submissions/:id/validation', () => {
+	const runningJob: ValidationJobRow = {
+		id: 55,
+		submissionId: 1,
+		state: 'running',
+		progress: [
+			{ key: 'fetch', label: 'Fetch source snapshot', state: 'ok' },
+			{ key: 'structure', label: 'Check package structure', state: 'running' },
+		],
+		bullJobId: 'bull-1',
+		error: null,
+		startedAt: new Date('2026-07-07T09:00:00Z'),
+		finishedAt: null,
+		createdAt: new Date('2026-07-07T09:00:00Z'),
+	};
+
+	it('401s without a session', async () => {
+		const res = await app.request('/submissions/1/validation');
+		expect(res.status).toBe(401);
+	});
+
+	it("404s another user's submission before any job lookup", async () => {
+		vi.mocked(findById).mockResolvedValue(userRow);
+		vi.mocked(findSubmissionForUser).mockResolvedValue(undefined);
+		const res = await app.request('/submissions/2/validation', {
+			headers: { Cookie: await sessionCookie(7) },
+		});
+		expect(res.status).toBe(404);
+		expect(vi.mocked(findValidationJobForSubmission)).not.toHaveBeenCalled();
+	});
+
+	it('returns a running job with its progress rows', async () => {
+		vi.mocked(findById).mockResolvedValue(userRow);
+		vi.mocked(findSubmissionForUser).mockResolvedValue({ ...submissionRow, status: 'validating' });
+		vi.mocked(findValidationJobForSubmission).mockResolvedValue(runningJob);
+		vi.mocked(findValidationReportForSubmission).mockResolvedValue(undefined);
+		const res = await app.request('/submissions/1/validation', {
+			headers: { Cookie: await sessionCookie(7) },
+		});
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({
+			success: true,
+			data: {
+				job: { state: 'running', progress: runningJob.progress, error: null },
+				submissionStatus: 'validating',
+				report: null,
+			},
+		});
+	});
+
+	it('returns job: null when the job row never landed', async () => {
+		vi.mocked(findById).mockResolvedValue(userRow);
+		vi.mocked(findSubmissionForUser).mockResolvedValue(submissionRow);
+		vi.mocked(findValidationJobForSubmission).mockResolvedValue(undefined);
+		vi.mocked(findValidationReportForSubmission).mockResolvedValue(undefined);
+		const res = await app.request('/submissions/1/validation', {
+			headers: { Cookie: await sessionCookie(7) },
+		});
+		expect(await res.json()).toEqual({
+			success: true,
+			data: { job: null, submissionStatus: 'draft', report: null },
+		});
+	});
+
+	it('collapses a stored report to the status/risk summary - findings never leak', async () => {
+		vi.mocked(findById).mockResolvedValue(userRow);
+		vi.mocked(findSubmissionForUser).mockResolvedValue({ ...submissionRow, status: 'failed' });
+		vi.mocked(findValidationJobForSubmission).mockResolvedValue({
+			...runningJob,
+			state: 'done',
+			finishedAt: new Date('2026-07-07T09:00:10Z'),
+		});
+		vi.mocked(findValidationReportForSubmission).mockResolvedValue({
+			id: 9,
+			submissionId: 1,
+			status: 'failed',
+			riskLevel: 'low',
+			sourceHash: 'sha256:abc',
+			engineVersion: '0.1.0',
+			report: {
+				schemaVersion: '0.1',
+				status: 'failed',
+				riskLevel: 'low',
+				sourceHash: 'sha256:abc',
+				engineVersion: '0.1.0',
+				permissionsDeclared: [],
+				permissionsDetected: [],
+				warnings: [],
+				failures: [
+					{ code: 'secret-pattern', message: 'contains an AWS access key id' },
+				],
+				createdAt: '2026-07-07T09:00:10.000Z',
+			},
+			createdAt: new Date('2026-07-07T09:00:10Z'),
+		});
+		const res = await app.request('/submissions/1/validation', {
+			headers: { Cookie: await sessionCookie(7) },
+		});
+		const body = (await res.json()) as { data: { report: unknown } };
+		expect(body.data.report).toEqual({ status: 'failed', riskLevel: 'low' });
+		expect(JSON.stringify(body)).not.toContain('secret-pattern');
+		expect(JSON.stringify(body)).not.toContain('sourceHash');
 	});
 });

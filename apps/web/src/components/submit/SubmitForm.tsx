@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { MAX_ZIP_BYTES, type PublicSubmission } from 'skill-schema';
 import { getMe, signInUrl, submitGithubUrl, submitZip, type CurrentUser } from '../../lib/api';
+import ValidationProgress from './ValidationProgress';
 
 type AuthState =
 	| { state: 'checking' }
@@ -168,7 +169,7 @@ export default function SubmitForm() {
 				</div>
 			)}
 
-			{result && <ResultCard submission={result} />}
+			{result && <ResultCard key={result.id} submission={result} />}
 		</div>
 	);
 }
@@ -210,9 +211,9 @@ function ResultCard({ submission }: { submission: PublicSubmission }) {
 				<dt className="text-faint">source hash</dt>
 				<dd className="truncate font-mono text-muted">{submission.sourceHash}</dd>
 			</dl>
+			<ValidationProgress submissionId={submission.id} />
 			<p className="mt-3 text-[12px] text-faint">
-				Your draft is stored and pinned. Validation and the Skill Passport run in an upcoming
-				release; nothing is public until then.
+				Your draft is stored and pinned. Nothing is public until it passes and you publish.
 			</p>
 		</div>
 	);

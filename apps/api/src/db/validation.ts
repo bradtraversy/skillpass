@@ -75,6 +75,17 @@ export async function markValidationJobDone(
 		.where(eq(validationJobs.id, id));
 }
 
+export async function findValidationReportForSubmission(
+	db: Db,
+	submissionId: number,
+): Promise<ValidationReportRow | undefined> {
+	const [row] = await db
+		.select()
+		.from(validationReports)
+		.where(eq(validationReports.submissionId, submissionId));
+	return row;
+}
+
 export type NewValidationReport = typeof validationReports.$inferInsert;
 
 // One report per submission: retries replace instead of duplicating.

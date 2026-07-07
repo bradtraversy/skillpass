@@ -13,6 +13,8 @@ import {
 } from '../db/submissions';
 import {
 	createValidationJob,
+	findValidationJobForSubmission,
+	findValidationReportForSubmission,
 	markValidationJobError,
 	setValidationJobBullId,
 } from '../db/validation';
@@ -23,7 +25,7 @@ import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { parseGithubUrl } from '../github/url';
-import { MAX_ZIP_BYTES } from 'skill-schema';
+import { MAX_ZIP_BYTES, type PublicValidation } from 'skill-schema';
 import { putBytes, putJson, snapshotDocument, snapshotKey, uploadKey } from '../storage/r2';
 import { extractZip } from '../uploads/zip';
 
@@ -188,6 +190,26 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
 			return c.json({ success: false, error: 'not found' }, 404);
 		}
 		return c.json({ success: true, data: publicSubmission(row) });
+	});
+
+	routes.get('/:id/validation', async (c) => {
+		const id = Number(c.req.param('id'));
+		if (!Number.isInteger(id)) {
+			return c.json({ success: false, error: 'not found' }, 404);
+		}
+		const row = await findSubmissionForUser(db, c.get('user').id, id);
+		if (!row) {
+			return c.json({ success: false, error: 'not found' }, 404);
+		}
+		const job = await findValidationJobForSubmission(db, id);
+		const report = await findValidationReportForSubmission(db, id);
+		const data: PublicValidation = {
+			job: job ? { state: job.state, progress: job.progress, error: job.error } : null,
+			submissionStatus: row.status,
+			// Summary only - findings stay private until feature 7's publish gate.
+			report: report ? { status: report.status, riskLevel: report.riskLevel } : null,
+		};
+		return c.json({ success: true, data });
 	});
 
 	return routes;

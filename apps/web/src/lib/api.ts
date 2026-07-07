@@ -1,4 +1,4 @@
-import type { ApiEnvelope, PublicSubmission } from 'skill-schema';
+import type { ApiEnvelope, PublicSubmission, PublicValidation } from 'skill-schema';
 
 // The only knob the static site needs to find the API.
 export const API_URL: string = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8787';
@@ -46,6 +46,10 @@ export function submitZip(file: File): Promise<ApiEnvelope<PublicSubmission>> {
 	const form = new FormData();
 	form.set('file', file);
 	return request('/submissions/zip', { method: 'POST', body: form });
+}
+
+export function getValidation(id: number): Promise<ApiEnvelope<PublicValidation>> {
+	return request(`/submissions/${id}/validation`);
 }
 
 export function logout(): Promise<ApiEnvelope<{ loggedOut: boolean }>> {
