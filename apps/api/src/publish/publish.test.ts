@@ -98,6 +98,7 @@ function versionRow(overrides: Partial<SkillVersionRow> = {}): SkillVersionRow {
 		resolvedCommitSha: 'abc123',
 		sourceHash: 'sha256:abc',
 		snapshotKey: 'snapshots/abc.json',
+		targets: ['claude-code'],
 		submissionId: 1,
 		publishedAt: NOW,
 		createdAt: NOW,
@@ -121,6 +122,7 @@ describe('publishSubmission', () => {
 			report: reportRow,
 			name: 'Clean Skill',
 			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
 			attributedTo: null,
 			now: NOW,
 		});
@@ -142,6 +144,7 @@ describe('publishSubmission', () => {
 			resolvedCommitSha: 'abc123',
 			sourceHash: 'sha256:abc',
 			snapshotKey: 'snapshots/abc.json',
+			targets: ['claude-code'],
 			submissionId: 1,
 			publishedAt: NOW,
 		});
@@ -157,7 +160,13 @@ describe('publishSubmission', () => {
 			riskLevel: 'low',
 			generatedAt: NOW,
 		});
-		expect(setLatestVersion).toHaveBeenCalledWith(db, 3, 11, NOW);
+		expect(setLatestVersion).toHaveBeenCalledWith(
+			db,
+			3,
+			11,
+			{ name: 'Clean Skill', summary: 'A tidy demo skill.' },
+			NOW,
+		);
 		expect(setSubmissionStatus).toHaveBeenCalledWith(db, 1, 'published');
 
 		const order = [
@@ -180,7 +189,8 @@ describe('publishSubmission', () => {
 			submission: zipSubmission,
 			report: { ...reportRow, submissionId: 2 },
 			name: 'Clean Skill',
-			summary: 'A tidy demo skill.',
+			summary: 'A tidier demo skill, third pass.',
+			targets: ['claude-code', 'codex'],
 			attributedTo: null,
 			now: NOW,
 		});
@@ -194,10 +204,18 @@ describe('publishSubmission', () => {
 				sourceType: 'zip',
 				githubRepoUrl: null,
 				resolvedCommitSha: null,
+				targets: ['claude-code', 'codex'],
 				submissionId: 2,
 			}),
 		);
-		expect(setLatestVersion).toHaveBeenCalledWith(db, 3, 12, NOW);
+		// The listing copy refreshes to describe the newly published version.
+		expect(setLatestVersion).toHaveBeenCalledWith(
+			db,
+			3,
+			12,
+			{ name: 'Clean Skill', summary: 'A tidier demo skill, third pass.' },
+			NOW,
+		);
 		expect(setSubmissionStatus).toHaveBeenCalledWith(db, 2, 'published');
 	});
 
@@ -209,6 +227,7 @@ describe('publishSubmission', () => {
 			report: reportRow,
 			name: 'Clean Skill',
 			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
 			attributedTo: null,
 			now: NOW,
 		});

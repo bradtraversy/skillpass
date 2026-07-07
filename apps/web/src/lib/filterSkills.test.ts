@@ -1,49 +1,51 @@
+import type { PublicSkillSummary } from 'skill-schema';
 import { describe, expect, it } from 'vitest';
 import { filterSkills, type SkillFilters } from './filterSkills';
-import type { Skill } from './skills';
 
 const base: SkillFilters = { query: '', verdict: 'all', tool: 'all' };
 
-const sample: Skill[] = [
-	{
+function summary(overrides: Partial<PublicSkillSummary>): PublicSkillSummary {
+	return {
+		slug: 'skill',
+		name: 'Skill',
+		summary: 'Does things.',
+		targets: ['claude-code'],
+		validationStatus: 'passed',
+		riskLevel: 'low',
+		version: '1.0.0',
+		maintainer: 'someone',
+		attributedTo: null,
+		publishedAt: '2026-07-07T18:00:00.000Z',
+		...overrides,
+	};
+}
+
+const sample: PublicSkillSummary[] = [
+	summary({
 		slug: 'commit-message-writer',
 		name: 'Commit Message Writer',
 		summary: 'Writes conventional commit messages from the staged diff.',
 		targets: ['codex', 'cursor'],
-		verdict: 'passed',
-		riskLevel: 'low',
-		category: 'Git',
-		tags: ['git', 'commits'],
 		maintainer: 'traversymedia',
-		installs: 5900,
-		lastValidated: '1d ago',
-	},
-	{
+	}),
+	summary({
 		slug: 'gmail-sweep',
 		name: 'Gmail Sweep',
 		summary: 'Weekly inbox triage and labeling.',
 		targets: ['cowork'],
-		verdict: 'warning',
+		validationStatus: 'warning',
 		riskLevel: 'high',
-		category: 'Productivity',
-		tags: ['email', 'gmail'],
 		maintainer: 'inboxlabs',
-		installs: 870,
-		lastValidated: 'review',
-	},
-	{
+	}),
+	summary({
 		slug: 'auto-deploy-runner',
 		name: 'Auto Deploy Runner',
 		summary: 'Runs build and deploy on merge.',
 		targets: ['aider'],
-		verdict: 'failed',
+		validationStatus: 'failed',
 		riskLevel: 'critical',
-		category: 'Deployment',
-		tags: ['deploy', 'ci'],
 		maintainer: 'shipfast',
-		installs: 0,
-		lastValidated: 'blocked',
-	},
+	}),
 ];
 
 describe('filterSkills', () => {
@@ -56,10 +58,9 @@ describe('filterSkills', () => {
 		expect(result.map((s) => s.slug)).toEqual(['gmail-sweep']);
 	});
 
-	it('matches the query against maintainer, tags, and tools', () => {
-		expect(filterSkills(sample, { ...base, query: 'shipfast' })).toHaveLength(1); // maintainer
-		expect(filterSkills(sample, { ...base, query: 'commits' })).toHaveLength(1); // tag
-		expect(filterSkills(sample, { ...base, query: 'cowork' })).toHaveLength(1); // target tool
+	it('matches the query against maintainer and target tools', () => {
+		expect(filterSkills(sample, { ...base, query: 'shipfast' })).toHaveLength(1);
+		expect(filterSkills(sample, { ...base, query: 'cowork' })).toHaveLength(1);
 	});
 
 	it('trims surrounding whitespace from the query', () => {

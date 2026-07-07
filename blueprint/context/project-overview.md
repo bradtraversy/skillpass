@@ -232,13 +232,15 @@ Static Astro pages (`apps/web`, names indicative):
 - `/dashboard` - maintainer dashboard widgets
 - `/admin` - holding queue for failed/flagged submissions, manual review states
 
-Dynamic pages (`/submit`, `/dashboard`, `/admin`, live search) are static shells
-whose React islands call the API; content pages (directory, detail, passports)
-are built from data at deploy time (see Open questions on freshness).
+All dynamic content is client-fetched (decided at 7b): the directory, detail,
+and passport pages are static shells whose React islands call the public read
+API at runtime, so new publishes appear without a rebuild. Revisit
+pre-rendering (rebuild-on-publish or hybrid) at deploy time if SEO wants it.
 
 Node API endpoints (`apps/api`, names indicative):
 
 - `GET /auth/github` + callback - GitHub OAuth
+- `GET /skills` + `GET /skills/:slug` - public, anonymous directory list/detail
 - `/submissions` - create and read submissions
 - `/validation/:jobId` - job status feeding the inline progress panel
 - `/download/preflight` - current validation, source hash, permissions, diffs
@@ -249,9 +251,6 @@ CLI (not a route): `aiskills scan`, `aiskills report`.
 
 > Resolve in the plans, then re-run /overview. Delete this section when empty.
 
-- **Static data freshness** - a fully static directory won't show newly published
-  skills until a rebuild. Decide the strategy before feature 7: rebuild-on-publish
-  (webhook/CI), client-fetch the listing from the API, or a hybrid.
 - **Maintainer profile modeling** - project-plan lists "users and maintainer
   profiles" separately; modeled here as fields on User. Split into a 1:1
   `MaintainerProfile` only if it grows.

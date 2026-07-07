@@ -310,6 +310,7 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
 				report,
 				name: pkg.manifest.data.name,
 				summary: pkg.manifest.data.description,
+				targets: pkg.manifest.data.targets,
 				attributedTo: attributionFor(c.get('user'), submission),
 			});
 		} catch (err) {

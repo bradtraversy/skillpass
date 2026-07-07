@@ -1,4 +1,10 @@
-import type { ApiEnvelope, PublicSubmission, PublicValidation, PublishResult } from 'skill-schema';
+import type {
+	ApiEnvelope,
+	PublicSkillSummary,
+	PublicSubmission,
+	PublicValidation,
+	PublishResult,
+} from 'skill-schema';
 
 // The only knob the static site needs to find the API.
 export const API_URL: string = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8787';
@@ -32,6 +38,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope
 
 export function getMe(): Promise<ApiEnvelope<CurrentUser>> {
 	return request('/me');
+}
+
+export function getSkills(): Promise<ApiEnvelope<PublicSkillSummary[]>> {
+	return request('/skills');
 }
 
 export function submitGithubUrl(githubUrl: string): Promise<ApiEnvelope<PublicSubmission>> {

@@ -1,39 +1,48 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { Skill, Target, Verdict } from '../../lib/skills';
+import { useEffect, useState } from 'react';
+import type { PublicSkillSummary, Target, ValidationStatus } from 'skill-schema';
+import { getSkills } from '../../lib/api';
 import { filterSkills } from '../../lib/filterSkills';
-
-interface Props {
-	skills: Skill[];
-	/** Server-rendered Row list, filtered client-side by toggling data-slug rows. */
-	children: ReactNode;
-}
+import Row from '../skill/Row';
 
 const TABS = ['Trending', 'New', 'Verified', 'Workflow packs'];
 
-const VERDICT_OPTIONS: { value: Verdict | 'all'; label: string }[] = [
+const VERDICT_OPTIONS: { value: ValidationStatus | 'all'; label: string }[] = [
 	{ value: 'all', label: 'Verdict' },
 	{ value: 'passed', label: 'Passed' },
 	{ value: 'warning', label: 'Warning' },
 	{ value: 'failed', label: 'Failed' },
 ];
 
-export default function Directory({ skills, children }: Props) {
+type LoadState =
+	| { phase: 'loading' }
+	| { phase: 'error'; message: string }
+	| { phase: 'ready'; skills: PublicSkillSummary[] };
+
+export default function Directory() {
+	const [load, setLoad] = useState<LoadState>({ phase: 'loading' });
 	const [query, setQuery] = useState('');
-	const [verdict, setVerdict] = useState<Verdict | 'all'>('all');
+	const [verdict, setVerdict] = useState<ValidationStatus | 'all'>('all');
 	const [tool, setTool] = useState<Target | 'all'>('all');
 	const [activeTab, setActiveTab] = useState(0);
-	const listRef = useRef<HTMLDivElement>(null);
 
+	useEffect(() => {
+		let cancelled = false;
+		void getSkills().then((res) => {
+			if (cancelled) return;
+			setLoad(
+				res.success
+					? { phase: 'ready', skills: res.data }
+					: { phase: 'error', message: res.error },
+			);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	const skills = load.phase === 'ready' ? load.skills : [];
 	const tools = Array.from(new Set(skills.flatMap((s) => s.targets))).sort();
 	const matches = filterSkills(skills, { query, verdict, tool });
-
-	// The rows are static server HTML; show only the ones the filter matches.
-	useEffect(() => {
-		const visible = new Set(matches.map((s) => s.slug));
-		listRef.current?.querySelectorAll<HTMLElement>('[data-slug]').forEach((row) => {
-			row.hidden = !visible.has(row.dataset.slug ?? '');
-		});
-	}, [matches]);
 
 	return (
 		<>
@@ -66,11 +75,10 @@ export default function Directory({ skills, children }: Props) {
 			</div>
 
 			<div className="mt-5 text-center font-mono text-xs text-faint">
-				<b className="font-medium text-muted">312</b> skills
+				<b className="font-medium text-muted">{load.phase === 'ready' ? skills.length : '-'}</b>{' '}
+				{skills.length === 1 ? 'skill' : 'skills'} published
 				<span className="mx-[10px] text-border-2">·</span>
-				<b className="font-medium text-muted">1,041</b> versions inspected
-				<span className="mx-[10px] text-border-2">·</span>
-				<b className="font-medium text-muted">27</b> flagged &amp; held
+				every version validated
 				<span className="mx-[10px] text-border-2">·</span>
 				same engine in the <span className="text-accent">aiskills</span> CLI
 			</div>
@@ -93,7 +101,7 @@ export default function Directory({ skills, children }: Props) {
 				<div className="ml-auto flex gap-2 pb-2">
 					<FilterSelect
 						value={verdict}
-						onChange={(value) => setVerdict(value as Verdict | 'all')}
+						onChange={(value) => setVerdict(value as ValidationStatus | 'all')}
 						options={VERDICT_OPTIONS}
 					/>
 					<FilterSelect
@@ -104,11 +112,24 @@ export default function Directory({ skills, children }: Props) {
 				</div>
 			</div>
 
-			<div ref={listRef} className="mt-[6px]">
-				{children}
+			<div className="mt-[6px]">
+				{matches.map((skill, i) => (
+					<Row key={skill.slug} skill={skill} rank={i + 1} />
+				))}
 			</div>
 
-			{matches.length === 0 && (
+			{load.phase === 'loading' && (
+				<p className="py-16 text-center text-[13px] text-muted">Loading skills...</p>
+			)}
+			{load.phase === 'error' && (
+				<p className="py-16 text-center text-[13px] text-fail">
+					Can't reach the API - is it running?
+				</p>
+			)}
+			{load.phase === 'ready' && skills.length === 0 && (
+				<p className="py-16 text-center text-[13px] text-muted">No skills published yet.</p>
+			)}
+			{load.phase === 'ready' && skills.length > 0 && matches.length === 0 && (
 				<p className="py-16 text-center text-[13px] text-muted">No skills match these filters.</p>
 			)}
 		</>

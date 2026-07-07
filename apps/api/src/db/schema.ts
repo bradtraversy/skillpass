@@ -17,6 +17,7 @@ import {
 	VALIDATION_STATUSES,
 	type ProgressStep,
 	type SkillPassport,
+	type Target,
 	type ValidationReport,
 } from 'skill-schema';
 
@@ -133,6 +134,7 @@ export const skillVersions = pgTable('skill_versions', {
 	resolvedCommitSha: text('resolved_commit_sha'),
 	sourceHash: text('source_hash').notNull(),
 	snapshotKey: text('snapshot_key').notNull(),
+	targets: jsonb('targets').$type<Target[]>().notNull().default([]),
 	submissionId: integer('submission_id')
 		.notNull()
 		.unique()

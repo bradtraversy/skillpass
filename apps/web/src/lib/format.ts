@@ -1,5 +1,5 @@
-// Presentational helpers for skill rows. Pure and reusable (Row.astro now, the
-// Directory island later). Monogram is derived, not stored on the Skill contract.
+// Presentational helpers for skill rows. Pure and reusable across the Directory
+// island and the detail page. Monogram is derived, not stored on the contract.
 
 export function monogram(name: string): string {
 	const words = name.trim().split(/\s+/);
@@ -8,10 +8,20 @@ export function monogram(name: string): string {
 	return (first + last).toUpperCase();
 }
 
-export function formatInstalls(installs: number): string {
-	if (installs <= 0) return 'held';
-	if (installs >= 1000) return `${(installs / 1000).toFixed(1)}k`;
-	return String(installs);
+// Coarse relative time for "published X ago" columns. Clamps future/skewed
+// timestamps to "just now".
+export function timeAgo(iso: string, now: Date = new Date()): string {
+	const seconds = Math.max(0, Math.floor((now.getTime() - new Date(iso).getTime()) / 1000));
+	if (seconds < 60) return 'just now';
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes}m ago`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours}h ago`;
+	const days = Math.floor(hours / 24);
+	if (days < 30) return `${days}d ago`;
+	const months = Math.floor(days / 30);
+	if (months < 12) return `${months}mo ago`;
+	return `${Math.floor(days / 365)}y ago`;
 }
 
 // Falls back to the raw input for a non-GitHub/malformed URL instead of throwing.

@@ -612,6 +612,7 @@ describe('POST /submissions/:id/publish', () => {
 		resolvedCommitSha: 'abc123',
 		sourceHash: HASH,
 		snapshotKey: KEY,
+		targets: ['claude-code'],
 		submissionId: 1,
 		publishedAt: new Date('2026-07-07T10:00:00Z'),
 		createdAt: new Date('2026-07-07T10:00:00Z'),
@@ -740,6 +741,7 @@ describe('POST /submissions/:id/publish', () => {
 			report: passedReport,
 			name: 'clean-skill',
 			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
 			attributedTo: null,
 		});
 	});

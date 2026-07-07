@@ -1,4 +1,4 @@
-import { nextVersion, slugForSkill, type PublishResult } from 'skill-schema';
+import { nextVersion, slugForSkill, type PublishResult, type Target } from 'skill-schema';
 import type { Db } from '../db/client';
 import type { SubmissionRow, ValidationReportRow } from '../db/schema';
 import {
@@ -17,6 +17,7 @@ export interface PublishInput {
 	report: ValidationReportRow;
 	name: string;
 	summary: string;
+	targets: Target[];
 	attributedTo: string | null;
 	now?: Date;
 }
@@ -61,6 +62,7 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 		resolvedCommitSha: submission.resolvedCommitSha,
 		sourceHash: submission.sourceHash,
 		snapshotKey: submission.snapshotKey,
+		targets: input.targets,
 		submissionId: submission.id,
 		publishedAt: now,
 	});
@@ -74,7 +76,7 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 		generatedAt: now,
 	});
 
-	await setLatestVersion(db, skill.id, versionRow.id, now);
+	await setLatestVersion(db, skill.id, versionRow.id, { name: input.name, summary: input.summary }, now);
 	await setSubmissionStatus(db, submission.id, 'published');
 
 	return { success: true, data: { slug, version } };

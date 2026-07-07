@@ -1,12 +1,15 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
+import type { PublicSkillDetail, PublicSkillSummary } from 'skill-schema';
 import type { Db } from './client';
 import {
 	skillPassports,
 	skills,
 	skillVersions,
+	users,
 	type SkillPassportRow,
 	type SkillRow,
 	type SkillVersionRow,
+	type UserRow,
 } from './schema';
 
 export type NewSkill = typeof skills.$inferInsert;
@@ -65,14 +68,104 @@ export async function createSkillPassport(
 	return row;
 }
 
+// A published skill joined with its latest version, that version's passport,
+// and the maintainer - one record per directory entry.
+export interface PublishedSkillRecord {
+	skill: SkillRow;
+	version: SkillVersionRow;
+	passport: SkillPassportRow;
+	maintainer: UserRow;
+}
+
+export async function listPublishedSkills(db: Db): Promise<PublishedSkillRecord[]> {
+	return db
+		.select({ skill: skills, version: skillVersions, passport: skillPassports, maintainer: users })
+		.from(skills)
+		.innerJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
+		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
+		.innerJoin(users, eq(skills.maintainerId, users.id))
+		.where(eq(skills.status, 'published'))
+		.orderBy(desc(skillVersions.publishedAt), desc(skills.id));
+}
+
+export async function findPublishedSkillBySlug(
+	db: Db,
+	slug: string,
+): Promise<PublishedSkillRecord | undefined> {
+	const [row] = await db
+		.select({ skill: skills, version: skillVersions, passport: skillPassports, maintainer: users })
+		.from(skills)
+		.innerJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
+		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
+		.innerJoin(users, eq(skills.maintainerId, users.id))
+		.where(and(eq(skills.slug, slug), eq(skills.status, 'published')));
+	return row;
+}
+
+export interface VersionWithPassport {
+	version: SkillVersionRow;
+	passport: SkillPassportRow;
+}
+
+export async function listVersionsWithPassports(
+	db: Db,
+	skillId: number,
+): Promise<VersionWithPassport[]> {
+	return db
+		.select({ version: skillVersions, passport: skillPassports })
+		.from(skillVersions)
+		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
+		.where(eq(skillVersions.skillId, skillId))
+		.orderBy(desc(skillVersions.id));
+}
+
+export function publicSkillSummary(r: PublishedSkillRecord): PublicSkillSummary {
+	return {
+		slug: r.skill.slug,
+		name: r.skill.name,
+		summary: r.skill.summary,
+		targets: r.version.targets,
+		validationStatus: r.passport.validationStatus,
+		riskLevel: r.passport.riskLevel,
+		version: r.version.version,
+		maintainer: r.maintainer.username,
+		attributedTo: r.skill.attributedTo,
+		publishedAt: (r.version.publishedAt ?? r.version.createdAt).toISOString(),
+	};
+}
+
+export function publicSkillDetail(
+	r: PublishedSkillRecord,
+	versions: VersionWithPassport[],
+): PublicSkillDetail {
+	return {
+		...publicSkillSummary(r),
+		passport: r.passport.passport,
+		maintainerInfo: {
+			username: r.maintainer.username,
+			displayName: r.maintainer.displayName,
+			avatarUrl: r.maintainer.avatarUrl,
+		},
+		versions: versions.map((v) => ({
+			version: v.version.version,
+			validationStatus: v.passport.validationStatus,
+			riskLevel: v.passport.riskLevel,
+			publishedAt: (v.version.publishedAt ?? v.version.createdAt).toISOString(),
+		})),
+	};
+}
+
+// Also refreshes the listing copy so the directory always describes the
+// latest published version.
 export async function setLatestVersion(
 	db: Db,
 	skillId: number,
 	versionId: number,
+	listing: { name: string; summary: string },
 	now: Date = new Date(),
 ): Promise<void> {
 	await db
 		.update(skills)
-		.set({ latestVersionId: versionId, updatedAt: now })
+		.set({ latestVersionId: versionId, name: listing.name, summary: listing.summary, updatedAt: now })
 		.where(eq(skills.id, skillId));
 }

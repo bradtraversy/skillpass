@@ -6,6 +6,7 @@ import { publicUser } from './db/users';
 import type { Env } from './env';
 import type { ValidationQueue } from './queue/queue';
 import { authRoutes } from './routes/auth';
+import { skillRoutes } from './routes/skills';
 import { submissionRoutes } from './routes/submissions';
 
 export function createApp(env: Env, db: Db, queue: ValidationQueue) {
@@ -21,6 +22,7 @@ export function createApp(env: Env, db: Db, queue: ValidationQueue) {
 	app.get('/health', (c) => c.json({ success: true, data: { status: 'ok' } }));
 
 	app.route('/auth', authRoutes(env, db));
+	app.route('/skills', skillRoutes(db));
 	app.route('/submissions', submissionRoutes(env, db, queue));
 
 	app.get('/me', requireAuth(env, db), (c) =>
