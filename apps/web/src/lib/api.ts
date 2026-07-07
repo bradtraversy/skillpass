@@ -1,5 +1,7 @@
 import type {
 	ApiEnvelope,
+	PublicSkillDetail,
+	PublicSkillSource,
 	PublicSkillSummary,
 	PublicSubmission,
 	PublicValidation,
@@ -42,6 +44,18 @@ export function getMe(): Promise<ApiEnvelope<CurrentUser>> {
 
 export function getSkills(): Promise<ApiEnvelope<PublicSkillSummary[]>> {
 	return request('/skills');
+}
+
+export function getSkill(slug: string, version?: string): Promise<ApiEnvelope<PublicSkillDetail>> {
+	const base = `/skills/${encodeURIComponent(slug)}`;
+	return request(version ? `${base}/${encodeURIComponent(version)}` : base);
+}
+
+export function getSkillSource(
+	slug: string,
+	version: string,
+): Promise<ApiEnvelope<PublicSkillSource>> {
+	return request(`/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/source`);
 }
 
 export function submitGithubUrl(githubUrl: string): Promise<ApiEnvelope<PublicSubmission>> {

@@ -107,6 +107,19 @@ export interface VersionWithPassport {
 	passport: SkillPassportRow;
 }
 
+export async function findVersionWithPassport(
+	db: Db,
+	skillId: number,
+	version: string,
+): Promise<VersionWithPassport | undefined> {
+	const [row] = await db
+		.select({ version: skillVersions, passport: skillPassports })
+		.from(skillVersions)
+		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
+		.where(and(eq(skillVersions.skillId, skillId), eq(skillVersions.version, version)));
+	return row;
+}
+
 export async function listVersionsWithPassports(
 	db: Db,
 	skillId: number,
@@ -140,6 +153,7 @@ export function publicSkillDetail(
 ): PublicSkillDetail {
 	return {
 		...publicSkillSummary(r),
+		githubRepoUrl: r.version.githubRepoUrl,
 		passport: r.passport.passport,
 		maintainerInfo: {
 			username: r.maintainer.username,

@@ -23,8 +23,11 @@ export const publicSkillVersionSchema = z.strictObject({
 	publishedAt: z.iso.datetime(),
 });
 
-// What GET /skills/:slug returns; the passport jsonb travels verbatim.
+// What GET /skills/:slug returns; the passport jsonb travels verbatim. The
+// version-pinned GET /skills/:slug/:version returns the same shape with
+// version/passport/status fields from the requested version.
 export const publicSkillDetailSchema = publicSkillSummarySchema.extend({
+	githubRepoUrl: z.string().min(1).nullable(),
 	passport: skillPassportSchema,
 	maintainerInfo: z.strictObject({
 		username: z.string().min(1),
@@ -34,6 +37,15 @@ export const publicSkillDetailSchema = publicSkillSummarySchema.extend({
 	versions: z.array(publicSkillVersionSchema),
 });
 
+// What GET /skills/:slug/:version/source returns - the pinned snapshot the
+// validator saw, verbatim; feature 8 and the CLI read the same object.
+export const publicSkillSourceSchema = z.strictObject({
+	version: z.string().min(1),
+	sourceHash: z.string().min(1),
+	files: z.array(z.strictObject({ path: z.string().min(1), content: z.string() })),
+});
+
 export type PublicSkillSummary = z.infer<typeof publicSkillSummarySchema>;
 export type PublicSkillVersion = z.infer<typeof publicSkillVersionSchema>;
 export type PublicSkillDetail = z.infer<typeof publicSkillDetailSchema>;
+export type PublicSkillSource = z.infer<typeof publicSkillSourceSchema>;

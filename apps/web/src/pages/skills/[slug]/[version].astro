@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Nav from '../../../components/nav/Nav.astro';
+import SkillDetail from '../../../components/skill/SkillDetail';
+import { API_URL } from '../../../lib/api';
+
+// Version permalinks: one page per published version, discovered from the API
+// at build time with the same unreachable-API fallback as the slug page.
+export async function getStaticPaths() {
+	try {
+		const listRes = await fetch(`${API_URL}/skills`);
+		const list = (await listRes.json()) as { success: boolean; data: { slug: string }[] };
+		if (!list.success) throw new Error('skills list returned an error');
+		const paths: { params: { slug: string; version: string } }[] = [];
+		for (const skill of list.data) {
+			const detailRes = await fetch(`${API_URL}/skills/${skill.slug}`);
+			const detail = (await detailRes.json()) as {
+				success: boolean;
+				data: { versions: { version: string }[] };
+			};
+			if (!detail.success) continue;
+			for (const v of detail.data.versions) {
+				paths.push({ params: { slug: skill.slug, version: v.version } });
+			}
+		}
+		return paths;
+	} catch (err) {
+		console.warn(
+			'getStaticPaths(/skills/[slug]/[version]): API unreachable, building no permalinks',
+			err,
+		);
+		return [];
+	}
+}
+
+const { slug, version } = Astro.params;
+---
+
+<BaseLayout title={`${slug} v${version} - Skill Passport`}>
+	<Nav />
+	<main class="mx-auto max-w-[760px] px-6">
+		<a
+			href={`/skills/${slug}`}
+			class="inline-flex items-center gap-[7px] pt-[26px] text-[13px] text-muted hover:text-text"
+		>
+			<svg
+				width="15"
+				height="15"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="m15 18-6-6 6-6"></path>
+			</svg>
+			Latest version
+		</a>
+		<SkillDetail client:load slug={slug} version={version} />
+	</main>
+</BaseLayout>

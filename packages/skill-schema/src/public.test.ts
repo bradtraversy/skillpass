@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	publicSkillDetailSchema,
+	publicSkillSourceSchema,
 	publicSkillSummarySchema,
 	type PublicSkillDetail,
 	type PublicSkillSummary,
@@ -21,6 +22,7 @@ const summary: PublicSkillSummary = {
 
 const detail: PublicSkillDetail = {
 	...summary,
+	githubRepoUrl: null,
 	passport: {
 		schemaVersion: '0.1',
 		validationStatus: 'passed',
@@ -85,5 +87,28 @@ describe('publicSkillDetailSchema', () => {
 			versions: [{ ...detail.versions[0], snapshotKey: 'x' }],
 		};
 		expect(publicSkillDetailSchema.safeParse(broken).success).toBe(false);
+	});
+});
+
+describe('publicSkillSourceSchema', () => {
+	it('parses a snapshot source and allows empty file content', () => {
+		const source = {
+			version: '1.0.0',
+			sourceHash: 'sha256:abc',
+			files: [
+				{ path: 'SKILL.md', content: '# hi' },
+				{ path: 'empty.txt', content: '' },
+			],
+		};
+		expect(publicSkillSourceSchema.parse(source)).toEqual(source);
+	});
+
+	it('rejects extra keys on files', () => {
+		const broken = {
+			version: '1.0.0',
+			sourceHash: 'sha256:abc',
+			files: [{ path: 'SKILL.md', content: '', snapshotKey: 'x' }],
+		};
+		expect(publicSkillSourceSchema.safeParse(broken).success).toBe(false);
 	});
 });

@@ -22,7 +22,7 @@ export function createApp(env: Env, db: Db, queue: ValidationQueue) {
 	app.get('/health', (c) => c.json({ success: true, data: { status: 'ok' } }));
 
 	app.route('/auth', authRoutes(env, db));
-	app.route('/skills', skillRoutes(db));
+	app.route('/skills', skillRoutes(env, db));
 	app.route('/submissions', submissionRoutes(env, db, queue));
 
 	app.get('/me', requireAuth(env, db), (c) =>

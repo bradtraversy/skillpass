@@ -1,4 +1,6 @@
-import type { Verdict } from './skills';
+import type { ValidationStatus } from 'skill-schema';
+
+type Verdict = ValidationStatus;
 
 export interface VerdictTint {
 	text: string; // text color only
