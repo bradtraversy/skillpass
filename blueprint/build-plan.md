@@ -24,6 +24,6 @@ are bundles; `/feature` splits them into sub-items (5a, 5b, ...) at spec time.
   - [x] 7b. **Public read API + live directory** - public list/detail endpoints over published data, the static-data-freshness decision (rebuild-on-publish vs client-fetch), homepage/browse swapped off fixture data.
   - [x] 7c. **Passport + source view pages** - `/skills/[slug]` and version permalinks rendering real passports, plus the source view (SKILL.md rendered, package files viewable) from the pinned snapshot.
 - [x] 8. **Download pre-flight** - endpoint + UI showing current validation, source hash, permissions, permission diffs, and blocking of failed versions.
-- [ ] 9. **CLI scan and report** - `packages/cli` with `aiskills scan` and `aiskills report`, sharing the validator, readable + JSON output.
+- [x] 9. **CLI scan and report** - `packages/cli` with `aiskills scan` and `aiskills report`, sharing the validator, readable + JSON output.
 - [ ] 10. **Reputation and admin** - maintainer reputation, user profiles, abuse reports, admin holding queue, validation history, manual review states.
 - [ ] 11. **Launch seed and docs** - seed first-party listings, feature AI Blueprint and Memcrate, author docs, and the bradtraversy.dev project page.

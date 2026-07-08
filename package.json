@@ -16,7 +16,8 @@
     "astro": "pnpm -C apps/web astro",
     "typecheck": "pnpm -C apps/web typecheck",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cli": "node packages/cli/bin/aiskills.mjs"
   },
   "keywords": [],
   "author": "",
