@@ -265,18 +265,37 @@ describe('runAdd', () => {
 });
 
 describe('installChoices', () => {
-	it('offers project, user-level, and current-directory locations', () => {
+	it('offers declared tools first, then undeclared mapped tools, then current directory', () => {
 		const choices = installChoices(['claude-code'], 'smoke-clean');
 		expect(choices.map((c) => c.dir)).toEqual([
 			join('.claude', 'skills', 'smoke-clean'),
 			join(homedir(), '.claude', 'skills', 'smoke-clean'),
+			join('.agents', 'skills', 'smoke-clean'),
 			'smoke-clean',
 		]);
 	});
 
-	it('offers only the current directory when nothing is mappable', () => {
-		expect(installChoices(['cursor'], 'smoke-clean')).toEqual([
-			{ label: 'current directory (./smoke-clean)', dir: 'smoke-clean' },
-		]);
+	it('marks undeclared tools honestly', () => {
+		const choices = installChoices(['claude-code'], 'smoke-clean');
+		const codex = choices.find((c) => c.label.startsWith('codex'));
+		expect(codex?.label).toContain('not declared by this skill');
+		expect(choices[0].label).not.toContain('not declared');
+	});
+
+	it('puts declared codex ahead of undeclared claude-code', () => {
+		const choices = installChoices(['codex'], 'smoke-clean');
+		expect(choices[0].dir).toBe(join('.agents', 'skills', 'smoke-clean'));
+		expect(choices[0].label).not.toContain('not declared');
+	});
+
+	it('still offers all mapped tools when nothing is declared as mappable', () => {
+		const choices = installChoices(['cursor'], 'smoke-clean');
+		expect(choices.every((c) => c.dir === 'smoke-clean' || c.label.includes('not declared'))).toBe(
+			true,
+		);
+		expect(choices.at(-1)).toEqual({
+			label: 'current directory (./smoke-clean)',
+			dir: 'smoke-clean',
+		});
 	});
 });

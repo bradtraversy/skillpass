@@ -6,7 +6,7 @@ import { loadPackageFromFiles, type PackageFile } from 'validator';
 import { fetchPreflight, resolveApiUrl } from './api';
 import { renderPreflightReport } from './render';
 import type { CommandResult } from './scan';
-import { mappableDeclaredTargets, resolveTargetDir } from './targets';
+import { MAPPED_TARGETS, mappableDeclaredTargets, resolveTargetDir } from './targets';
 
 export interface AddOptions {
 	yes?: boolean;
@@ -32,16 +32,26 @@ interface InstallChoice {
 	dir: string;
 }
 
+// Declared tools first, then the other mapped tools marked as undeclared -
+// hiding a real install location is worse than labeling it honestly.
 export function installChoices(declared: Target[], slug: string): InstallChoice[] {
 	const choices: InstallChoice[] = [];
-	for (const tool of mappableDeclaredTargets(declared)) {
+	const ordered = [
+		...MAPPED_TARGETS.filter((t) => declared.includes(t)),
+		...MAPPED_TARGETS.filter((t) => !declared.includes(t)),
+	];
+	for (const tool of ordered) {
+		const note = declared.includes(tool) ? '' : ' - not declared by this skill';
 		const resolved = resolveTargetDir(tool, slug);
 		if (resolved.ok) {
-			choices.push({ label: `${tool} skills folder (${resolved.dir})`, dir: resolved.dir });
+			choices.push({ label: `${tool} skills folder (${resolved.dir})${note}`, dir: resolved.dir });
 		}
 		const global = resolveTargetDir(tool, slug, true);
 		if (global.ok) {
-			choices.push({ label: `${tool} user-level skills folder (${global.dir})`, dir: global.dir });
+			choices.push({
+				label: `${tool} user-level skills folder (${global.dir})${note}`,
+				dir: global.dir,
+			});
 		}
 	}
 	choices.push({ label: `current directory (./${slug})`, dir: slug });
