@@ -1,0 +1,12 @@
+# Keep GitHub language stats focused on the product code.
+blueprint/** linguist-documentation
+.agents/** linguist-documentation
+.claude/** linguist-documentation
+
+# Prototype output is a reference artifact, not production source.
+prototypes/** linguist-generated
+
+# Generated output, if it ever gets committed by mistake.
+**/dist/** linguist-generated
+**/.astro/** linguist-generated
+**/coverage/** linguist-generated
