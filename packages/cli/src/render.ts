@@ -2,6 +2,7 @@ import {
 	PERMISSIONS,
 	type PermissionKey,
 	type PublicPreflight,
+	type PublicSkillDetail,
 	type ReportFinding,
 	type ValidationStatus,
 } from 'skill-schema';
@@ -44,6 +45,29 @@ export function renderFindings(title: string, findings: ReportFinding[]): string
 		return [];
 	}
 	return [`${title} (${findings.length})`, ...findings.map(findingLine)];
+}
+
+export function renderPreflightReport(
+	detail: PublicSkillDetail,
+	preflight: PublicPreflight,
+): string[] {
+	const attribution = detail.attributedTo ? ` (curated from ${detail.attributedTo})` : '';
+	const lines = [
+		`Skill     ${detail.name} by ${detail.maintainer}${attribution}`,
+		`Version   ${preflight.version}`,
+		`Status    ${statusLabel(preflight.validationStatus)}`,
+		`Risk      ${preflight.riskLevel}`,
+		`Source    ${preflight.sourceHash} ${preflight.sourceVerified ? '(verified)' : '(HASH MISMATCH)'}`,
+		`Generated ${preflight.generatedAt.slice(0, 10)}`,
+		'',
+		...renderPermissions(preflight.permissions.declared, preflight.permissions.detected),
+		'',
+		...renderDiff(preflight.diff),
+	];
+	if (preflight.blocked) {
+		lines.push('', `BLOCKED: ${preflight.blockedReason ?? 'this version cannot be downloaded'}`);
+	}
+	return lines;
 }
 
 export function renderDiff(diff: PublicPreflight['diff']): string[] {

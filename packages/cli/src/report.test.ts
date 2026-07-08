@@ -4,7 +4,8 @@ import {
 	type PublicSkillDetail,
 } from 'skill-schema';
 import { describe, expect, it, vi } from 'vitest';
-import { parseSkillRef, runReport } from './report';
+import { parseSkillRef } from './api';
+import { runReport } from './report';
 
 const detail: PublicSkillDetail = {
 	slug: 'smoke-clean',

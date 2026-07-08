@@ -4,6 +4,8 @@ import { renderFindings, renderPermissions, statusLabel } from './render';
 export interface CommandResult {
 	lines: string[];
 	exitCode: number;
+	// True when the command already printed its lines itself (interactive add).
+	streamed?: boolean;
 }
 
 // Exit codes are contract: 0 passed/warning, 1 failed, 2 unreadable package.

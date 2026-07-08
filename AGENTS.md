@@ -86,9 +86,11 @@ proxy into `apps/web`.
 - Astro CLI passthrough: `pnpm astro <cmd>` (e.g. `pnpm astro add react`)
 - Test (Vitest, run once): `pnpm test`
 - Test (watch): `pnpm test:watch`
-- Skills CLI: `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` (or
-  `node packages/cli/bin/aiskills.mjs ...`); `--json` for machine output,
-  `AISKILLS_API` overrides the API base URL for `report`
+- Skills CLI: `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
+  `pnpm cli add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]`
+  (or `node packages/cli/bin/aiskills.mjs ...`); `--target claude-code` installs to
+  `.claude/skills/`, `--target codex` to `.agents/skills/`; `--json` for machine
+  output, `AISKILLS_API` overrides the API base URL for `report` and `add`
 
 `pnpm test` runs Vitest across the monorepo (`apps/*`, `packages/*`) via the root
 `vitest.config.ts`. **The `test` command is declared, so tests are a gate:** a

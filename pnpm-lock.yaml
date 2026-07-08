@@ -305,6 +305,9 @@ importers:
 
   packages/cli:
     dependencies:
+      fflate:
+        specifier: ^0.8.3
+        version: 0.8.3
       skill-schema:
         specifier: workspace:*
         version: link:../skill-schema

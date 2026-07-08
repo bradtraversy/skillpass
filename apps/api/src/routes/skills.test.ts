@@ -512,6 +512,23 @@ describe('GET /skills/:slug/:version/download', () => {
 		});
 	});
 
+	it('records a cli download event when ?source=cli', async () => {
+		mockVerified();
+		const res = await app.request('/skills/smoke-clean/1.0.0/download?source=cli');
+		expect(res.status).toBe(200);
+		expect(vi.mocked(recordDownload)).toHaveBeenCalledWith(expect.anything(), {
+			skillVersionId: 1,
+			userId: null,
+			source: 'cli',
+		});
+	});
+
+	it('400s an unknown source before any lookup', async () => {
+		const res = await app.request('/skills/smoke-clean/1.0.0/download?source=curl');
+		expect(res.status).toBe(400);
+		expect(vi.mocked(findPublishedSkillBySlug)).not.toHaveBeenCalled();
+	});
+
 	it('attributes the event when a valid session cookie rides along', async () => {
 		mockVerified();
 		await app.request('/skills/smoke-clean/1.0.0/download', {

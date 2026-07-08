@@ -89,6 +89,10 @@ export function skillRoutes(env: Env, db: Db) {
 	});
 
 	routes.get('/:slug/:version/download', async (c) => {
+		const source = c.req.query('source') ?? 'web';
+		if (source !== 'web' && source !== 'cli') {
+			return c.json({ success: false, error: 'source must be "web" or "cli"' }, 400);
+		}
 		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
 		if (!record) {
 			return c.json({ success: false, error: 'not found' }, 404);
@@ -122,7 +126,7 @@ export function skillRoutes(env: Env, db: Db) {
 		);
 		const userId = await readSessionUserId(c, env);
 		try {
-			await recordDownload(db, { skillVersionId: pinned.version.id, userId, source: 'web' });
+			await recordDownload(db, { skillVersionId: pinned.version.id, userId, source });
 		} catch (err) {
 			// Attribution must never block a verified download.
 			console.error(`download: event insert failed for version ${pinned.version.id}: ${err}`);

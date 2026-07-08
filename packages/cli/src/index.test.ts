@@ -8,6 +8,8 @@ describe('parseCliArgs', () => {
 			positional: ['./pkg'],
 			json: true,
 			help: false,
+			yes: false,
+			global: false,
 		});
 	});
 
@@ -17,6 +19,32 @@ describe('parseCliArgs', () => {
 			positional: [],
 			json: false,
 			help: false,
+			yes: false,
+			global: false,
+		});
+	});
+
+	it('parses --dir with a value and --yes', () => {
+		expect(parseCliArgs(['add', 'smoke-clean', '--dir', './here', '--yes'])).toEqual({
+			command: 'add',
+			positional: ['smoke-clean'],
+			json: false,
+			help: false,
+			yes: true,
+			global: false,
+			dir: './here',
+		});
+	});
+
+	it('parses --target with a value and --global', () => {
+		expect(parseCliArgs(['add', 'smoke-clean', '--target', 'claude-code', '--global'])).toEqual({
+			command: 'add',
+			positional: ['smoke-clean'],
+			json: false,
+			help: false,
+			yes: false,
+			global: true,
+			target: 'claude-code',
 		});
 	});
 });
@@ -43,5 +71,11 @@ describe('run', () => {
 		const result = await run(['scan']);
 		expect(result.exitCode).toBe(2);
 		expect(result.lines[0]).toContain('needs a path');
+	});
+
+	it('requires a slug for add', async () => {
+		const result = await run(['add']);
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toContain('needs a skill slug');
 	});
 });
