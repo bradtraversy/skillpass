@@ -88,6 +88,20 @@ export async function listPublishedSkills(db: Db): Promise<PublishedSkillRecord[
 		.orderBy(desc(skillVersions.publishedAt), desc(skills.id));
 }
 
+export async function listPublishedSkillsByMaintainer(
+	db: Db,
+	maintainerId: number,
+): Promise<PublishedSkillRecord[]> {
+	return db
+		.select({ skill: skills, version: skillVersions, passport: skillPassports, maintainer: users })
+		.from(skills)
+		.innerJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
+		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
+		.innerJoin(users, eq(skills.maintainerId, users.id))
+		.where(and(eq(skills.status, 'published'), eq(skills.maintainerId, maintainerId)))
+		.orderBy(desc(skillVersions.publishedAt), desc(skills.id));
+}
+
 export async function findPublishedSkillBySlug(
 	db: Db,
 	slug: string,

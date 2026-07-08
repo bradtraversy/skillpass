@@ -152,6 +152,26 @@ export const skillVersions = pgTable(
 
 export type SkillVersionRow = typeof skillVersions.$inferSelect;
 
+export const reputationInputType = pgEnum('reputation_input_type', [
+	'skill_published',
+	'version_published',
+	'report_actioned',
+]);
+
+// The ledger is the truth, users.reputation is the cached roll-up; rows are
+// never edited, and they store the weight they were awarded with.
+export const reputationInputs = pgTable('reputation_inputs', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id),
+	type: reputationInputType('type').notNull(),
+	weight: integer('weight').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type ReputationInputRow = typeof reputationInputs.$inferSelect;
+
 export const downloadSource = pgEnum('download_source', ['web', 'cli']);
 
 // The overview's Download/InstallEvent model - first-party install counts

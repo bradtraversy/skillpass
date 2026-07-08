@@ -41,6 +41,11 @@ export async function findById(db: Db, id: number): Promise<UserRow | undefined>
 	return row;
 }
 
+export async function findByUsername(db: Db, username: string): Promise<UserRow | undefined> {
+	const [row] = await db.select().from(users).where(eq(users.username, username));
+	return row;
+}
+
 // Identity is githubId; profile fields refresh on every sign-in so GitHub
 // renames stay current.
 export async function upsertFromGithub(db: Db, profile: GithubProfile): Promise<UserRow> {

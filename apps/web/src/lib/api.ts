@@ -1,6 +1,7 @@
 import type {
 	ApiEnvelope,
 	PublicPreflight,
+	PublicProfile,
 	PublicSkillDetail,
 	PublicSkillSource,
 	PublicSkillSummary,
@@ -73,6 +74,10 @@ export function getSkillSource(
 	version: string,
 ): Promise<ApiResult<PublicSkillSource>> {
 	return request(`/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/source`);
+}
+
+export function getProfile(username: string): Promise<ApiResult<PublicProfile>> {
+	return request(`/users/${encodeURIComponent(username)}`);
 }
 
 export function getPreflight(slug: string, version: string): Promise<ApiResult<PublicPreflight>> {

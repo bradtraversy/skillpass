@@ -8,6 +8,7 @@ import type { ValidationQueue } from './queue/queue';
 import { authRoutes } from './routes/auth';
 import { skillRoutes } from './routes/skills';
 import { submissionRoutes } from './routes/submissions';
+import { userRoutes } from './routes/users';
 
 export function createApp(env: Env, db: Db, queue: ValidationQueue) {
 	const app = new Hono<{ Variables: AuthVariables }>();
@@ -24,6 +25,7 @@ export function createApp(env: Env, db: Db, queue: ValidationQueue) {
 	app.route('/auth', authRoutes(env, db));
 	app.route('/skills', skillRoutes(env, db));
 	app.route('/submissions', submissionRoutes(env, db, queue));
+	app.route('/users', userRoutes(db));
 
 	app.get('/me', requireAuth(env, db), (c) =>
 		c.json({ success: true, data: publicUser(c.get('user')) }),

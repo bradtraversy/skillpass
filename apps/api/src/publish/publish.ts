@@ -10,6 +10,7 @@ import {
 	setLatestVersion,
 } from '../db/skills';
 import { setSubmissionStatus } from '../db/submissions';
+import { awardReputation } from '../reputation/reputation';
 import { buildPassport } from './passport';
 
 export interface PublishInput {
@@ -78,6 +79,13 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 
 	await setLatestVersion(db, skill.id, versionRow.id, { name: input.name, summary: input.summary }, now);
 	await setSubmissionStatus(db, submission.id, 'published');
+
+	try {
+		await awardReputation(db, submission.userId, existing ? 'version_published' : 'skill_published');
+	} catch (err) {
+		// Reputation is derived data; an award failure must not fail the publish.
+		console.error(`publish: reputation award failed for user ${submission.userId}: ${err}`);
+	}
 
 	return { success: true, data: { slug, version } };
 }

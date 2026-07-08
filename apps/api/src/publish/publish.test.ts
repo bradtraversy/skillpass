@@ -11,6 +11,7 @@ import {
 	setLatestVersion,
 } from '../db/skills';
 import { setSubmissionStatus } from '../db/submissions';
+import { awardReputation } from '../reputation/reputation';
 import { publishSubmission } from './publish';
 
 vi.mock('../db/skills', () => ({
@@ -24,6 +25,10 @@ vi.mock('../db/skills', () => ({
 vi.mock('../db/submissions', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../db/submissions')>()),
 	setSubmissionStatus: vi.fn(),
+}));
+vi.mock('../reputation/reputation', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../reputation/reputation')>()),
+	awardReputation: vi.fn(),
 }));
 
 const db = {} as Db;
@@ -217,6 +222,47 @@ describe('publishSubmission', () => {
 			NOW,
 		);
 		expect(setSubmissionStatus).toHaveBeenCalledWith(db, 2, 'published');
+		expect(awardReputation).toHaveBeenCalledWith(db, 7, 'version_published');
+	});
+
+	it('awards skill_published reputation on a first publish', async () => {
+		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
+		vi.mocked(createSkill).mockResolvedValue(skillRow);
+		vi.mocked(findLatestVersionForSkill).mockResolvedValue(undefined);
+		vi.mocked(createSkillVersion).mockResolvedValue(versionRow());
+
+		const outcome = await publishSubmission(db, {
+			submission: githubSubmission,
+			report: reportRow,
+			name: 'Clean Skill',
+			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
+			attributedTo: null,
+			now: NOW,
+		});
+
+		expect(outcome.success).toBe(true);
+		expect(awardReputation).toHaveBeenCalledWith(db, 7, 'skill_published');
+	});
+
+	it('still publishes when the reputation award fails', async () => {
+		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
+		vi.mocked(createSkill).mockResolvedValue(skillRow);
+		vi.mocked(findLatestVersionForSkill).mockResolvedValue(undefined);
+		vi.mocked(createSkillVersion).mockResolvedValue(versionRow());
+		vi.mocked(awardReputation).mockRejectedValue(new Error('db down'));
+
+		const outcome = await publishSubmission(db, {
+			submission: githubSubmission,
+			report: reportRow,
+			name: 'Clean Skill',
+			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
+			attributedTo: null,
+			now: NOW,
+		});
+
+		expect(outcome).toEqual({ success: true, data: { slug: 'clean-skill', version: '1.0.0' } });
 	});
 
 	it('refuses a slug owned by another maintainer without writing anything', async () => {
@@ -237,5 +283,6 @@ describe('publishSubmission', () => {
 		expect(createSkillVersion).not.toHaveBeenCalled();
 		expect(createSkillPassport).not.toHaveBeenCalled();
 		expect(setSubmissionStatus).not.toHaveBeenCalled();
+		expect(awardReputation).not.toHaveBeenCalled();
 	});
 });

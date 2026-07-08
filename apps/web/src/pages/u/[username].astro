@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/nav/Nav.astro';
+import Profile from '../../components/profile/Profile';
+import { API_URL } from '../../lib/api';
+
+// Build-time route discovery only; the island fetches fresh data at runtime.
+// An unreachable API means no pre-built pages, never a failed build. In dev,
+// Astro re-runs this per request, so new maintainers get pages immediately.
+export async function getStaticPaths() {
+	try {
+		const res = await fetch(`${API_URL}/skills`);
+		const body = (await res.json()) as { success: boolean; data: { maintainer: string }[] };
+		if (!body.success) throw new Error('skills list returned an error');
+		const usernames = [...new Set(body.data.map((skill) => skill.maintainer))];
+		return usernames.map((username) => ({ params: { username } }));
+	} catch (err) {
+		console.warn('getStaticPaths(/u/[username]): API unreachable, building no profile pages', err);
+		return [];
+	}
+}
+
+const { username } = Astro.params;
+---
+
+<BaseLayout title={`${username} - Maintainer Profile`}>
+	<Nav />
+	<main class="mx-auto max-w-[760px] px-6">
+		<a
+			href="/"
+			class="inline-flex items-center gap-[7px] pt-[26px] text-[13px] text-muted hover:text-text"
+		>
+			<svg
+				width="15"
+				height="15"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="m15 18-6-6 6-6"></path>
+			</svg>
+			Skills
+		</a>
+		<Profile client:load username={username} />
+	</main>
+</BaseLayout>

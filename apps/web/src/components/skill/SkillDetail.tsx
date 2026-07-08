@@ -88,7 +88,10 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 
 			<section className="mt-[26px]">
 				<h2 className={SECTION_HEADING}>Maintainer</h2>
-				<div className="flex items-center gap-[12px]">
+				<a
+					href={`/u/${detail.maintainerInfo.username}`}
+					className="flex items-center gap-[12px] rounded-md hover:bg-surface"
+				>
 					<img
 						src={detail.maintainerInfo.avatarUrl}
 						alt=""
@@ -106,7 +109,7 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 							)}
 						</div>
 					</div>
-				</div>
+				</a>
 			</section>
 
 			<footer className="py-[46px] text-center text-[12.5px] text-faint">
