@@ -31,9 +31,9 @@ describe('getMe', () => {
 		expect(init.credentials).toBe('include');
 	});
 
-	it('passes an API error envelope through untouched', async () => {
+	it('attaches the HTTP status to API error envelopes', async () => {
 		mockFetch({ status: 401, json: { success: false, error: 'unauthorized' } });
-		expect(await getMe()).toEqual({ success: false, error: 'unauthorized' });
+		expect(await getMe()).toEqual({ success: false, error: 'unauthorized', status: 401 });
 	});
 });
 
@@ -64,7 +64,7 @@ describe('submitZip', () => {
 });
 
 describe('request failure mapping', () => {
-	it('maps a network failure to a friendly envelope', async () => {
+	it('maps a network failure to a friendly envelope with no status', async () => {
 		mockFetch({ reject: new Error('ECONNREFUSED') });
 		expect(await getMe()).toEqual({ success: false, error: 'cannot reach the API - is it running?' });
 	});
@@ -74,6 +74,7 @@ describe('request failure mapping', () => {
 		expect(await getMe()).toEqual({
 			success: false,
 			error: 'unexpected response from the API (502)',
+			status: 502,
 		});
 	});
 
@@ -82,6 +83,7 @@ describe('request failure mapping', () => {
 		expect(await getMe()).toEqual({
 			success: false,
 			error: 'unexpected response from the API (200)',
+			status: 200,
 		});
 	});
 });

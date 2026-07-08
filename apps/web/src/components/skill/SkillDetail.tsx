@@ -25,7 +25,7 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 			if (cancelled) return;
 			if (res.success) {
 				setLoad({ phase: 'ready', detail: res.data });
-			} else if (res.error === 'not found') {
+			} else if (res.status === 404) {
 				setLoad({ phase: 'notfound' });
 			} else {
 				setLoad({ phase: 'error', message: res.error });

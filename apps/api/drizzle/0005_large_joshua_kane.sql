@@ -1,0 +1,1 @@
+ALTER TABLE "skill_versions" ADD CONSTRAINT "skill_versions_skill_id_version_unique" UNIQUE("skill_id","version");

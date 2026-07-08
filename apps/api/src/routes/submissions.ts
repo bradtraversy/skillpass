@@ -318,10 +318,14 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
 			const pgErr = err as { code?: string; constraint?: string };
 			if (pgErr.code === '23505') {
 				console.error(`publish: unique conflict for submission ${id}`, err);
+				// A version-number collision means we raced another publish of the
+				// same skill; unlike the other conflicts, a retry succeeds.
 				const error =
 					pgErr.constraint === 'skills_slug_unique'
 						? 'that skill name is already taken'
-						: ALREADY_PUBLISHED;
+						: pgErr.constraint === 'skill_versions_skill_id_version_unique'
+							? 'another publish for this skill was in flight; try again'
+							: ALREADY_PUBLISHED;
 				return c.json({ success: false, error }, 409);
 			}
 			throw err;

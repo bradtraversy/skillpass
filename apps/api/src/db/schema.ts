@@ -5,6 +5,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import {
@@ -122,26 +123,32 @@ export const skills = pgTable('skills', {
 
 export type SkillRow = typeof skills.$inferSelect;
 
-// submissionId is unique: a submission publishes at most once, retries 409 here.
-export const skillVersions = pgTable('skill_versions', {
-	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-	skillId: integer('skill_id')
-		.notNull()
-		.references(() => skills.id),
-	version: text('version').notNull(),
-	sourceType: versionSourceType('source_type').notNull(),
-	githubRepoUrl: text('github_repo_url'),
-	resolvedCommitSha: text('resolved_commit_sha'),
-	sourceHash: text('source_hash').notNull(),
-	snapshotKey: text('snapshot_key').notNull(),
-	targets: jsonb('targets').$type<Target[]>().notNull().default([]),
-	submissionId: integer('submission_id')
-		.notNull()
-		.unique()
-		.references(() => submissions.id),
-	publishedAt: timestamp('published_at', { withTimezone: true }),
-	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+// submissionId is unique: a submission publishes at most once, retries 409
+// here. (skillId, version) is unique so concurrent re-publishes can't mint
+// duplicate version numbers - the loser 409s and retries with the next number.
+export const skillVersions = pgTable(
+	'skill_versions',
+	{
+		id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+		skillId: integer('skill_id')
+			.notNull()
+			.references(() => skills.id),
+		version: text('version').notNull(),
+		sourceType: versionSourceType('source_type').notNull(),
+		githubRepoUrl: text('github_repo_url'),
+		resolvedCommitSha: text('resolved_commit_sha'),
+		sourceHash: text('source_hash').notNull(),
+		snapshotKey: text('snapshot_key').notNull(),
+		targets: jsonb('targets').$type<Target[]>().notNull().default([]),
+		submissionId: integer('submission_id')
+			.notNull()
+			.unique()
+			.references(() => submissions.id),
+		publishedAt: timestamp('published_at', { withTimezone: true }),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [unique('skill_versions_skill_id_version_unique').on(t.skillId, t.version)],
+);
 
 export type SkillVersionRow = typeof skillVersions.$inferSelect;
 

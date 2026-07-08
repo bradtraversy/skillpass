@@ -19,7 +19,14 @@ export interface CurrentUser {
 	avatarUrl: string;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
+// The API's envelope, with the HTTP status attached to failures so islands
+// can branch on it (404 vs outage) without matching error copy. A network
+// failure has no response, so status stays undefined.
+export type ApiResult<T> =
+	| { success: true; data: T }
+	| { success: false; error: string; status?: number };
+
+async function request<T>(path: string, init?: RequestInit): Promise<ApiResult<T>> {
 	let res: Response;
 	try {
 		res = await fetch(`${API_URL}${path}`, { credentials: 'include', ...init });
@@ -30,23 +37,32 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope
 	try {
 		body = await res.json();
 	} catch {
-		return { success: false, error: `unexpected response from the API (${res.status})` };
+		return {
+			success: false,
+			error: `unexpected response from the API (${res.status})`,
+			status: res.status,
+		};
 	}
 	if (typeof body === 'object' && body !== null && 'success' in body) {
-		return body as ApiEnvelope<T>;
+		const envelope = body as ApiEnvelope<T>;
+		return envelope.success ? envelope : { ...envelope, status: res.status };
 	}
-	return { success: false, error: `unexpected response from the API (${res.status})` };
+	return {
+		success: false,
+		error: `unexpected response from the API (${res.status})`,
+		status: res.status,
+	};
 }
 
-export function getMe(): Promise<ApiEnvelope<CurrentUser>> {
+export function getMe(): Promise<ApiResult<CurrentUser>> {
 	return request('/me');
 }
 
-export function getSkills(): Promise<ApiEnvelope<PublicSkillSummary[]>> {
+export function getSkills(): Promise<ApiResult<PublicSkillSummary[]>> {
 	return request('/skills');
 }
 
-export function getSkill(slug: string, version?: string): Promise<ApiEnvelope<PublicSkillDetail>> {
+export function getSkill(slug: string, version?: string): Promise<ApiResult<PublicSkillDetail>> {
 	const base = `/skills/${encodeURIComponent(slug)}`;
 	return request(version ? `${base}/${encodeURIComponent(version)}` : base);
 }
@@ -54,11 +70,11 @@ export function getSkill(slug: string, version?: string): Promise<ApiEnvelope<Pu
 export function getSkillSource(
 	slug: string,
 	version: string,
-): Promise<ApiEnvelope<PublicSkillSource>> {
+): Promise<ApiResult<PublicSkillSource>> {
 	return request(`/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/source`);
 }
 
-export function submitGithubUrl(githubUrl: string): Promise<ApiEnvelope<PublicSubmission>> {
+export function submitGithubUrl(githubUrl: string): Promise<ApiResult<PublicSubmission>> {
 	return request('/submissions', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -66,21 +82,21 @@ export function submitGithubUrl(githubUrl: string): Promise<ApiEnvelope<PublicSu
 	});
 }
 
-export function submitZip(file: File): Promise<ApiEnvelope<PublicSubmission>> {
+export function submitZip(file: File): Promise<ApiResult<PublicSubmission>> {
 	const form = new FormData();
 	form.set('file', file);
 	return request('/submissions/zip', { method: 'POST', body: form });
 }
 
-export function getValidation(id: number): Promise<ApiEnvelope<PublicValidation>> {
+export function getValidation(id: number): Promise<ApiResult<PublicValidation>> {
 	return request(`/submissions/${id}/validation`);
 }
 
-export function publishSubmission(id: number): Promise<ApiEnvelope<PublishResult>> {
+export function publishSubmission(id: number): Promise<ApiResult<PublishResult>> {
 	return request(`/submissions/${id}/publish`, { method: 'POST' });
 }
 
-export function logout(): Promise<ApiEnvelope<{ loggedOut: boolean }>> {
+export function logout(): Promise<ApiResult<{ loggedOut: boolean }>> {
 	return request('/auth/logout', { method: 'POST' });
 }
 

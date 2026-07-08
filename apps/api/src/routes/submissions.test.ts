@@ -772,6 +772,22 @@ describe('POST /submissions/:id/publish', () => {
 		);
 	});
 
+	it('maps a version-number race to a retryable 409', async () => {
+		mockPublishPath();
+		vi.mocked(publishSubmission).mockRejectedValue(
+			Object.assign(new Error('duplicate key value violates unique constraint'), {
+				code: '23505',
+				constraint: 'skill_versions_skill_id_version_unique',
+			}),
+		);
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(409);
+		expect(await res.json()).toEqual({
+			success: false,
+			error: 'another publish for this skill was in flight; try again',
+		});
+	});
+
 	it('maps a submissionId unique-constraint race to the already-published 409', async () => {
 		mockPublishPath();
 		vi.mocked(publishSubmission).mockRejectedValue(
