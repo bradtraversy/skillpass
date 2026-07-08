@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { getSignedCookie } from 'hono/cookie';
 import type { Db } from '../db/client';
 import { findById } from '../db/users';
@@ -27,4 +27,15 @@ export function requireAuth(env: Env, db: Db): MiddlewareHandler<{ Variables: Au
 		c.set('user', user);
 		await next();
 	};
+}
+
+// Optional read for anonymous routes that attribute when they can: a valid
+// session yields the user id, anything else yields null - never a 401.
+export async function readSessionUserId(c: Context, env: Env): Promise<number | null> {
+	const value = await getSignedCookie(c, env.SESSION_SECRET, SESSION_COOKIE);
+	if (typeof value !== 'string') {
+		return null;
+	}
+	const id = Number(value);
+	return Number.isInteger(id) ? id : null;
 }

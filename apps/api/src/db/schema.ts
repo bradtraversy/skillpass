@@ -152,6 +152,22 @@ export const skillVersions = pgTable(
 
 export type SkillVersionRow = typeof skillVersions.$inferSelect;
 
+export const downloadSource = pgEnum('download_source', ['web', 'cli']);
+
+// The overview's Download/InstallEvent model - first-party install counts
+// roll up from here. userId is attribution only; downloads stay anonymous.
+export const downloadEvents = pgTable('download_events', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	skillVersionId: integer('skill_version_id')
+		.notNull()
+		.references(() => skillVersions.id),
+	userId: integer('user_id').references(() => users.id),
+	source: downloadSource('source').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type DownloadEventRow = typeof downloadEvents.$inferSelect;
+
 // Immutable by omission: no update path exists for passports.
 export const skillPassports = pgTable('skill_passports', {
 	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),

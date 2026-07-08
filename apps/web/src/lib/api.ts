@@ -1,5 +1,6 @@
 import type {
 	ApiEnvelope,
+	PublicPreflight,
 	PublicSkillDetail,
 	PublicSkillSource,
 	PublicSkillSummary,
@@ -72,6 +73,15 @@ export function getSkillSource(
 	version: string,
 ): Promise<ApiResult<PublicSkillSource>> {
 	return request(`/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/source`);
+}
+
+export function getPreflight(slug: string, version: string): Promise<ApiResult<PublicPreflight>> {
+	return request(`/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/preflight`);
+}
+
+// A plain href - the browser handles the zip attachment itself.
+export function downloadUrl(slug: string, version: string): string {
+	return `${API_URL}/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/download`;
 }
 
 export function submitGithubUrl(githubUrl: string): Promise<ApiResult<PublicSubmission>> {

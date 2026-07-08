@@ -1,10 +1,18 @@
+import { strFromU8, unzipSync } from 'fflate';
+import { Hono } from 'hono';
+import { setSignedCookie } from 'hono/cookie';
 import {
+	publicPreflightSchema,
 	publicSkillDetailSchema,
 	publicSkillSourceSchema,
 	publicSkillSummarySchema,
 } from 'skill-schema';
+import { loadPackageFromFiles } from 'validator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
+import { SESSION_COOKIE } from '../auth/middleware';
+import { recordDownload } from '../db/downloads';
+import { BLOCKED_REASON } from './skills';
 import type { Db } from '../db/client';
 import type { SkillPassportRow, SkillRow, SkillVersionRow, UserRow } from '../db/schema';
 import {
@@ -30,6 +38,7 @@ vi.mock('../storage/r2', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../storage/r2')>()),
 	getSnapshotDocument: vi.fn(),
 }));
+vi.mock('../db/downloads', () => ({ recordDownload: vi.fn() }));
 
 const env = loadEnv(RAW_TEST_ENV);
 const app = createApp(env, {} as Db, {} as ValidationQueue);
@@ -278,5 +287,290 @@ describe('GET /skills/:slug/:version/source', () => {
 		const text = JSON.stringify(await res.json());
 		expect(text).not.toContain('snapshotKey');
 		expect(text).not.toContain('snapshots/abc.json');
+	});
+});
+
+describe('GET /skills/:slug/:version/preflight', () => {
+	const FILES = [
+		{ path: 'SKILL.md', content: '# smoke-clean\n' },
+		{ path: 'skill.json', content: '{"name":"smoke-clean"}' },
+	];
+	// The real validator hash of FILES, so sourceVerified exercises hash parity.
+	const REAL_HASH = loadPackageFromFiles(FILES).sourceHash;
+
+	const currentVersion: SkillVersionRow = {
+		...version,
+		id: 2,
+		version: '2.0.0',
+		sourceHash: REAL_HASH,
+	};
+	const currentPassport: SkillPassportRow = {
+		...passport,
+		id: 2,
+		skillVersionId: 2,
+		passport: {
+			...passport.passport,
+			sourceHash: REAL_HASH,
+			permissionsSummary: {
+				declared: ['network.fetch'],
+				detected: ['network.fetch', 'shell.execute'],
+			},
+		},
+	};
+	const previousPassport: SkillPassportRow = {
+		...passport,
+		passport: {
+			...passport.passport,
+			permissionsSummary: { declared: ['network.fetch', 'env.read'], detected: ['network.fetch'] },
+		},
+	};
+
+	function mockPinned(pinned: { version: SkillVersionRow; passport: SkillPassportRow }) {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findVersionWithPassport).mockResolvedValue(pinned);
+		vi.mocked(getSnapshotDocument).mockResolvedValue({
+			success: true,
+			data: { version: 1, files: FILES },
+		});
+	}
+
+	it('404s an unknown skill before touching R2', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(undefined);
+		const res = await app.request('/skills/nope/1.0.0/preflight');
+		expect(res.status).toBe(404);
+		expect(vi.mocked(getSnapshotDocument)).not.toHaveBeenCalled();
+	});
+
+	it('404s an unknown version of a known skill', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findVersionWithPassport).mockResolvedValue(undefined);
+		const res = await app.request('/skills/smoke-clean/9.9.9/preflight');
+		expect(res.status).toBe(404);
+	});
+
+	it('returns a verified preflight with the diff against the previous version', async () => {
+		mockPinned({ version: currentVersion, passport: currentPassport });
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([
+			{ version: currentVersion, passport: currentPassport },
+			{ version, passport: previousPassport },
+		]);
+		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: unknown };
+		expect(publicPreflightSchema.parse(body.data)).toEqual({
+			version: '2.0.0',
+			validationStatus: 'passed',
+			riskLevel: 'low',
+			sourceHash: REAL_HASH,
+			sourceVerified: true,
+			resolvedCommitSha: null,
+			generatedAt: NOW.toISOString(),
+			permissions: {
+				declared: ['network.fetch'],
+				detected: ['network.fetch', 'shell.execute'],
+			},
+			diff: {
+				previousVersion: '1.0.0',
+				declared: { added: [], removed: ['env.read'] },
+				detected: { added: ['shell.execute'], removed: [] },
+			},
+			blocked: false,
+			blockedReason: null,
+		});
+	});
+
+	it('returns a null diff for the first published version', async () => {
+		mockPinned({ version: currentVersion, passport: currentPassport });
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([
+			{ version: currentVersion, passport: currentPassport },
+		]);
+		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
+		const body = (await res.json()) as { data: unknown };
+		expect(publicPreflightSchema.parse(body.data).diff).toBeNull();
+	});
+
+	it('reports sourceVerified false when the snapshot does not match the pinned hash', async () => {
+		const tampered: SkillVersionRow = { ...currentVersion, sourceHash: 'sha256:pinned-other' };
+		mockPinned({ version: tampered, passport: currentPassport });
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([
+			{ version: tampered, passport: currentPassport },
+		]);
+		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: unknown };
+		expect(publicPreflightSchema.parse(body.data).sourceVerified).toBe(false);
+	});
+
+	it('marks a failed version blocked with a reason', async () => {
+		const failedPassport: SkillPassportRow = {
+			...currentPassport,
+			validationStatus: 'failed',
+			riskLevel: 'critical',
+			passport: { ...currentPassport.passport, validationStatus: 'failed', riskLevel: 'critical' },
+		};
+		mockPinned({ version: currentVersion, passport: failedPassport });
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([
+			{ version: currentVersion, passport: failedPassport },
+		]);
+		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
+		const body = (await res.json()) as { data: unknown };
+		const preflight = publicPreflightSchema.parse(body.data);
+		expect(preflight.blocked).toBe(true);
+		expect(preflight.blockedReason).toBe(BLOCKED_REASON);
+	});
+
+	it('502s when R2 is down', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findVersionWithPassport).mockResolvedValue({ version, passport });
+		vi.mocked(getSnapshotDocument).mockResolvedValue({
+			success: false,
+			error: 'r2 get failed (500)',
+		});
+		const res = await app.request('/skills/smoke-clean/1.0.0/preflight');
+		expect(res.status).toBe(502);
+	});
+
+	it('leaks no internal fields', async () => {
+		mockPinned({ version: currentVersion, passport: currentPassport });
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([
+			{ version: currentVersion, passport: currentPassport },
+		]);
+		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
+		const text = JSON.stringify(await res.json());
+		expect(text).not.toContain('snapshotKey');
+		expect(text).not.toContain('githubId');
+		expect(text).not.toContain('submissionId');
+		expect(text).not.toContain('snapshots/');
+	});
+});
+
+describe('GET /skills/:slug/:version/download', () => {
+	const FILES = [
+		{ path: 'SKILL.md', content: '# smoke-clean\n' },
+		{ path: 'skill.json', content: '{"name":"smoke-clean"}' },
+	];
+	const REAL_HASH = loadPackageFromFiles(FILES).sourceHash;
+
+	const verifiedVersion: SkillVersionRow = { ...version, sourceHash: REAL_HASH };
+	const verifiedPassport: SkillPassportRow = {
+		...passport,
+		passport: { ...passport.passport, sourceHash: REAL_HASH },
+	};
+
+	async function sessionCookie(id: number): Promise<string> {
+		const signer = new Hono();
+		signer.get('/', async (c) => {
+			await setSignedCookie(c, SESSION_COOKIE, String(id), env.SESSION_SECRET);
+			return c.text('ok');
+		});
+		const res = await signer.request('/');
+		return res.headers.getSetCookie()[0].split(';')[0];
+	}
+
+	function mockVerified() {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findVersionWithPassport).mockResolvedValue({
+			version: verifiedVersion,
+			passport: verifiedPassport,
+		});
+		vi.mocked(getSnapshotDocument).mockResolvedValue({
+			success: true,
+			data: { version: 1, files: FILES },
+		});
+	}
+
+	it('404s an unknown skill or version', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(undefined);
+		expect((await app.request('/skills/nope/1.0.0/download')).status).toBe(404);
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findVersionWithPassport).mockResolvedValue(undefined);
+		expect((await app.request('/skills/smoke-clean/9.9.9/download')).status).toBe(404);
+		expect(vi.mocked(recordDownload)).not.toHaveBeenCalled();
+	});
+
+	it('serves a zip that round-trips to the snapshot files, with attachment headers', async () => {
+		mockVerified();
+		const res = await app.request('/skills/smoke-clean/1.0.0/download');
+		expect(res.status).toBe(200);
+		expect(res.headers.get('Content-Type')).toBe('application/zip');
+		expect(res.headers.get('Content-Disposition')).toBe(
+			'attachment; filename="smoke-clean-1.0.0.zip"',
+		);
+		const unzipped = unzipSync(new Uint8Array(await res.arrayBuffer()));
+		expect(Object.keys(unzipped).sort()).toEqual(['SKILL.md', 'skill.json']);
+		expect(strFromU8(unzipped['SKILL.md'])).toBe('# smoke-clean\n');
+		expect(strFromU8(unzipped['skill.json'])).toBe('{"name":"smoke-clean"}');
+	});
+
+	it('records an anonymous web download event', async () => {
+		mockVerified();
+		await app.request('/skills/smoke-clean/1.0.0/download');
+		expect(vi.mocked(recordDownload)).toHaveBeenCalledWith(expect.anything(), {
+			skillVersionId: 1,
+			userId: null,
+			source: 'web',
+		});
+	});
+
+	it('attributes the event when a valid session cookie rides along', async () => {
+		mockVerified();
+		await app.request('/skills/smoke-clean/1.0.0/download', {
+			headers: { Cookie: await sessionCookie(7) },
+		});
+		expect(vi.mocked(recordDownload)).toHaveBeenCalledWith(expect.anything(), {
+			skillVersionId: 1,
+			userId: 7,
+			source: 'web',
+		});
+	});
+
+	it('still serves the download when the event insert fails', async () => {
+		mockVerified();
+		vi.mocked(recordDownload).mockRejectedValue(new Error('db down'));
+		const res = await app.request('/skills/smoke-clean/1.0.0/download');
+		expect(res.status).toBe(200);
+	});
+
+	it('403s a failed version without touching R2', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findVersionWithPassport).mockResolvedValue({
+			version: verifiedVersion,
+			passport: { ...verifiedPassport, validationStatus: 'failed' },
+		});
+		const res = await app.request('/skills/smoke-clean/1.0.0/download');
+		expect(res.status).toBe(403);
+		expect(((await res.json()) as { error: string }).error).toBe(BLOCKED_REASON);
+		expect(vi.mocked(getSnapshotDocument)).not.toHaveBeenCalled();
+		expect(vi.mocked(recordDownload)).not.toHaveBeenCalled();
+	});
+
+	it('502s and serves no bytes when the snapshot fails integrity verification', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findVersionWithPassport).mockResolvedValue({
+			version: { ...verifiedVersion, sourceHash: 'sha256:pinned-other' },
+			passport: verifiedPassport,
+		});
+		vi.mocked(getSnapshotDocument).mockResolvedValue({
+			success: true,
+			data: { version: 1, files: FILES },
+		});
+		const res = await app.request('/skills/smoke-clean/1.0.0/download');
+		expect(res.status).toBe(502);
+		expect(res.headers.get('Content-Type')).not.toBe('application/zip');
+		expect(vi.mocked(recordDownload)).not.toHaveBeenCalled();
+	});
+
+	it('502s when R2 is down', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findVersionWithPassport).mockResolvedValue({
+			version: verifiedVersion,
+			passport: verifiedPassport,
+		});
+		vi.mocked(getSnapshotDocument).mockResolvedValue({
+			success: false,
+			error: 'r2 get failed (500)',
+		});
+		const res = await app.request('/skills/smoke-clean/1.0.0/download');
+		expect(res.status).toBe(502);
 	});
 });

@@ -58,7 +58,7 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 	return (
 		<>
 			<DetailHeader detail={detail} />
-			<InstallBar slug={detail.slug} />
+			<InstallBar slug={detail.slug} version={detail.version} />
 			<Passport detail={detail} />
 
 			<section className="mt-[26px]">
