@@ -33,13 +33,14 @@ helping you write.
 | Small diffs | Implementation happens one reviewed step at a time, with proof each step works. |
 | File-backed state | Plans, current work, and history live in markdown files, so context clears are survivable. |
 | Tool adapters | Codex uses `.agents/skills`; Claude Code uses `.claude/skills`. |
+| Optional visibility | Commit the workflow files for portability, or keep them local with `.gitignore`. |
 
 ## Quick start
 
-Scaffold the app first, then overlay the blueprint on top.
+Scaffold the app first, then install the Blueprint.
 
 > [!IMPORTANT]
-> Scaffold your app first, then overlay the Blueprint. Do not run a framework
+> Scaffold your app first, then install the Blueprint. Do not run a framework
 > scaffolder inside a folder that already contains Blueprint files.
 
 **1. Scaffold your app** in a new, empty directory. Next.js is only an example
@@ -61,45 +62,32 @@ git init
 **2. Add the blueprint** from inside the app:
 
 ```bash
-npx degit bradtraversy/ai-blueprint . --force
+npx create-ai-blueprint@latest
 ```
 
-Prefer a local copy instead of `degit`?
+You can also run `npm create ai-blueprint@latest`.
 
-```bash
-cp -R path/to/ai-blueprint/{AGENTS.md,CLAUDE.md,.agents,.claude,blueprint} .
-```
-
-This drops in `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, and `blueprint/`.
-Codex reads `.agents/skills`; Claude Code reads `.claude/skills`.
-
-Only keep the adapter for the tool you use. Codex-only projects can delete
-`CLAUDE.md` and `.claude/`. Claude Code-only projects can delete `.agents/`, but
-should keep `AGENTS.md` because `CLAUDE.md` imports it.
-
-### Which files do I need?
-
-| Setup | Keep | Optional to delete |
-| ---- | ---- | ---- |
-| Codex only | `AGENTS.md`, `.agents/`, `blueprint/` | `CLAUDE.md`, `.claude/` |
-| Claude Code only | `AGENTS.md`, `CLAUDE.md`, `.claude/`, `blueprint/` | `.agents/` |
-| Codex and Claude Code | `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, `blueprint/` | Nothing |
+The installer asks which AI tool adapters you want and adds only the Blueprint
+workflow files your app needs.
 
 > [!IMPORTANT]
-> After the overlay, run `/onboard` before filling in plans or running
+> After installing, run `/onboard` before filling in plans or running
 > `/overview`. This is the setup pass that makes the Blueprint match your actual
-> project.
+> project. If Claude Code was already open when the Blueprint was installed,
+> restart Claude Code in that folder so the newly added project skills appear.
 
-**3. Run onboard before anything else.** This detects the stack, updates the
-Commands section of `AGENTS.md`, sets the `CLAUDE.md` project title when present,
-tunes `coding-standards.md`, checks `.gitignore`, and confirms which tool
-adapters you need:
+**3. Run onboard before anything else.** This detects the stack and may edit the
+setup files that ship with the overlay: `AGENTS.md` commands, the `CLAUDE.md`
+project title when present, `blueprint/context/coding-standards.md`,
+`blueprint/context/ai-interaction.md`, `.gitignore`, adapter recommendations, and
+README placement. It also asks whether Blueprint workflow files should be
+committed or kept local-only through `.gitignore`:
 
 ```text
 /onboard
 ```
 
-In Codex, invoke it as `$onboard` or ask naturally, such as "run onboard."
+In Codex, invoke it as `$onboard`. In Claude Code, invoke it as `/onboard`.
 
 **4. Review the setup.** Skim
 [blueprint/context/coding-standards.md](blueprint/context/coding-standards.md) and
@@ -145,14 +133,10 @@ In Codex, invoke the same steps as skills (`$overview`, `$feature`, `$implement`
 `$check`, `$complete`) or ask naturally, such as "run the overview." In Claude
 Code, use the slash commands shown above.
 
-Most scaffolders need an empty folder, which is why the app comes first and the
-blueprint is overlaid second. `degit` replaces the app's boilerplate README with
-this one; the `cp` alternative leaves your README in place.
-
 ### Already have a codebase?
 
 If the app already has meaningful shipped features, use `/adopt` instead of
-`/onboard`. Overlay the blueprint files the same way, then run:
+`/onboard`. Install the Blueprint, then run:
 
 ```text
 /adopt
@@ -168,11 +152,15 @@ AI loops are popular because the assistant can plan, act, check the result, and
 iterate. This blueprint turns that idea into a project workflow with human review
 gates and a written history.
 
-The repeating build loop is:
+The core build loop is:
 
 ```text
 /feature -> review spec -> /implement -> /check -> /complete
 ```
+
+Use `/try` when you want a manual review path, `/audit` when you want a read-only
+code quality pass before closing the work, and `/release` after a completed
+feature or milestone when you want Render or Vercel deployment prep.
 
 For unplanned bugs or small changes, use the fix loop:
 
@@ -192,16 +180,22 @@ In this repo, **the build loop** means:
 The loop is the control system. The AI can keep iterating, but only inside the
 current spec, with observable checks and review gates.
 
-The diagram shows the whole workflow. `/overview` happens after planning and only
-re-runs when the plans change; the repeating loop starts at `/feature`.
+The diagram shows the fresh-project workflow. `/overview` happens after planning
+and only re-runs when the plans change; the repeating loop starts at `/feature`
+or `/fix`. For an existing codebase, use `/adopt` instead of `/onboard`; that
+path is described above.
 
 ```mermaid
 flowchart TD
-    subgraph you["you provide"]
+    OB(["/onboard<br/>fresh setup"])
+
+    subgraph planning["planning files"]
         PP["project-plan.md"]
         BPL["build-plan.md"]
     end
 
+    OB -->|fill next| PP
+    OB -->|fill next| BPL
     PP --> OV(["/overview"])
     BPL --> OV
     OV --> POV["project-overview.md<br/>source of truth"]
@@ -216,13 +210,20 @@ flowchart TD
     FX --> CF
     CF --> IM(["/implement<br/>build + iterate, reviewed"])
     IM -.->|prove done-whens| CK(["/check"])
+    IM -.->|manual path| TRY(["/try"])
+    IM -.->|quality pass| AU(["/audit"])
     CK -.->|fails| IM
+    TRY -.->|issues| IM
+    AU -.->|findings| IM
+    CK -.->|passes| CP
+    TRY -.->|looks good| CP
+    AU -.->|clean| CP
     IM --> CP(["/complete<br/>commit + merge + log"])
     CP --> AR["blueprint/history/"]
     AR -.->|next| FT
 
     classDef skill fill:#2563eb,stroke:#1e40af,color:#ffffff;
-    class OV,PT,BR,FT,FX,IM,CP,CK skill;
+    class OB,OV,PT,BR,FT,FX,IM,CP,CK,TRY,AU skill;
 ```
 
 ## The two files you own
@@ -279,9 +280,13 @@ Then repeat the build loop for each feature:
 3. Run **`/implement`**. It branches, builds one step, shows the diff, proves the
    done-when, and waits for approval before moving on.
 4. Run **`/check`** when you want an outside proof pass against the real app.
-5. Run **`/complete`** when the feature is done. It archives the spec, checks off
+5. Run **`/try`** when you want the manual review path: where to go, what to
+   click or run, and what to expect.
+6. Run **`/complete`** when the feature is done. It archives the spec, checks off
    the build plan, commits the finished work, and squash-merges with your
-   go-ahead.
+   go-ahead. After the merge, it must ask separately before pushing main.
+7. Optionally run **`/release render`** or **`/release vercel`** when you want
+   local deployment config and a provider-specific readiness check.
 
 ### Fixes
 
@@ -302,23 +307,42 @@ Then continue with `/implement`, `/check`, and `/complete`. Fixes are logged to
 
 | Skill | Run it | Does |
 | ----- | ------ | ---- |
-| **/onboard** | once, after overlaying onto a fresh or early project | Detects the stack, updates commands and conventions, checks `.gitignore`, and tells you what to fill in before `/overview`. |
-| **/doctor** | any time, especially after `/onboard` or when setup feels off | Runs a read-only health check for Blueprint files, adapters, commands, ignore rules, planning readiness, overview freshness, workflow drift, and git state. |
-| **/adopt** | once, for an existing codebase | Surveys the repo and generates the planning docs and coding standards from what already exists. |
+| **/onboard** | once, after installing into a fresh or early project | Detects the stack, updates commands and conventions, asks whether Blueprint workflow files should be committed or kept local-only, checks `.gitignore`, and tells you what to fill in before `/overview`. |
+| **/doctor** | any time, especially after `/onboard` or when setup feels off | Runs a read-only health check for Blueprint files, adapters, commands, root README placement, ignore rules, planning readiness, overview freshness, workflow drift, and git state. |
+| **/adopt** | once, for an existing codebase | Surveys the repo, protects the project README, and generates the planning docs and coding standards from what already exists. |
 | **/overview** | after writing or editing the plans | Checks plan quality, normalizes rough build-plan bullets when approved, and generates `blueprint/context/project-overview.md`. |
 | **/brief** | before spec'ing, or when deciding what's next | Read-only briefing on an upcoming build-plan feature - scope, dependencies, what it touches, size, likely split - without writing anything. |
 | **/feature** | for each planned feature | Specs the next unchecked feature, or a selected feature, into `current-feature.md`. |
 | **/fix** | for an unplanned bug or small change | Specs an ad-hoc fix into `current-feature.md`. |
 | **/tests** | when you want unit tests added | Adds or normalizes the stack-native unit test setup, adds one example test, updates `AGENTS.md`, and runs build plus tests. |
-| **/implement** | after reviewing a spec | Builds the current spec one small, reviewed step at a time. |
+| **/implement** | after reviewing a spec | Builds the current spec one small, reviewed step at a time, then ends with a compact review packet. |
 | **/check** | before wrapping up, or any time you want proof | Runs the real app and reports pass/fail against the spec's done-whens. |
-| **/complete** | when work is built and reviewed | Archives the spec, commits the finished work, and merges with your approval. |
+| **/try** | when you want to review manually | Gives a human walkthrough: what to start, where to go, what to click or run, what to expect, and what would count as wrong. |
+| **/audit** | before closing a feature, or any time quality feels suspect | Runs a read-only code quality audit for duplication, dead code, DRY issues, standards drift, missing tests, and maintainability risks. |
+| **/complete** | when work is built and reviewed | Runs a final safety pass, archives the spec, commits the finished work, and merges with your approval. Pushes main only after a separate yes. |
+| **/release** | after a completed feature or milestone | Prepares Render or Vercel deployment readiness, local config, env var review, and smoke-test steps. Never deploys or changes remote services without a separate yes. |
 | **/prototype** | before the build loop | Creates throwaway static mockups to explore the look and feel. |
 | **/status** | any time | Shows build-plan progress, current work, overview freshness, git state, workflow drift warnings, and the suggested next action. |
+| **/autopilot** | experimental, explicit opt-in only | Runs one bounded spec/build/check pass without pausing after each passing implementation step, then stops with a review packet before `/complete`. |
 
 These commands are the structured path, not a cage. You can describe a feature,
 fix, or change directly in chat at any time. Use the skills when you want the
 repeatable loop, review gates, and history.
+
+### Experimental: Autopilot
+
+`/autopilot` or `$autopilot` is an experimental, explicit opt-in mode for one
+bounded pass. It can pick or resume a feature, write the spec when needed,
+implement small steps, run build/tests/checks, create checkpoint commits on the
+feature branch after passing steps, self-review the diff, and stop with a review
+packet.
+
+Autopilot does not replace the normal workflow. `/feature`, `/implement`,
+`/check`, and `/complete` remain the conservative default.
+
+Autopilot always stops before `/complete`, merge, push, deploy, publish, send,
+destructive actions, or any action that needs a product decision not covered by
+the docs.
 
 ## Testing
 
@@ -353,6 +377,54 @@ For browser-heavy work, Playwright is preferred when the project already has it
 installed or declares a Playwright command. The blueprint does not install it by
 default; adding browser automation is a normal setup task when a project wants
 that level of verification.
+
+## Code quality audits
+
+`/check` proves the app does what the spec promised. `/audit` reviews the code
+itself.
+
+Run `/audit` when you want a read-only maintainability pass before closing a
+feature, after an Autopilot run, or whenever the code feels like it may be
+drifting. It looks for issues such as duplicated logic, dead code, unused exports,
+overgrown modules, inconsistent patterns, missing tests for logic-bearing code,
+security risks, performance risks, and drift from `coding-standards.md`.
+
+`/audit` reports findings with severity and file references. It does not edit
+files, install tools, commit, merge, or push. Fixes stay in `/implement` or a
+separate `/fix`.
+
+## Manual try guides
+
+`/check` is the agent proof pass. `/try` is the human review path.
+
+Run `/try` when you want to know what to start, where to go, what to click or
+run, what to expect, and what would count as wrong. It reads the active feature
+spec when a feature is in progress, or the latest archived feature after
+`/complete`.
+
+`/try` is read-only. It does not run the app unless you explicitly ask for that.
+
+## Deployment readiness
+
+`/release` prepares a project for Render or Vercel without making deployment an
+automatic part of the build loop.
+
+Use it after a feature or milestone is complete:
+
+```text
+/release render
+/release vercel
+```
+
+It reads the project plans, app commands, package files, and existing provider
+config. It can create or update local files such as `render.yaml`, `vercel.json`,
+or `.env.example` when the target is clear. It also runs local build/test/start
+checks where possible and ends with the env vars, smoke-test path, blockers, and
+next provider step.
+
+`/release` must stop before deploy, remote service creation, remote env changes,
+push, publish, or any external action unless you explicitly approve that action
+in the current chat.
 
 ## Picking up where you left off
 
@@ -391,9 +463,13 @@ step in `current-feature.md`.
 │       ├── tests/             ($tests: add unit testing)
 │       ├── implement/         ($implement: build the current spec)
 │       ├── check/             ($check: prove the done-whens)
+│       ├── try/               ($try: manual review guide)
+│       ├── audit/             ($audit: code quality review)
 │       ├── complete/          ($complete: commit, merge, and log)
+│       ├── release/           ($release: Render or Vercel readiness)
 │       ├── prototype/         ($prototype: static mockups)
-│       └── status/            ($status: where things stand)
+│       ├── status/            ($status: where things stand)
+│       └── autopilot/         ($autopilot: experimental bounded pass)
 ├── .claude/
 │   └── skills/                (Claude Code skills and slash commands)
 │       ├── adopt/             (/adopt: bootstrap from an existing codebase)
@@ -406,10 +482,15 @@ step in `current-feature.md`.
 │       ├── tests/             (/tests: add unit testing)
 │       ├── implement/         (/implement: build the current spec)
 │       ├── check/             (/check: prove the done-whens)
+│       ├── try/               (/try: manual review guide)
+│       ├── audit/             (/audit: code quality review)
 │       ├── complete/          (/complete: commit, merge, and log)
+│       ├── release/           (/release: Render or Vercel readiness)
 │       ├── prototype/         (/prototype: static mockups)
-│       └── status/            (/status: where things stand)
+│       ├── status/            (/status: where things stand)
+│       └── autopilot/         (/autopilot: experimental bounded pass)
 └── blueprint/
+    ├── README.md             (workflow docs installed here)
     ├── project-plan.md        (you write: what and why)
     ├── build-plan.md          (you write: ordered feature list)
     ├── context/
@@ -426,6 +507,28 @@ step in `current-feature.md`.
 because the tools that read them look there. Everything else owned by the
 workflow lives under `blueprint/`, so it stays out of your app code.
 
+This file map shows the portable, committed layout. During `/onboard`, you can
+choose local-only mode instead. That keeps `AGENTS.md` public as a lightweight
+project guide, but adds this to `.gitignore`:
+
+```gitignore
+# AI Blueprint local workflow files
+.agents/
+.claude/
+blueprint/
+CLAUDE.md
+```
+
+In local-only mode, `/onboard` should keep public `AGENTS.md` focused on project
+description, commands, testing status, and conventions, not the hidden workflow
+docs or skill list.
+
+Local-only mode keeps the workflow contents out of the repo, but it is not
+portable by itself. Another machine needs the Blueprint reinstalled or restored
+locally. If those paths were already committed, `.gitignore` is not enough; you
+must explicitly approve untracking them with `git rm --cached` while keeping the
+local files.
+
 When editing shared workflow behavior, keep the matching files in `.agents/skills`
 and `.claude/skills` aligned. Tool-specific invocation text is fine, but the
 actual build loop should stay the same across both adapters.
@@ -434,15 +537,15 @@ actual build loop should stay the same across both adapters.
 
 ### This is not an app skeleton
 
-There is no `package.json` in the blueprint. Scaffold the app first with whatever
-stack you like, then overlay these files. That keeps the workflow stack-agnostic:
-the same process can guide a Next.js app, a Vite SPA, a Python service, or
-something else.
+The installed Blueprint overlay does not add a project-level `package.json`.
+Scaffold the app first with whatever stack you like, then install these files.
+That keeps the workflow stack-agnostic: the same process can guide a Next.js
+app, a Vite SPA, a Python service, or something else.
 
 The defaults in `coding-standards.md` assume Next.js, TypeScript, Tailwind, and
-Prisma. Change them to match your project. To keep the overlay conflict-free, the
+Prisma. Change them to match your project. To keep the install low-conflict, the
 blueprint avoids root files a framework scaffold usually creates, like
-`.gitignore`, `tsconfig.json`, or `eslint.config.mjs`.
+`.gitignore`, `package.json`, lockfiles, `tsconfig.json`, or `eslint.config.mjs`.
 
 ### Prototyping is separate
 
@@ -464,10 +567,13 @@ between tools.
 
 Use the native invocation style for your tool:
 
-- Codex: `$onboard`, `$overview`, `$feature`, `$tests`, `$implement`, `$check`,
-  `$complete`, or plain language like "run the overview."
-- Claude Code: `/onboard`, `/overview`, `/feature`, `/tests`, `/implement`,
-  `/check`, `/complete`.
+- Codex: `$onboard`, `$doctor`, `$adopt`, `$overview`, `$brief`, `$feature`,
+  `$fix`, `$tests`, `$implement`, `$check`, `$try`, `$audit`, `$complete`,
+  `$release`, `$prototype`, `$status`, or plain language like "run the overview."
+  Experimental: `$autopilot`.
+- Claude Code: `/onboard`, `/doctor`, `/adopt`, `/overview`, `/brief`,
+  `/feature`, `/fix`, `/tests`, `/implement`, `/check`, `/try`, `/audit`,
+  `/complete`, `/release`, `/prototype`, `/status`. Experimental: `/autopilot`.
 - Other tools: ask the agent to follow the matching `SKILL.md`.
 
 ```text

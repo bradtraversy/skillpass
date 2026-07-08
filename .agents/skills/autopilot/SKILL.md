@@ -151,7 +151,8 @@ may be enough. Be explicit about the evidence used.
 
 ## Step 6 - final review packet
 
-Stop with a concise review packet:
+Stop with a concise review packet. Keep it useful enough for `/complete` but not
+a full audit report:
 
 - branch name
 - target feature or fix

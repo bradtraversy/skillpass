@@ -50,6 +50,14 @@ Look, feel, and the main routes/screens, from project-plan.md section 7.
 
 - `/<route>` - what's there
 
+## Deployment
+
+Target host, app type, build/start commands, output directory, env vars by name,
+database/storage needs, workers or cron jobs, health path, and domain notes from
+project-plan.md section 8.
+
+> TODO if the deployment target is not decided yet.
+
 ## Open questions
 
 > TODOs and contradictions found between the two plans. Resolve them in the

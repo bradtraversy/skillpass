@@ -56,6 +56,7 @@ Core skills:
 - `try` - read-only manual review guide: where to go, what to click, what to expect
 - `audit` - read-only code quality review for duplication, dead code, standards drift, and maintainability risks
 - `complete` - log it to `blueprint/history/features/` or `blueprint/history/fixes/`, then merge
+- `release` - deployment readiness for Render or Vercel: verify build/start/env/health, create provider config on request; never deploys without explicit approval
 - `prototype` - optional, pre-build static mockups to lock the look
 - `status` - read-only progress summary, workflow drift warning, and suggested next action
 

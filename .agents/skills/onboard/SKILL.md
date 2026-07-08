@@ -1,6 +1,6 @@
 ---
 name: onboard
-description: Set up the Blueprint after overlaying it onto a freshly scaffolded or early project. Detects the stack, relocates the copied Blueprint README when needed, updates AGENTS.md commands, sets the CLAUDE.md project title when present, tunes coding-standards.md, checks ai-interaction.md and .gitignore, confirms which tool adapters to keep, and tells the user exactly what to fill in before /overview or $overview. Use when the user runs /onboard, invokes $onboard, just copied the Blueprint into a new project, or asks what to do after overlaying the Blueprint. For an existing app with meaningful shipped features, use adopt instead.
+description: Set up the Blueprint after overlaying it onto a freshly scaffolded or early project. Detects the stack, relocates the copied Blueprint README when needed, updates AGENTS.md commands, sets the CLAUDE.md project title when present, tunes coding-standards.md, checks ai-interaction.md and .gitignore, asks whether Blueprint workflow files should be committed or kept local-only, confirms which tool adapters to keep, and tells the user exactly what to fill in before /overview or $overview. Use when the user runs /onboard, invokes $onboard, just copied the Blueprint into a new project, or asks what to do after overlaying the Blueprint. For an existing app with meaningful shipped features, use adopt instead.
 ---
 
 # onboard - finish the Blueprint overlay setup
@@ -14,7 +14,8 @@ Where this sits in the workflow:
 and the Blueprint files were overlaid after. Run it before filling in plans or
 running `/overview`. Its job is to make the Blueprint fit the real project before
 planning starts: commands, project title, conventions, ignore rules, and tool
-adapters.
+adapters. It also asks whether the Blueprint workflow files should be committed
+with the repo or kept local-only through `.gitignore`.
 
 Use `/adopt` instead when the app is brownfield: real routes, shipped features,
 and project behavior already exist and need to be reflected into the plans.
@@ -51,6 +52,7 @@ Read only enough to identify the setup:
 - source layout, route layout, and app/package directories
 - existing `.gitignore`
 - whether `.agents/` and `.claude/` are both needed
+- whether Blueprint workflow paths are already tracked by git
 - project name, from `package.json`, the folder name, existing docs, or the user
 
 Do not infer more than the files support. Mark uncertain items as `> TODO` in the
@@ -124,12 +126,53 @@ instead of guessing, such as:
 
 If no changes are needed, say so.
 
-## Step 5 - check ignore files and adapters
+## Step 5 - check ignore files, visibility, and adapters
 
 Update `.gitignore` for common generated files from the detected stack while
 preserving existing entries. Typical examples include dependencies, build output,
 framework caches, logs, environment files, test output, temporary files, and OS or
 editor files.
+
+Ask how Blueprint workflow files should be handled in git, unless the user
+already gave a preference:
+
+```text
+Blueprint visibility?
+
+1. Commit Blueprint workflow files
+   Portable. Best for teams and working across machines.
+
+2. Keep Blueprint workflow files local
+   Adds .agents/, .claude/, blueprint/, and CLAUDE.md to .gitignore.
+   Keeps AGENTS.md public as the lightweight project agent guide.
+```
+
+Recommend option 1 by default. If the user chooses option 2:
+
+- Add this block to `.gitignore`, preserving existing entries:
+
+  ```gitignore
+  # AI Blueprint local workflow files
+  .agents/
+  .claude/
+  blueprint/
+  CLAUDE.md
+  ```
+
+- Keep `AGENTS.md` tracked. It remains the lightweight public project guide for
+  commands and conventions.
+- Make `AGENTS.md` public-safe: keep project description, commands, testing gate,
+  and coding conventions, but remove or avoid Blueprint workflow explanations,
+  hidden adapter paths, `blueprint/README.md` pointers, and core skill lists that
+  would expose the local-only workflow.
+- Explain that local-only mode hides the workflow contents from the repo, but the
+  `.gitignore` names still reveal the ignored paths.
+- Explain that Blueprint state, specs, and history will not travel with the repo;
+  another machine needs the Blueprint reinstalled or restored locally.
+- If any of `.agents/`, `.claude/`, `blueprint/`, or `CLAUDE.md` are already
+  tracked, say `.gitignore` will not hide tracked files. Ask before running
+  `git rm --cached -r .agents .claude blueprint CLAUDE.md`, and only run it if
+  the user explicitly approves. Never delete the local files.
 
 Then report which adapter folders are needed:
 
@@ -148,6 +191,8 @@ Stop with a concise onboarding report:
 - stack and package manager detected
 - project name used for entry files
 - README handling, especially if the copied Blueprint README was moved
+- Blueprint visibility choice
+- tracked-file warning if local-only mode was chosen after files were already tracked
 - files changed
 - commands now available
 - testing gate status
@@ -176,6 +221,10 @@ $overview
 - Never run scaffolders or install dependencies unless the user explicitly asks.
 - Reflect the stack that exists, not the stack the default Blueprint mentions.
 - Be honest about tests. No `test` command means no required test gate yet.
+- Keep `AGENTS.md` public in local-only mode unless the user explicitly asks for
+  a more advanced setup.
+- Do not untrack Blueprint files with `git rm --cached` without a separate
+  explicit approval.
 - Keep changes small and explain what changed.
 
 ## Formatting

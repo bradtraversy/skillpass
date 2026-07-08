@@ -24,7 +24,7 @@ project instructions load at the start of every session.
 The two planning docs, already written:
 
 - `blueprint/project-plan.md` - problem, users, features, data, tech,
-  monetization, UI/UX
+  monetization, UI/UX, deployment
 - `blueprint/build-plan.md` - the ordered, one-line-per-feature build checklist
 
 If either is missing or still has placeholder text, stop and tell the user to
@@ -104,6 +104,9 @@ copy:
   use them. This is the most valuable thing the overview adds.
 - **Tie features to build order.** List the features with a one-line purpose
   each, in build-plan order, so the AI knows what exists and what's next.
+- **Carry deployment constraints forward.** If the plan names Render, Vercel,
+  build commands, env vars, health checks, or provider constraints, include them
+  in a short Deployment section. If deployment is unknown, mark it `> TODO`.
 - **Stay faithful.** Don't add features, data, or stack choices that aren't in
   the plans. If something is underspecified, leave a clearly marked `> TODO`
   rather than inventing an answer.

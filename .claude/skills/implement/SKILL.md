@@ -106,10 +106,18 @@ split it. Build and tests must pass before any commit.
 ## Step 3 - hand off to /complete
 
 When every step is built and the build and tests pass (committed as checkpoints or
-not), stop. Tell the user it's done on its branch and to run `/complete`, which
-makes the one feature-level commit, logs it (archive, check off if it's a feature,
-reset), and merges. Include a short **How to try it** section, or tell the user
-to run `/try` for the full manual walkthrough. This skill does not touch main.
+not), stop with a compact review packet:
+
+- branch name
+- what changed, grouped by file or area
+- checks run, with the exact command or proof used
+- how to try it manually, or a pointer to `/try`
+- known risks, skipped checks, or follow-up notes
+- next action, usually `/complete`
+
+Then tell the user `/complete` makes the one feature-level commit, logs it
+(archive, check off if it's a feature, reset), and merges with approval. This
+skill does not touch main.
 
 ## Rules
 
