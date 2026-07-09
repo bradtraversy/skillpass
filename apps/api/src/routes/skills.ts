@@ -1,9 +1,16 @@
 import { strToU8, zipSync } from 'fflate';
 import { Hono } from 'hono';
-import { diffPermissions, type PublicPreflight, type PublicSkillSource } from 'skill-schema';
+import {
+	diffPermissions,
+	parseAbuseReportInput,
+	type PublicAbuseReport,
+	type PublicPreflight,
+	type PublicSkillSource,
+} from 'skill-schema';
 import { loadPackageFromFiles, type PackageFile } from 'validator';
-import { readSessionUserId } from '../auth/middleware';
+import { readSessionUserId, requireAuth, type AuthVariables } from '../auth/middleware';
 import type { Db } from '../db/client';
+import { createAbuseReport, findOpenReportBySkillAndReporter } from '../db/abuse';
 import { recordDownload } from '../db/downloads';
 import {
 	findPublishedSkillBySlug,
@@ -61,7 +68,43 @@ function buildPreflight(
 // Public, anonymous, read-only: directory listing, skill detail, version
 // permalinks, and the pinned source view. Specific routes register first.
 export function skillRoutes(env: Env, db: Db) {
-	const routes = new Hono();
+	// requireAuth guards only the report route; everything else stays anonymous.
+	const routes = new Hono<{ Variables: AuthVariables }>();
+
+	routes.post('/:slug/report', requireAuth(env, db), async (c) => {
+		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
+		if (!record) {
+			return c.json({ success: false, error: 'not found' }, 404);
+		}
+		let body: unknown;
+		try {
+			body = await c.req.json();
+		} catch {
+			return c.json({ success: false, error: 'send a JSON body with a reason' }, 400);
+		}
+		const parsed = parseAbuseReportInput(body);
+		if (!parsed.success) {
+			return c.json({ success: false, error: parsed.error }, 400);
+		}
+		const reporter = c.get('user');
+		const existing = await findOpenReportBySkillAndReporter(db, record.skill.id, reporter.id);
+		if (existing) {
+			return c.json(
+				{ success: false, error: 'you already have an open report for this skill' },
+				409,
+			);
+		}
+		const report = await createAbuseReport(db, {
+			skillId: record.skill.id,
+			reporterId: reporter.id,
+			reason: parsed.data.reason,
+		});
+		const data: PublicAbuseReport = {
+			status: report.status,
+			createdAt: report.createdAt.toISOString(),
+		};
+		return c.json({ success: true, data }, 201);
+	});
 
 	routes.get('/', async (c) => {
 		const records = await listPublishedSkills(db);

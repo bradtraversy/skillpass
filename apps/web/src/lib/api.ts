@@ -1,5 +1,6 @@
 import type {
 	ApiEnvelope,
+	PublicAbuseReport,
 	PublicPreflight,
 	PublicProfile,
 	PublicSkillDetail,
@@ -109,6 +110,14 @@ export function getValidation(id: number): Promise<ApiResult<PublicValidation>> 
 
 export function publishSubmission(id: number): Promise<ApiResult<PublishResult>> {
 	return request(`/submissions/${id}/publish`, { method: 'POST' });
+}
+
+export function reportSkill(slug: string, reason: string): Promise<ApiResult<PublicAbuseReport>> {
+	return request(`/skills/${encodeURIComponent(slug)}/report`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ reason }),
+	});
 }
 
 export function logout(): Promise<ApiResult<{ loggedOut: boolean }>> {

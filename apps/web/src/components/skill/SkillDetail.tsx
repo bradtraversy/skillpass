@@ -5,6 +5,7 @@ import { timeAgo } from '../../lib/format';
 import DetailHeader from './DetailHeader';
 import InstallBar from './InstallBar';
 import Passport from './Passport';
+import ReportPanel from './ReportPanel';
 import SourceView from './SourceView';
 import Stamp from './Stamp';
 
@@ -18,6 +19,7 @@ type LoadState =
 
 export default function SkillDetail({ slug, version }: { slug: string; version?: string }) {
 	const [load, setLoad] = useState<LoadState>({ phase: 'loading' });
+	const [reportOpen, setReportOpen] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -110,6 +112,20 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 						</div>
 					</div>
 				</a>
+			</section>
+
+			<section className="mt-[22px]">
+				{!reportOpen ? (
+					<button
+						type="button"
+						onClick={() => setReportOpen(true)}
+						className="cursor-pointer text-[12px] text-faint underline decoration-dotted underline-offset-2 hover:text-fail"
+					>
+						Report this skill
+					</button>
+				) : (
+					<ReportPanel slug={detail.slug} onClose={() => setReportOpen(false)} />
+				)}
 			</section>
 
 			<footer className="py-[46px] text-center text-[12.5px] text-faint">

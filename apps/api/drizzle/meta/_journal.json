@@ -57,6 +57,13 @@
       "when": 1783524965342,
       "tag": "0007_moaning_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783601449080,
+      "tag": "0008_minor_punisher",
+      "breakpoints": true
     }
   ]
 }

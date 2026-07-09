@@ -9,6 +9,7 @@ import {
 	type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import {
+	ABUSE_REPORT_STATUSES,
 	PROGRESS_STEP_STATES,
 	RISK_LEVELS,
 	SOURCE_TYPES,
@@ -187,6 +188,24 @@ export const downloadEvents = pgTable('download_events', {
 });
 
 export type DownloadEventRow = typeof downloadEvents.$inferSelect;
+
+export const abuseReportStatus = pgEnum('abuse_report_status', ABUSE_REPORT_STATUSES);
+
+// Append-only from the public side; only admin actions (10c) change status.
+export const abuseReports = pgTable('abuse_reports', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	skillId: integer('skill_id')
+		.notNull()
+		.references(() => skills.id),
+	reporterId: integer('reporter_id')
+		.notNull()
+		.references(() => users.id),
+	reason: text('reason').notNull(),
+	status: abuseReportStatus('status').notNull().default('open'),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type AbuseReportRow = typeof abuseReports.$inferSelect;
 
 // Immutable by omission: no update path exists for passports.
 export const skillPassports = pgTable('skill_passports', {

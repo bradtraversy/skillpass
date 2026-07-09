@@ -2,6 +2,7 @@ import { strFromU8, unzipSync } from 'fflate';
 import { Hono } from 'hono';
 import { setSignedCookie } from 'hono/cookie';
 import {
+	publicAbuseReportSchema,
 	publicPreflightSchema,
 	publicSkillDetailSchema,
 	publicSkillSourceSchema,
@@ -11,7 +12,9 @@ import { loadPackageFromFiles } from 'validator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
 import { SESSION_COOKIE } from '../auth/middleware';
+import { createAbuseReport, findOpenReportBySkillAndReporter } from '../db/abuse';
 import { recordDownload } from '../db/downloads';
+import { findById } from '../db/users';
 import { BLOCKED_REASON } from './skills';
 import type { Db } from '../db/client';
 import type { SkillPassportRow, SkillRow, SkillVersionRow, UserRow } from '../db/schema';
@@ -39,6 +42,14 @@ vi.mock('../storage/r2', async (importOriginal) => ({
 	getSnapshotDocument: vi.fn(),
 }));
 vi.mock('../db/downloads', () => ({ recordDownload: vi.fn() }));
+vi.mock('../db/abuse', () => ({
+	createAbuseReport: vi.fn(),
+	findOpenReportBySkillAndReporter: vi.fn(),
+}));
+vi.mock('../db/users', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../db/users')>()),
+	findById: vi.fn(),
+}));
 
 const env = loadEnv(RAW_TEST_ENV);
 const app = createApp(env, {} as Db, {} as ValidationQueue);
@@ -103,6 +114,16 @@ const passport: SkillPassportRow = {
 };
 
 const record: PublishedSkillRecord = { skill, version, passport, maintainer };
+
+async function sessionCookie(id: number): Promise<string> {
+	const signer = new Hono();
+	signer.get('/', async (c) => {
+		await setSignedCookie(c, SESSION_COOKIE, String(id), env.SESSION_SECRET);
+		return c.text('ok');
+	});
+	const res = await signer.request('/');
+	return res.headers.getSetCookie()[0].split(';')[0];
+}
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -457,16 +478,6 @@ describe('GET /skills/:slug/:version/download', () => {
 		passport: { ...passport.passport, sourceHash: REAL_HASH },
 	};
 
-	async function sessionCookie(id: number): Promise<string> {
-		const signer = new Hono();
-		signer.get('/', async (c) => {
-			await setSignedCookie(c, SESSION_COOKIE, String(id), env.SESSION_SECRET);
-			return c.text('ok');
-		});
-		const res = await signer.request('/');
-		return res.headers.getSetCookie()[0].split(';')[0];
-	}
-
 	function mockVerified() {
 		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
 		vi.mocked(findVersionWithPassport).mockResolvedValue({
@@ -589,5 +600,92 @@ describe('GET /skills/:slug/:version/download', () => {
 		});
 		const res = await app.request('/skills/smoke-clean/1.0.0/download');
 		expect(res.status).toBe(502);
+	});
+});
+
+describe('POST /skills/:slug/report', () => {
+	const REASON = 'This skill exfiltrates env vars in its install step.';
+
+	function post(body: unknown, cookie?: string) {
+		return app.request('/skills/smoke-clean/report', {
+			method: 'POST',
+			body: JSON.stringify(body),
+			headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
+		});
+	}
+
+	function mockReporter() {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(findOpenReportBySkillAndReporter).mockResolvedValue(undefined);
+		vi.mocked(createAbuseReport).mockResolvedValue({
+			id: 5,
+			skillId: 1,
+			reporterId: 1,
+			reason: REASON,
+			status: 'open',
+			createdAt: NOW,
+		});
+	}
+
+	it('401s without a session', async () => {
+		const res = await post({ reason: REASON });
+		expect(res.status).toBe(401);
+		expect(vi.mocked(createAbuseReport)).not.toHaveBeenCalled();
+	});
+
+	it('404s an unknown or unpublished slug', async () => {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(undefined);
+		const res = await post({ reason: REASON }, await sessionCookie(1));
+		expect(res.status).toBe(404);
+	});
+
+	it('400s a too-short reason with the validation message', async () => {
+		mockReporter();
+		const res = await post({ reason: 'bad' }, await sessionCookie(1));
+		expect(res.status).toBe(400);
+		expect(((await res.json()) as { error: string }).error).toContain('at least 10');
+		expect(vi.mocked(createAbuseReport)).not.toHaveBeenCalled();
+	});
+
+	it('409s when the reporter already has an open report', async () => {
+		mockReporter();
+		vi.mocked(findOpenReportBySkillAndReporter).mockResolvedValue({
+			id: 4,
+			skillId: 1,
+			reporterId: 1,
+			reason: 'earlier report',
+			status: 'open',
+			createdAt: NOW,
+		});
+		const res = await post({ reason: REASON }, await sessionCookie(1));
+		expect(res.status).toBe(409);
+		expect(vi.mocked(createAbuseReport)).not.toHaveBeenCalled();
+	});
+
+	it('201s with the locked confirmation contract and stores the trimmed reason', async () => {
+		mockReporter();
+		const res = await post({ reason: `  ${REASON}  ` }, await sessionCookie(1));
+		expect(res.status).toBe(201);
+		const body = (await res.json()) as { data: unknown };
+		expect(publicAbuseReportSchema.parse(body.data)).toEqual({
+			status: 'open',
+			createdAt: NOW.toISOString(),
+		});
+		expect(vi.mocked(createAbuseReport)).toHaveBeenCalledWith(expect.anything(), {
+			skillId: 1,
+			reporterId: 1,
+			reason: REASON,
+		});
+	});
+
+	it('leaks no ids on the confirmation', async () => {
+		mockReporter();
+		const res = await post({ reason: REASON }, await sessionCookie(1));
+		const text = JSON.stringify(await res.json());
+		expect(text).not.toContain('reporterId');
+		expect(text).not.toContain('skillId');
+		expect(text).not.toContain('"id"');
 	});
 });
