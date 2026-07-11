@@ -1,7 +1,12 @@
 # Render Blueprint for the AI Skills Directory monorepo.
-# Three services + the queue's key-value store. Neon Postgres and Cloudflare R2
-# stay external. Env vars marked sync: false are set in the Render dashboard;
-# never put secret values in this file.
+# Launch-lean: two services (static site + API), validation runs inline in the API
+# (VALIDATION_MODE=inline), so no worker or Redis is needed. Neon Postgres and
+# Cloudflare R2 stay external. Env vars marked sync: false are set in the Render
+# dashboard; never put secret values in this file.
+#
+# To scale up later, set VALIDATION_MODE=queue on the API and re-add the worker +
+# keyvalue services with a REDIS_URL from the keyvalue store (the code is retained
+# in apps/api/src/worker.ts and src/queue/*).
 services:
   - type: web
     name: aiskills-web
@@ -24,6 +29,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 24.18.0
+      # Validate in-process; no worker or Redis required.
+      - key: VALIDATION_MODE
+        value: inline
       - key: DATABASE_URL
         sync: false
       - key: GITHUB_CLIENT_ID
@@ -45,48 +53,3 @@ services:
       # The public URL of aiskills-web (OAuth redirects + CORS).
       - key: WEB_ORIGIN
         sync: false
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: aiskills-queue
-          property: connectionString
-
-  - type: worker
-    name: aiskills-worker
-    runtime: node
-    buildCommand: corepack enable && corepack prepare pnpm@11.9.0 --activate && pnpm install --frozen-lockfile
-    startCommand: cd apps/api && node --import tsx src/worker.ts
-    envVars:
-      - key: NODE_VERSION
-        value: 24.18.0
-      - key: DATABASE_URL
-        sync: false
-      - key: GITHUB_CLIENT_ID
-        sync: false
-      - key: GITHUB_CLIENT_SECRET
-        sync: false
-      - key: GITHUB_TOKEN
-        sync: false
-      - key: SESSION_SECRET
-        sync: false
-      - key: R2_ACCOUNT_ID
-        sync: false
-      - key: R2_ACCESS_KEY_ID
-        sync: false
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: R2_BUCKET
-        sync: false
-      - key: WEB_ORIGIN
-        sync: false
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: aiskills-queue
-          property: connectionString
-
-  # BullMQ requires noeviction so queued jobs are never silently dropped.
-  - type: keyvalue
-    name: aiskills-queue
-    maxmemoryPolicy: noeviction
-    ipAllowList: []

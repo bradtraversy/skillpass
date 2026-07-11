@@ -26,6 +26,7 @@ import {
 	setValidationJobBullId,
 } from '../db/validation';
 import { loadEnv } from '../env';
+import { processValidationJob } from '../queue/processor';
 import { enqueueValidation, type ValidationQueue } from '../queue/queue';
 import { sourceError } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
@@ -56,6 +57,10 @@ vi.mock('../queue/queue', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../queue/queue')>()),
 	enqueueValidation: vi.fn(),
 }));
+vi.mock('../queue/processor', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../queue/processor')>()),
+	processValidationJob: vi.fn(),
+}));
 vi.mock('../github/ownership', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../github/ownership')>()),
 	verifySubmitPermission: vi.fn(),
@@ -85,6 +90,10 @@ vi.mock('../publish/publish', async (importOriginal) => ({
 
 const env = loadEnv(RAW_TEST_ENV);
 const app = createApp(env, {} as Db, {} as ValidationQueue);
+
+// Inline mode: no queue object, validation runs in-process.
+const inlineEnv = loadEnv({ ...RAW_TEST_ENV, VALIDATION_MODE: 'inline' });
+const inlineApp = createApp(inlineEnv, {} as Db, null);
 
 const userRow: UserRow = {
 	id: 7,
@@ -260,6 +269,20 @@ describe('POST /submissions', () => {
 		expect(vi.mocked(enqueueValidation)).toHaveBeenCalledWith(expect.anything(), 1);
 		expect(vi.mocked(setValidationJobBullId)).toHaveBeenCalledWith(expect.anything(), 55, 'bull-1');
 		expect(vi.mocked(markValidationJobError)).not.toHaveBeenCalled();
+	});
+
+	it('inline mode validates in-process and never enqueues', async () => {
+		mockHappyPath();
+		vi.mocked(processValidationJob).mockResolvedValue(undefined);
+		const res = await inlineApp.request('/submissions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Cookie: await sessionCookie(7) },
+			body: JSON.stringify({ githubUrl: 'https://github.com/octocat/hello' }),
+		});
+		expect(res.status).toBe(201);
+		expect(vi.mocked(createValidationJob)).toHaveBeenCalledWith(expect.anything(), 1);
+		expect(vi.mocked(processValidationJob)).toHaveBeenCalledWith(expect.anything(), expect.anything(), 1);
+		expect(vi.mocked(enqueueValidation)).not.toHaveBeenCalled();
 	});
 
 	it('still 201s when Redis is down, recording the error on the job row', async () => {

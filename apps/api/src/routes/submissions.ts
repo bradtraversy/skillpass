@@ -21,6 +21,7 @@ import {
 	setValidationJobBullId,
 } from '../db/validation';
 import type { Env } from '../env';
+import { processValidationJob } from '../queue/processor';
 import { enqueueValidation, type ValidationQueue } from '../queue/queue';
 import type { SourceErrorCode } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
@@ -86,11 +87,25 @@ function nameFromFilename(filename: string): string {
 	return base || 'upload';
 }
 
-// A Redis outage must not fail the submission: the job row records the error
-// and the draft still returns 201.
-async function queueValidation(db: Db, queue: ValidationQueue, submissionId: number) {
+// A validation failure must never fail the submission: the draft still returns
+// 201. Inline mode runs the validator in-process; queue mode enqueues to the
+// worker and the job row records any Redis outage.
+async function startValidation(
+	env: Env,
+	db: Db,
+	queue: ValidationQueue | null,
+	submissionId: number,
+) {
 	try {
 		const job = await createValidationJob(db, submissionId);
+		if (env.VALIDATION_MODE === 'inline' || !queue) {
+			// Fire-and-forget in-process: don't block the 201 on validation. The
+			// job row it updates is what the submit-page progress panel polls.
+			void processValidationJob(env, db, submissionId).catch((err) =>
+				console.error('inline validation failed', err),
+			);
+			return;
+		}
 		const enqueued = await enqueueValidation(queue, submissionId);
 		if (!enqueued.success) {
 			await markValidationJobError(db, job.id, enqueued.error);
@@ -98,11 +113,11 @@ async function queueValidation(db: Db, queue: ValidationQueue, submissionId: num
 			await setValidationJobBullId(db, job.id, enqueued.data);
 		}
 	} catch (err) {
-		console.error('queueValidation failed', err);
+		console.error('startValidation failed', err);
 	}
 }
 
-export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
+export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null) {
 	const routes = new Hono<{ Variables: AuthVariables }>();
 	routes.use('*', requireAuth(env, db));
 
@@ -156,7 +171,7 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
 			sourceHash: pkg.sourceHash,
 			snapshotKey: key,
 		});
-		await queueValidation(db, queue, row.id);
+		await startValidation(env, db, queue, row.id);
 		return c.json({ success: true, data: publicSubmission(row) }, 201);
 	});
 
@@ -205,7 +220,7 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue) {
 			sourceHash: pkg.sourceHash,
 			snapshotKey: key,
 		});
-		await queueValidation(db, queue, row.id);
+		await startValidation(env, db, queue, row.id);
 		return c.json({ success: true, data: publicSubmission(row) }, 201);
 	});
 

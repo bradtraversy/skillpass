@@ -13,5 +13,9 @@ export function redisConnection(
 	env: Env,
 	overrides: { enableOfflineQueue?: boolean } = {},
 ): RedisConnection {
+	// Only queue mode reaches here, where env validation guarantees REDIS_URL.
+	if (!env.REDIS_URL) {
+		throw new Error('REDIS_URL is required in queue mode');
+	}
 	return { url: env.REDIS_URL, maxRetriesPerRequest: null, ...overrides };
 }

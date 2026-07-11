@@ -25,9 +25,21 @@ describe('loadEnv', () => {
 		expect(() => loadEnv(rest)).toThrow();
 	});
 
-	it('rejects a missing REDIS_URL', () => {
+	it('requires REDIS_URL in queue mode', () => {
 		const { REDIS_URL: _redis, ...rest } = valid;
-		expect(() => loadEnv(rest)).toThrow();
+		expect(() => loadEnv({ ...rest, VALIDATION_MODE: 'queue' })).toThrow();
+	});
+
+	it('allows a missing REDIS_URL in inline mode', () => {
+		const { REDIS_URL: _redis, ...rest } = valid;
+		const env = loadEnv({ ...rest, VALIDATION_MODE: 'inline' });
+		expect(env.VALIDATION_MODE).toBe('inline');
+		expect(env.REDIS_URL).toBeUndefined();
+	});
+
+	it('defaults VALIDATION_MODE to inline', () => {
+		const { REDIS_URL: _redis, VALIDATION_MODE: _mode, ...rest } = valid;
+		expect(loadEnv(rest).VALIDATION_MODE).toBe('inline');
 	});
 
 	it('accepts an optional GITHUB_TOKEN', () => {

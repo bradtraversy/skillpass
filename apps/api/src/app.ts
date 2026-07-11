@@ -11,7 +11,7 @@ import { skillRoutes } from './routes/skills';
 import { submissionRoutes } from './routes/submissions';
 import { userRoutes } from './routes/users';
 
-export function createApp(env: Env, db: Db, queue: ValidationQueue) {
+export function createApp(env: Env, db: Db, queue: ValidationQueue | null) {
 	const app = new Hono<{ Variables: AuthVariables }>();
 
 	app.onError((err, c) => {

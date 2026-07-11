@@ -9,4 +9,6 @@ export const RAW_TEST_ENV = {
 	R2_SECRET_ACCESS_KEY: 'r2-secret',
 	R2_BUCKET: 'test-bucket',
 	REDIS_URL: 'redis://localhost:6379',
+	// Tests exercise the queue path by default; inline cases override this.
+	VALIDATION_MODE: 'queue',
 };

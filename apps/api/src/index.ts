@@ -5,7 +5,9 @@ import { loadEnv } from './env';
 import { createValidationQueue } from './queue/queue';
 
 const env = loadEnv();
-const app = createApp(env, createDb(env.DATABASE_URL), createValidationQueue(env));
+// Only queue mode needs a live Redis connection; inline mode validates in-process.
+const queue = env.VALIDATION_MODE === 'queue' ? createValidationQueue(env) : null;
+const app = createApp(env, createDb(env.DATABASE_URL), queue);
 
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
 	console.log(`api listening on http://localhost:${info.port}`);
