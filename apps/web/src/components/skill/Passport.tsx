@@ -132,6 +132,12 @@ export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 				<div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint">
 					Permissions requested
 				</div>
+				{passport.manifestInferred && (
+					<p className="mb-3 rounded-sm border border-border-2 bg-bg-well px-3 py-[9px] text-[12px] text-muted">
+						This skill ships no <span className="font-mono">skill.json</span>, so its permissions
+						were inferred from the skill's content, not declared by the author.
+					</p>
+				)}
 				<div className="divide-y divide-border">
 					{permissions.length === 0 && (
 						<p className="py-[11px] text-[12.5px] text-muted">

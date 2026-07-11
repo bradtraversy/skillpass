@@ -40,7 +40,7 @@ export function buildReport(
 	opts: { now?: Date } = {},
 ): ValidationReport {
 	const declared = pkg.manifest.state === 'ok' ? pkg.manifest.data.permissions : [];
-	const detected = detectPermissions(pkg)
+	const detected = detectPermissions(pkg.files)
 		.map((d) => d.permission)
 		.sort();
 

@@ -13,7 +13,10 @@ const MATRIX = [
 	{ name: 'clean-skill', status: 'passed', riskLevel: 'low', codes: [] },
 	{ name: 'workflow-pack', status: 'passed', riskLevel: 'low', codes: [] },
 	{ name: 'undeclared-network', status: 'warning', riskLevel: 'low', codes: ['undeclared-permission'] },
-	{ name: 'missing-manifest', status: 'warning', riskLevel: 'low', codes: ['missing-manifest'] },
+	// A bare SKILL.md gets an inferred manifest and passes; a critical capability
+	// in a manifest-less skill stays undeclared and still fails.
+	{ name: 'missing-manifest', status: 'passed', riskLevel: 'low', codes: [] },
+	{ name: 'inferred-critical', status: 'failed', riskLevel: 'critical', codes: ['undeclared-critical-permission'] },
 	{ name: 'broken-manifest', status: 'failed', riskLevel: 'low', codes: ['invalid-manifest'] },
 	{ name: 'leaked-secret', status: 'failed', riskLevel: 'low', codes: ['secret-pattern'] },
 	{ name: 'prompt-injection', status: 'failed', riskLevel: 'low', codes: ['prompt-injection'] },

@@ -60,7 +60,14 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 	return (
 		<>
 			<DetailHeader detail={detail} />
-			<InstallBar slug={detail.slug} version={detail.version} />
+			<InstallBar
+				slug={detail.slug}
+				version={detail.version}
+				distribution={detail.passport.distribution ?? 'skill'}
+				install={detail.passport.install}
+				homepage={detail.passport.homepage}
+				githubRepoUrl={detail.githubRepoUrl}
+			/>
 			<Passport detail={detail} />
 
 			<section className="mt-[26px]">

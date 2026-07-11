@@ -126,7 +126,7 @@ describe('processValidationJob', () => {
 		expect(vi.mocked(markValidationJobError)).not.toHaveBeenCalled();
 	});
 
-	it('marks a manifest-less package warning, with the structure step warned', async () => {
+	it('passes a manifest-less package by inferring its manifest', async () => {
 		mockRows();
 		await processValidationJob(env, db, 1, {
 			fetchSnapshotDocument: snapshotOk(NO_MANIFEST_FILES),
@@ -135,10 +135,10 @@ describe('processValidationJob', () => {
 
 		expect(vi.mocked(upsertValidationReport)).toHaveBeenCalledWith(
 			db,
-			expect.objectContaining({ status: 'warning' }),
+			expect.objectContaining({ status: 'passed' }),
 		);
-		expect(vi.mocked(setSubmissionStatus)).toHaveBeenLastCalledWith(db, 1, 'warning');
-		expect(doneProgress().find((s) => s.key === 'structure')?.state).toBe('warn');
+		expect(vi.mocked(setSubmissionStatus)).toHaveBeenLastCalledWith(db, 1, 'passed');
+		expect(doneProgress().find((s) => s.key === 'structure')?.state).toBe('ok');
 	});
 
 	it('fails a package with a secret, with the content step failed', async () => {

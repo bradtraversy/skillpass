@@ -765,6 +765,10 @@ describe('POST /submissions/:id/publish', () => {
 			name: 'clean-skill',
 			summary: 'A tidy demo skill.',
 			targets: ['claude-code'],
+			distribution: 'skill',
+			homepage: undefined,
+			install: undefined,
+			manifestInferred: false,
 			attributedTo: null,
 		});
 	});

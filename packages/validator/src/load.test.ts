@@ -73,10 +73,21 @@ describe('loadPackageFromFiles', () => {
 		expect(fromMemory.entries).toEqual(fromDisk.entries);
 	});
 
-	it('falls back to the given name for a manifest-less package', () => {
+	it('infers a manifest from the given name for a manifest-less package', () => {
 		const pkg = loadPackageFromFiles([{ path: 'SKILL.md', content: '# hi\n' }], 'my-skill');
-		expect(pkg.manifest.state).toBe('missing');
+		expect(pkg.manifest.state).toBe('ok');
+		if (pkg.manifest.state === 'ok') {
+			expect(pkg.manifest.inferred).toBe(true);
+			expect(pkg.manifest.data.name).toBe('my-skill');
+			expect(pkg.manifest.data.distribution).toBe('skill');
+			expect(pkg.manifest.data.targets).toEqual(['claude-code', 'codex']);
+		}
 		expect(pkg.entries).toEqual([{ skillName: 'my-skill', path: 'SKILL.md', exists: true }]);
+	});
+
+	it('stays missing when there is no SKILL.md to infer from', () => {
+		const pkg = loadPackageFromFiles([{ path: 'README.md', content: '# hi\n' }], 'my-skill');
+		expect(pkg.manifest.state).toBe('missing');
 	});
 });
 

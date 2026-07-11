@@ -104,6 +104,8 @@ const passport: SkillPassportRow = {
 		riskLevel: 'low',
 		permissionsSummary: { declared: [], detected: [] },
 		warningsSummary: [],
+		distribution: 'skill',
+		manifestInferred: false,
 		sourceHash: 'sha256:abc',
 		engineVersion: 'validator-0.1.0',
 		generatedAt: NOW.toISOString(),

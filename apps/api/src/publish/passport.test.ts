@@ -1,9 +1,11 @@
 import type { ValidationReport } from 'skill-schema';
 import { describe, expect, it } from 'vitest';
 import type { SubmissionRow, ValidationReportRow } from '../db/schema';
-import { buildPassport } from './passport';
+import { buildPassport, type PassportManifest } from './passport';
 
 const NOW = new Date('2026-07-07T15:00:00Z');
+
+const MANIFEST: PassportManifest = { distribution: 'skill', inferred: false };
 
 function reportDoc(overrides: Partial<ValidationReport> = {}): ValidationReport {
 	return {
@@ -53,7 +55,7 @@ function submissionRow(overrides: Partial<SubmissionRow> = {}): SubmissionRow {
 describe('buildPassport', () => {
 	it('maps a github report row into a passport with the pinned commit', () => {
 		const doc = reportDoc();
-		const passport = buildPassport(reportRow(doc), submissionRow(), { now: NOW });
+		const passport = buildPassport(reportRow(doc), submissionRow(), MANIFEST, { now: NOW });
 
 		expect(passport).toEqual({
 			schemaVersion: '0.1',
@@ -64,11 +66,25 @@ describe('buildPassport', () => {
 				detected: ['network.fetch', 'filesystem.read.project'],
 			},
 			warningsSummary: [],
+			distribution: 'skill',
+			manifestInferred: false,
 			sourceHash: 'sha256:abc',
 			resolvedCommitSha: 'abc123',
 			engineVersion: 'validator-0.1.0',
 			generatedAt: '2026-07-07T15:00:00.000Z',
 		});
+	});
+
+	it('carries distribution, install, and the inferred flag from the manifest', () => {
+		const passport = buildPassport(
+			reportRow(reportDoc()),
+			submissionRow(),
+			{ distribution: 'cli', install: 'cargo install memcrate', inferred: true },
+			{ now: NOW },
+		);
+		expect(passport.distribution).toBe('cli');
+		expect(passport.install).toBe('cargo install memcrate');
+		expect(passport.manifestInferred).toBe(true);
 	});
 
 	it('omits resolvedCommitSha for zip submissions', () => {
@@ -78,7 +94,7 @@ describe('buildPassport', () => {
 			uploadedZipKey: 'uploads/abc.zip',
 			resolvedCommitSha: null,
 		});
-		const passport = buildPassport(reportRow(reportDoc()), submission, { now: NOW });
+		const passport = buildPassport(reportRow(reportDoc()), submission, MANIFEST, { now: NOW });
 
 		expect('resolvedCommitSha' in passport).toBe(false);
 	});
@@ -92,7 +108,7 @@ describe('buildPassport', () => {
 			},
 		];
 		const doc = reportDoc({ status: 'warning', riskLevel: 'medium', warnings });
-		const passport = buildPassport(reportRow(doc), submissionRow(), { now: NOW });
+		const passport = buildPassport(reportRow(doc), submissionRow(), MANIFEST, { now: NOW });
 
 		expect(passport.validationStatus).toBe('warning');
 		expect(passport.riskLevel).toBe('medium');
@@ -101,7 +117,7 @@ describe('buildPassport', () => {
 
 	it('throws when the built passport fails the schema self-check', () => {
 		const doc = reportDoc({ sourceHash: '' });
-		expect(() => buildPassport(reportRow(doc), submissionRow(), { now: NOW })).toThrow(
+		expect(() => buildPassport(reportRow(doc), submissionRow(), MANIFEST, { now: NOW })).toThrow(
 			/self-check/,
 		);
 	});

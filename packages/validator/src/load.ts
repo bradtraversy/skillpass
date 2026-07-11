@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { parseManifest, type Manifest } from 'skill-schema';
+import { parseManifest, riskWeightOf, type Manifest, type Target } from 'skill-schema';
+import { CRITICAL_WEIGHT, detectPermissions } from './rules/permissions';
 
 export interface PackageFile {
 	path: string; // relative to the package dir, posix separators
@@ -9,7 +10,7 @@ export interface PackageFile {
 }
 
 export type ManifestState =
-	| { state: 'ok'; data: Manifest; raw: string }
+	| { state: 'ok'; data: Manifest; raw: string; inferred?: boolean }
 	| { state: 'missing' }
 	| { state: 'invalid'; error: string };
 
@@ -81,6 +82,74 @@ function readManifest(files: PackageFile[]): ManifestState {
 	return { state: 'ok', data: result.data, raw: file.content };
 }
 
+const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---/;
+
+// name/description only; deliberately not a full YAML parser. Reads SKILL.md
+// frontmatter, then falls back to the first prose line for a description.
+function readSkillMeta(content: string): { name?: string; description?: string } {
+	const out: { name?: string; description?: string } = {};
+	const fm = FRONTMATTER_RE.exec(content);
+	const body = fm ? content.slice(fm[0].length) : content;
+	if (fm) {
+		for (const line of fm[1].split('\n')) {
+			const kv = /^(name|description):\s*(.+?)\s*$/.exec(line);
+			if (!kv) continue;
+			const value = kv[2].replace(/^["']|["']$/g, '');
+			if (kv[1] === 'name' && !out.name) out.name = value;
+			if (kv[1] === 'description' && !out.description) out.description = value;
+		}
+	}
+	if (!out.description) {
+		const prose = body
+			.split('\n')
+			.map((line) => line.trim())
+			.find((line) => line && !line.startsWith('#'));
+		if (prose) out.description = prose.slice(0, 200);
+	}
+	return out;
+}
+
+function slugify(value: string): string {
+	const slug = value
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+	return slug || 'skill';
+}
+
+function inferTargets(files: PackageFile[]): Target[] {
+	const targets = new Set<Target>();
+	for (const file of files) {
+		if (file.path.includes('.claude/skills')) targets.add('claude-code');
+		if (file.path.includes('.agents/skills')) targets.add('codex');
+	}
+	return targets.size > 0 ? [...targets] : ['claude-code', 'codex'];
+}
+
+// Synthesize a manifest for a bare SKILL.md so it lists without an author-written
+// skill.json. Declares only non-critical detected permissions - critical ones stay
+// undeclared so the permission rule still fails a dangerous manifest-less skill.
+function inferManifest(files: PackageFile[], fallbackName: string): Manifest {
+	const skillFile = files.find((f) => f.path === 'SKILL.md');
+	const meta = skillFile ? readSkillMeta(skillFile.content) : {};
+	const name = slugify(meta.name ?? fallbackName);
+	const permissions = [
+		...new Set(
+			detectPermissions(files)
+				.map((d) => d.permission)
+				.filter((p) => riskWeightOf(p) < CRITICAL_WEIGHT),
+		),
+	];
+	return {
+		schemaVersion: '0.1',
+		name,
+		description: meta.description ?? name,
+		targets: inferTargets(files),
+		permissions,
+		distribution: 'skill',
+	};
+}
+
 function resolveEntries(dir: string, manifest: ManifestState, files: PackageFile[]): SkillEntryFile[] {
 	const has = (path: string) => files.some((f) => f.path === path);
 
@@ -112,7 +181,13 @@ export const byPath = (a: PackageFile, b: PackageFile) =>
 // worker); the flat path sort here defines the file order the source hash is built on.
 export function loadPackageFromFiles(files: PackageFile[], name = 'package'): LoadedPackage {
 	const sorted = [...files].sort(byPath);
-	const manifest = readManifest(sorted);
+	let manifest = readManifest(sorted);
+	// No skill.json but a SKILL.md is present: infer a manifest so the skill lists.
+	// A package with neither stays 'missing' and fails on missing-skill-file.
+	if (manifest.state === 'missing' && sorted.some((f) => f.path === 'SKILL.md')) {
+		const data = inferManifest(sorted, name);
+		manifest = { state: 'ok', inferred: true, data, raw: JSON.stringify(data, null, 2) };
+	}
 	return {
 		dir: name,
 		files: sorted,

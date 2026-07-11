@@ -1,11 +1,21 @@
-import { parsePassport, type SkillPassport } from 'skill-schema';
+import { parsePassport, type Distribution, type SkillPassport } from 'skill-schema';
 import type { SubmissionRow, ValidationReportRow } from '../db/schema';
+
+// How the listing is obtained + whether its manifest was inferred; carried from
+// the loaded manifest so the passport (and the detail-page CTA) stay honest.
+export interface PassportManifest {
+	distribution: Distribution;
+	homepage?: string;
+	install?: string;
+	inferred: boolean;
+}
 
 // Maps from the jsonb report document (the report of record), not the row's
 // denormalized columns; the commit sha comes from the submission (github only).
 export function buildPassport(
 	report: ValidationReportRow,
 	submission: SubmissionRow,
+	manifest: PassportManifest,
 	opts: { now?: Date } = {},
 ): SkillPassport {
 	const doc = report.report;
@@ -18,6 +28,10 @@ export function buildPassport(
 			detected: doc.permissionsDetected,
 		},
 		warningsSummary: doc.warnings,
+		distribution: manifest.distribution,
+		...(manifest.homepage ? { homepage: manifest.homepage } : {}),
+		...(manifest.install ? { install: manifest.install } : {}),
+		manifestInferred: manifest.inferred,
 		sourceHash: doc.sourceHash,
 		...(submission.resolvedCommitSha ? { resolvedCommitSha: submission.resolvedCommitSha } : {}),
 		engineVersion: doc.engineVersion,

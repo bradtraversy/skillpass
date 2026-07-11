@@ -13,6 +13,7 @@ function pkgWith(content: string, permissions: PermissionKey[] = []): LoadedPack
 		description: 'fake',
 		targets: ['claude-code'],
 		permissions,
+		distribution: 'skill',
 	};
 	return {
 		dir: '/fake',
@@ -24,7 +25,7 @@ function pkgWith(content: string, permissions: PermissionKey[] = []): LoadedPack
 }
 
 const detectedKeys = (content: string) =>
-	detectPermissions(pkgWith(content)).map((d) => d.permission);
+	detectPermissions(pkgWith(content).files).map((d) => d.permission);
 
 describe('permission signals', () => {
 	it.each([
@@ -53,7 +54,7 @@ describe('permission signals', () => {
 
 	it('deduplicates repeated signals to one detection at the first location', () => {
 		const detected = detectPermissions(
-			pkgWith('Fetch the readme.\nThen fetch the changelog.\nAnd download the icons.'),
+			pkgWith('Fetch the readme.\nThen fetch the changelog.\nAnd download the icons.').files,
 		);
 		const fetches = detected.filter((d) => d.permission === 'network.fetch');
 		expect(fetches).toHaveLength(1);

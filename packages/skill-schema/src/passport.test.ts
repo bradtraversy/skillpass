@@ -11,6 +11,8 @@ function passport(overrides: Record<string, unknown> = {}): Record<string, unkno
 			detected: ['filesystem.read.project', 'network.fetch', 'network.post'],
 		},
 		warningsSummary: [{ code: 'undeclared-permission', message: 'network.post detected but not declared' }],
+		distribution: 'skill',
+		manifestInferred: false,
 		sourceHash: 'sha256:abc123',
 		resolvedCommitSha: '9e7b5a0',
 		engineVersion: '0.1.0',
@@ -27,6 +29,25 @@ describe('parsePassport accepts', () => {
 	it('a zip-sourced passport without a commit sha or signature', () => {
 		const { resolvedCommitSha: _sha, ...rest } = passport();
 		expect(parsePassport(rest).success).toBe(true);
+	});
+
+	it('a cli distribution with an install command and an inferred flag', () => {
+		const result = parsePassport(
+			passport({ distribution: 'cli', install: 'cargo install memcrate', manifestInferred: true }),
+		);
+		expect(result.success).toBe(true);
+	});
+});
+
+describe('parsePassport rejects', () => {
+	it('a missing distribution', () => {
+		const { distribution: _d, ...rest } = passport();
+		expect(parsePassport(rest).success).toBe(false);
+	});
+
+	it('a missing manifestInferred', () => {
+		const { manifestInferred: _m, ...rest } = passport();
+		expect(parsePassport(rest).success).toBe(false);
 	});
 });
 

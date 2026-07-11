@@ -326,6 +326,10 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 				name: pkg.manifest.data.name,
 				summary: pkg.manifest.data.description,
 				targets: pkg.manifest.data.targets,
+				distribution: pkg.manifest.data.distribution,
+				homepage: pkg.manifest.data.homepage,
+				install: pkg.manifest.data.install,
+				manifestInferred: pkg.manifest.inferred ?? false,
 				attributedTo: attributionFor(c.get('user'), submission),
 			});
 		} catch (err) {

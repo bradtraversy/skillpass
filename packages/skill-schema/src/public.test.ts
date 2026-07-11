@@ -29,6 +29,8 @@ const detail: PublicSkillDetail = {
 		riskLevel: 'low',
 		permissionsSummary: { declared: [], detected: ['network.fetch'] },
 		warningsSummary: [],
+		distribution: 'skill',
+		manifestInferred: false,
 		sourceHash: 'sha256:abc',
 		engineVersion: 'validator-0.1.0',
 		generatedAt: '2026-07-07T18:24:19.337Z',

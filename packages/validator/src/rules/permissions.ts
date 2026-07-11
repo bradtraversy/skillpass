@@ -1,6 +1,6 @@
 import { riskWeightOf, type PermissionKey, type ReportFinding } from 'skill-schema';
 import type { Rule, RuleFinding } from './types';
-import type { LoadedPackage } from '../load';
+import type { PackageFile } from '../load';
 
 export interface PermissionSignal {
 	pattern: RegExp;
@@ -69,9 +69,9 @@ export interface DetectedPermission {
 	location: NonNullable<ReportFinding['location']>;
 }
 
-export function detectPermissions(pkg: LoadedPackage): DetectedPermission[] {
+export function detectPermissions(files: PackageFile[]): DetectedPermission[] {
 	const detected = new Map<PermissionKey, DetectedPermission>();
-	for (const file of pkg.files) {
+	for (const file of files) {
 		file.content.split('\n').forEach((line, i) => {
 			for (const signal of PERMISSION_SIGNALS) {
 				if (!detected.has(signal.permission) && signal.pattern.test(line)) {
@@ -87,12 +87,12 @@ export function detectPermissions(pkg: LoadedPackage): DetectedPermission[] {
 	return [...detected.values()];
 }
 
-const CRITICAL_WEIGHT = 7;
+export const CRITICAL_WEIGHT = 7;
 
 export const permissionsRule: Rule = (pkg) => {
 	const declared = pkg.manifest.state === 'ok' ? pkg.manifest.data.permissions : [];
 	const findings: RuleFinding[] = [];
-	for (const d of detectPermissions(pkg)) {
+	for (const d of detectPermissions(pkg.files)) {
 		if (declared.includes(d.permission)) {
 			continue;
 		}

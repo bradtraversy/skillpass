@@ -66,6 +66,19 @@ describe('parseManifest accepts', () => {
 		const { version: _version, ...rest } = singleSkill();
 		expect(parseManifest(rest).success).toBe(true);
 	});
+
+	it('defaults distribution to "skill" when omitted', () => {
+		const result = parseManifest(singleSkill());
+		expect(result.success && result.data.distribution).toBe('skill');
+	});
+
+	it('a cli distribution with an install command and homepage', () => {
+		const result = parseManifest(
+			singleSkill({ distribution: 'cli', install: 'cargo install memcrate', homepage: 'https://memcrate.dev' }),
+		);
+		expect(result.success && result.data.distribution).toBe('cli');
+		expect(result.success && result.data.install).toBe('cargo install memcrate');
+	});
 });
 
 describe('parseManifest rejects', () => {
@@ -94,6 +107,14 @@ describe('parseManifest rejects', () => {
 		expect(parseManifest(singleSkill({ permissions: ['filesystem.format.disk'] })).success).toBe(
 			false,
 		);
+	});
+
+	it('an unknown distribution type', () => {
+		expect(parseManifest(singleSkill({ distribution: 'binary' })).success).toBe(false);
+	});
+
+	it('a non-URL homepage', () => {
+		expect(parseManifest(singleSkill({ homepage: 'not a url' })).success).toBe(false);
 	});
 
 	it('an empty skills array', () => {
@@ -152,7 +173,7 @@ describe('parseManifest rejects', () => {
 	});
 
 	it('an unknown top-level key', () => {
-		expect(parseManifest(singleSkill({ homepage: 'https://example.com' })).success).toBe(false);
+		expect(parseManifest(singleSkill({ unknownField: 'x' })).success).toBe(false);
 	});
 
 	it('a non-object input with a readable error', () => {

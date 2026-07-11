@@ -1,4 +1,10 @@
-import { nextVersion, slugForSkill, type PublishResult, type Target } from 'skill-schema';
+import {
+	nextVersion,
+	slugForSkill,
+	type Distribution,
+	type PublishResult,
+	type Target,
+} from 'skill-schema';
 import type { Db } from '../db/client';
 import type { SubmissionRow, ValidationReportRow } from '../db/schema';
 import {
@@ -19,6 +25,12 @@ export interface PublishInput {
 	name: string;
 	summary: string;
 	targets: Target[];
+	// Default to a downloadable, author-declared skill; the publish route passes
+	// the real values read from the (possibly inferred) manifest.
+	distribution?: Distribution;
+	homepage?: string;
+	install?: string;
+	manifestInferred?: boolean;
 	attributedTo: string | null;
 	now?: Date;
 }
@@ -68,7 +80,17 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 		publishedAt: now,
 	});
 
-	const passport = buildPassport(input.report, submission, { now });
+	const passport = buildPassport(
+		input.report,
+		submission,
+		{
+			distribution: input.distribution ?? 'skill',
+			homepage: input.homepage,
+			install: input.install,
+			inferred: input.manifestInferred ?? false,
+		},
+		{ now },
+	);
 	await createSkillPassport(db, {
 		skillVersionId: versionRow.id,
 		passport,

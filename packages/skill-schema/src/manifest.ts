@@ -8,6 +8,10 @@ const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 const slugSchema = z.string().regex(SLUG_RE, 'must be a kebab-case slug');
 
+export const DISTRIBUTIONS = ['skill', 'cli', 'system'] as const;
+export const distributionSchema = z.enum(DISTRIBUTIONS);
+export type Distribution = z.infer<typeof distributionSchema>;
+
 const relativePathSchema = z
 	.string()
 	.min(1)
@@ -31,6 +35,11 @@ export const manifestSchema = z
 		version: z.string().regex(SEMVER_RE, 'must be a semver version').optional(),
 		targets: z.array(targetSchema).min(1),
 		permissions: z.array(permissionKeySchema),
+		// How the listing is obtained: download the validated snapshot (default),
+		// a CLI installed via `install`, or a system/framework fetched from its repo.
+		distribution: distributionSchema.default('skill'),
+		homepage: z.url().optional(),
+		install: z.string().min(1).optional(),
 		skills: z.array(skillEntrySchema).min(1).optional(),
 	})
 	.superRefine((manifest, ctx) => {

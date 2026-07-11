@@ -21,10 +21,15 @@ describe('structureRule', () => {
 		expect(structureRule(loadPackage(fixture('clean-skill')))).toEqual([]);
 	});
 
-	it('warns on the missing-manifest fixture', () => {
-		const findings = structureRule(loadPackage(fixture('missing-manifest')));
-		expect(findings).toHaveLength(1);
-		expect(findings[0]).toMatchObject({ severity: 'warning', code: 'missing-manifest' });
+	it('reports nothing for the missing-manifest fixture (its manifest is inferred)', () => {
+		expect(structureRule(loadPackage(fixture('missing-manifest')))).toEqual([]);
+	});
+
+	it('warns when a manifest is genuinely missing (no SKILL.md to infer from)', () => {
+		const findings = structureRule(pkg());
+		expect(findings).toContainEqual(
+			expect.objectContaining({ severity: 'warning', code: 'missing-manifest' }),
+		);
 	});
 
 	it('fails on the broken-manifest fixture', () => {
