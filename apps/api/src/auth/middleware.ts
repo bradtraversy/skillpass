@@ -29,6 +29,21 @@ export function requireAuth(env: Env, db: Db): MiddlewareHandler<{ Variables: Au
 	};
 }
 
+// Role gate for admin surfaces. Reads the user requireAuth already resolved, so
+// it must be mounted after requireAuth: an anon 401s there before this runs, a
+// signed-in non-match 403s here.
+export function requireRole(
+	role: UserRow['role'],
+): MiddlewareHandler<{ Variables: AuthVariables }> {
+	return async (c, next) => {
+		const user = c.get('user');
+		if (!user || user.role !== role) {
+			return c.json({ success: false, error: 'forbidden' }, 403);
+		}
+		await next();
+	};
+}
+
 // Optional read for anonymous routes that attribute when they can: a valid
 // session yields the user id, anything else yields null - never a 401.
 export async function readSessionUserId(c: Context, env: Env): Promise<number | null> {

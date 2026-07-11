@@ -1,4 +1,7 @@
 import type {
+	AdminAbuseReport,
+	AdminQueue,
+	AdminVersionHistory,
 	ApiEnvelope,
 	PublicAbuseReport,
 	PublicPreflight,
@@ -118,6 +121,33 @@ export function reportSkill(slug: string, reason: string): Promise<ApiResult<Pub
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ reason }),
 	});
+}
+
+export function getAdminQueue(): Promise<ApiResult<AdminQueue>> {
+	return request('/admin/queue');
+}
+
+export function getSkillHistory(slug: string): Promise<ApiResult<AdminVersionHistory[]>> {
+	return request(`/admin/skills/${encodeURIComponent(slug)}/history`);
+}
+
+export function resolveReport(
+	id: number,
+	status: 'reviewed' | 'actioned',
+): Promise<ApiResult<AdminAbuseReport>> {
+	return request(`/admin/reports/${id}/resolve`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ status }),
+	});
+}
+
+export function flagSkill(slug: string): Promise<ApiResult<{ slug: string; status: string }>> {
+	return request(`/admin/skills/${encodeURIComponent(slug)}/flag`, { method: 'POST' });
+}
+
+export function unflagSkill(slug: string): Promise<ApiResult<{ slug: string; status: string }>> {
+	return request(`/admin/skills/${encodeURIComponent(slug)}/unflag`, { method: 'POST' });
 }
 
 export function logout(): Promise<ApiResult<{ loggedOut: boolean }>> {

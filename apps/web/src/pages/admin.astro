@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/nav/Nav.astro';
+import AdminDashboard from '../components/admin/AdminDashboard';
+---
+
+<BaseLayout title="Admin - Review Queue">
+	<Nav />
+	<main class="mx-auto max-w-[760px] px-6">
+		<header class="pt-[34px] pb-[24px]">
+			<h1 class="text-[22px] font-bold tracking-[-0.01em]">Review queue</h1>
+			<p class="mt-[5px] text-[13px] text-muted">
+				Open abuse reports, failed submissions, and flagged skills. Actions take effect
+				immediately.
+			</p>
+		</header>
+		<AdminDashboard client:load />
+	</main>
+</BaseLayout>

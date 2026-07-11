@@ -1,7 +1,13 @@
 import { and, desc, eq } from 'drizzle-orm';
-import type { PublicSubmission } from 'skill-schema';
+import type { AdminSubmission, PublicSubmission } from 'skill-schema';
 import type { Db } from './client';
-import { submissions, type SubmissionRow } from './schema';
+import {
+	submissions,
+	users,
+	validationReports,
+	type SubmissionRow,
+	type ValidationReportRow,
+} from './schema';
 
 export type NewSubmission = typeof submissions.$inferInsert;
 
@@ -57,4 +63,42 @@ export async function findSubmissionForUser(
 		.from(submissions)
 		.where(and(eq(submissions.id, id), eq(submissions.userId, userId)));
 	return row;
+}
+
+// A failed submission joined with its submitter and validation report - the
+// admin queue's triage rows. Unscoped by user: the admin sees every failure.
+export interface FailedSubmissionRecord {
+	submission: SubmissionRow;
+	user: { username: string };
+	report: ValidationReportRow | null;
+}
+
+export async function listFailedSubmissions(db: Db): Promise<FailedSubmissionRecord[]> {
+	const rows = await db
+		.select({ submission: submissions, user: { username: users.username }, report: validationReports })
+		.from(submissions)
+		.innerJoin(users, eq(submissions.userId, users.id))
+		.leftJoin(validationReports, eq(validationReports.submissionId, submissions.id))
+		.where(eq(submissions.status, 'failed'))
+		.orderBy(desc(submissions.createdAt), desc(submissions.id));
+	return rows.map((r) => ({ submission: r.submission, user: r.user, report: r.report ?? null }));
+}
+
+export function adminSubmission(r: FailedSubmissionRecord): AdminSubmission {
+	return {
+		id: r.submission.id,
+		sourceType: r.submission.sourceType,
+		githubUrl: r.submission.githubUrl,
+		status: r.submission.status,
+		createdAt: r.submission.createdAt.toISOString(),
+		user: { username: r.user.username },
+		report: r.report
+			? {
+					status: r.report.status,
+					riskLevel: r.report.riskLevel,
+					warnings: r.report.report.warnings,
+					failures: r.report.report.failures,
+				}
+			: null,
+	};
 }

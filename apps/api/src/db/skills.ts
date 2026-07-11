@@ -1,11 +1,18 @@
 import { and, desc, eq } from 'drizzle-orm';
-import type { PublicSkillDetail, PublicSkillSummary } from 'skill-schema';
+import type {
+	AdminSkillRef,
+	AdminVersionHistory,
+	PublicSkillDetail,
+	PublicSkillSummary,
+} from 'skill-schema';
 import type { Db } from './client';
 import {
 	skillPassports,
 	skills,
 	skillVersions,
+	submissions,
 	users,
+	validationReports,
 	type SkillPassportRow,
 	type SkillRow,
 	type SkillVersionRow,
@@ -114,6 +121,61 @@ export async function findPublishedSkillBySlug(
 		.innerJoin(users, eq(skills.maintainerId, users.id))
 		.where(and(eq(skills.slug, slug), eq(skills.status, 'published')));
 	return row;
+}
+
+// Flagged skills for the admin queue, with the maintainer who owns the listing.
+export interface FlaggedSkillRecord {
+	skill: { slug: string; name: string };
+	maintainer: { username: string };
+}
+
+export async function listFlaggedSkills(db: Db): Promise<FlaggedSkillRecord[]> {
+	return db
+		.select({
+			skill: { slug: skills.slug, name: skills.name },
+			maintainer: { username: users.username },
+		})
+		.from(skills)
+		.innerJoin(users, eq(skills.maintainerId, users.id))
+		.where(eq(skills.status, 'flagged'))
+		.orderBy(desc(skills.updatedAt), desc(skills.id));
+}
+
+export function adminSkillRef(r: FlaggedSkillRecord): AdminSkillRef {
+	return { slug: r.skill.slug, name: r.skill.name, maintainer: { username: r.maintainer.username } };
+}
+
+export async function setSkillStatus(
+	db: Db,
+	id: number,
+	status: SkillRow['status'],
+	now: Date = new Date(),
+): Promise<void> {
+	await db.update(skills).set({ status, updatedAt: now }).where(eq(skills.id, id));
+}
+
+// Every version's validation verdict, newest first. A skill_version only exists
+// after a passed publish, so its submission always has a report - inner join.
+export async function listSkillValidationHistory(
+	db: Db,
+	skillId: number,
+): Promise<AdminVersionHistory[]> {
+	const rows = await db
+		.select({ version: skillVersions, report: validationReports })
+		.from(skillVersions)
+		.innerJoin(validationReports, eq(validationReports.submissionId, skillVersions.submissionId))
+		.where(eq(skillVersions.skillId, skillId))
+		.orderBy(desc(skillVersions.id));
+	return rows.map((r) => ({
+		version: r.version.version,
+		publishedAt: r.version.publishedAt?.toISOString() ?? null,
+		validationStatus: r.report.status,
+		riskLevel: r.report.riskLevel,
+		warnings: r.report.report.warnings,
+		failures: r.report.report.failures,
+		sourceHash: r.version.sourceHash,
+		resolvedCommitSha: r.version.resolvedCommitSha,
+	}));
 }
 
 export interface VersionWithPassport {

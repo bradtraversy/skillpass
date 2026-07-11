@@ -25,8 +25,8 @@ are bundles; `/feature` splits them into sub-items (5a, 5b, ...) at spec time.
   - [x] 7c. **Passport + source view pages** - `/skills/[slug]` and version permalinks rendering real passports, plus the source view (SKILL.md rendered, package files viewable) from the pinned snapshot.
 - [x] 8. **Download pre-flight** - endpoint + UI showing current validation, source hash, permissions, permission diffs, and blocking of failed versions.
 - [x] 9. **CLI scan and report** - `packages/cli` with `aiskills scan` and `aiskills report`, sharing the validator, readable + JSON output.
-- [ ] 10. **Reputation and admin** - maintainer reputation, user profiles, abuse reports, admin holding queue, validation history, manual review states.
+- [x] 10. **Reputation and admin** - maintainer reputation, user profiles, abuse reports, admin holding queue, validation history, manual review states.
   - [x] 10a. **Profiles + reputation** - `reputation_inputs` table rolling up into `users.reputation`, publish events wired as the first inputs, public `GET /users/:username`, and the `/u/[username]` profile page (listed skills + reputation), maintainer links from skill pages.
   - [x] 10b. **Abuse reports** - signed-in report flow on skill pages, `abuse_reports` table (open/reviewed/actioned), owner-visible confirmation.
-  - [ ] 10c. **Admin queue + review states** - admin-only `/admin` holding queue (failed/flagged submissions, open abuse reports), manual review states (flag/unflag skill, resolve reports with reputation consequences), per-skill validation history.
+  - [x] 10c. **Admin queue + review states** - admin-only `/admin` holding queue (failed/flagged submissions, open abuse reports), manual review states (flag/unflag skill, resolve reports with reputation consequences), per-skill validation history.
 - [ ] 11. **Launch seed and docs** - seed first-party listings, feature AI Blueprint and Memcrate, author docs, and the bradtraversy.dev project page.
