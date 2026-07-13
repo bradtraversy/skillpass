@@ -1,13 +1,7 @@
 ---
-// Top navigation, matching prototypes/homepage.html. Static except the
-// account slot, which hydrates lazily.
+// Top nav: logo, the Submit CTA, and the lazily-hydrated account slot. Menu
+// links return in feature 14 once their destination pages exist.
 import AccountMenu from './AccountMenu';
-
-const links = [
-	{ label: 'Browse', href: '#' },
-	{ label: 'Validator', href: '#' },
-	{ label: 'Docs', href: '#' },
-];
 ---
 
 <header class="border-b border-border">
@@ -36,8 +30,6 @@ const links = [
 			AI Skills Directory
 		</a>
 		<nav class="ml-auto flex items-center gap-[22px] font-medium text-muted">
-			{links.map((link) => <a href={link.href} class="hover:text-text">{link.label}</a>)}
-			<a href="#" class="font-mono text-[13px] hover:text-text">CLI</a>
 			<a
 				href="/submit"
 				class="inline-flex items-center gap-[7px] rounded-sm border border-border-2 px-3.5 py-2 text-[13px] font-semibold text-text hover:bg-hover"
