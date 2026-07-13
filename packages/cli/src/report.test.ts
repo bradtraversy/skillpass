@@ -17,6 +17,8 @@ const detail: PublicSkillDetail = {
 	version: '2.0.0',
 	maintainer: 'bradtraversy',
 	attributedTo: null,
+	featured: false,
+	verified: false,
 	publishedAt: '2026-07-07T18:24:19.337Z',
 	githubRepoUrl: null,
 	passport: {

@@ -13,6 +13,8 @@ export const publicSkillSummarySchema = z.strictObject({
 	version: z.string().min(1),
 	maintainer: z.string().min(1),
 	attributedTo: z.string().min(1).nullable(),
+	featured: z.boolean(),
+	verified: z.boolean(),
 	publishedAt: z.iso.datetime(),
 });
 

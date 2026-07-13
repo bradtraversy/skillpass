@@ -5,12 +5,16 @@ import type {
 	AdminSkillRef,
 	AdminSubmission,
 	AdminVersionHistory,
+	PublicSkillSummary,
 } from 'skill-schema';
 import {
 	flagSkill,
 	getAdminQueue,
 	getSkillHistory,
+	getSkills,
 	resolveReport,
+	setFeatured,
+	setVerified,
 	signInUrl,
 	unflagSkill,
 	type ApiResult,
@@ -111,7 +115,110 @@ export default function AdminDashboard() {
 					</div>
 				)}
 			</section>
+
+			<CurationSection />
 		</div>
+	);
+}
+
+// Toggle featured / verified on every published skill; its own fetch, since the
+// review queue doesn't carry published listings.
+function CurationSection() {
+	const [skills, setSkills] = useState<PublicSkillSummary[] | null | 'error'>(null);
+
+	const load = useCallback(async () => {
+		const res = await getSkills();
+		setSkills(res.success ? res.data : 'error');
+	}, []);
+
+	useEffect(() => {
+		void load();
+	}, [load]);
+
+	const count = Array.isArray(skills) ? skills.length : '-';
+	return (
+		<section>
+			<h2 className={SECTION_HEADING}>Published skills ({count})</h2>
+			{skills === null && <Empty>Loading published skills...</Empty>}
+			{skills === 'error' && <p className="text-[13px] text-fail">Couldn't load published skills.</p>}
+			{Array.isArray(skills) &&
+				(skills.length === 0 ? (
+					<Empty>No published skills yet.</Empty>
+				) : (
+					<div className="flex flex-col gap-[10px]">
+						{skills.map((s) => (
+							<CurationCard key={s.slug} skill={s} onChange={load} />
+						))}
+					</div>
+				))}
+		</section>
+	);
+}
+
+function CurationCard({
+	skill,
+	onChange,
+}: {
+	skill: PublicSkillSummary;
+	onChange: () => Promise<void>;
+}) {
+	const { busy, error, run } = useAction(onChange);
+	return (
+		<div className={CARD}>
+			<div className="flex items-center justify-between gap-4">
+				<div className="min-w-0">
+					<a href={`/skills/${skill.slug}`} className="font-semibold hover:text-accent">
+						{skill.name}
+					</a>
+					<div className="mt-[2px] text-[12px] text-faint">
+						{skill.attributedTo ? `curated - ${skill.attributedTo}` : `@${skill.maintainer}`}
+					</div>
+				</div>
+				<div className="flex flex-none gap-[8px]">
+					<ToggleButton
+						label="Featured"
+						on={skill.featured}
+						busy={busy}
+						onClick={() => void run(() => setFeatured(skill.slug, !skill.featured))}
+					/>
+					<ToggleButton
+						label="Verified"
+						on={skill.verified}
+						busy={busy}
+						onClick={() => void run(() => setVerified(skill.slug, !skill.verified))}
+					/>
+				</div>
+			</div>
+			{error && <p className="mt-[8px] text-[12px] text-fail">{error}</p>}
+		</div>
+	);
+}
+
+function ToggleButton({
+	label,
+	on,
+	busy,
+	onClick,
+}: {
+	label: string;
+	on: boolean;
+	busy: boolean;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			disabled={busy}
+			onClick={onClick}
+			aria-pressed={on}
+			className={`${BTN_BASE} border ${
+				on
+					? 'border-pass-line bg-pass-soft text-pass'
+					: 'border-border text-muted hover:text-text'
+			}`}
+		>
+			{on ? `✓ ${label}` : label}
+		</button>
 	);
 }
 

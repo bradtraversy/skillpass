@@ -64,6 +64,13 @@
       "when": 1783601449080,
       "tag": "0008_minor_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783859485396,
+      "tag": "0009_kind_cammi",
+      "breakpoints": true
     }
   ]
 }

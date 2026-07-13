@@ -64,8 +64,31 @@ list.
    `aiskills report`, sharing the validator, readable + JSON output.
 10. **Reputation and admin** - maintainer reputation, user profiles, abuse
     reports, admin holding queue, validation history, manual review states.
-11. **Launch seed and docs** - seed first-party listings, feature AI Blueprint and
-    Memcrate, author docs, and the bradtraversy.dev project page.
+11. **Launch seed** - seed real listings through the admin-curate path and feature
+    the AI Blueprint pack and Memcrate (8 Anthropic skills already curated into
+    dev).
+12. **Navigation and shell wiring** - make the top nav and footer real (Browse,
+    Validator, Docs, CLI) with active states, replacing the `#` placeholder links
+    carried over from the prototype.
+13. **Homepage ranking and curation** - give the Trending/New/Verified/Workflow-packs
+    tabs real backing: a curation/featured signal, New by recency, Verified as a
+    first-party/maintainer signal, and Workflow packs = multi-skill packs; wire the
+    active tab into the filter (today it is set but never applied).
+14. **Docs and CLI onboarding** - docs pages explaining the Skill Passport,
+    validation, the permission taxonomy, and how to submit, plus the `aiskills`
+    install-and-usage guide the skill detail page's `aiskills add` command assumes.
+15. **CLI install lifecycle** - ship `aiskills` (npm or a documented install path)
+    and round out the command set into a local install manager: `add`, `remove`
+    (mirror add's target resolution and delete `<target>/<slug>`), and a simple
+    `list` of installed skill names.
+16. **Maintainer dashboard** - authed `/dashboard` to manage your own listings:
+    your skills and their status (published/draft/private/flagged), your submissions
+    and their validation state, publish/unlist/delete actions, and abuse reports
+    filed against your skills; the private counterpart to the public `/u/[username]`.
+    Delete withdraws the listing (its effect on the immutable passports and
+    snapshots is a spec-time detail).
+17. **Category/tag browse** (optional) - surface the existing Category and Tag
+    models as browse and filter affordances.
 
 ## Data model
 

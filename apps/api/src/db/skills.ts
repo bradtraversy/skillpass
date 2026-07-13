@@ -154,6 +154,18 @@ export async function setSkillStatus(
 	await db.update(skills).set({ status, updatedAt: now }).where(eq(skills.id, id));
 }
 
+export async function setSkillCuration(
+	db: Db,
+	id: number,
+	patch: { featured?: boolean; verified?: boolean },
+	now: Date = new Date(),
+): Promise<void> {
+	await db
+		.update(skills)
+		.set({ ...patch, updatedAt: now })
+		.where(eq(skills.id, id));
+}
+
 // Every version's validation verdict, newest first. A skill_version only exists
 // after a passed publish, so its submission always has a report - inner join.
 export async function listSkillValidationHistory(
@@ -219,6 +231,8 @@ export function publicSkillSummary(r: PublishedSkillRecord): PublicSkillSummary 
 		version: r.version.version,
 		maintainer: r.maintainer.username,
 		attributedTo: r.skill.attributedTo,
+		featured: r.skill.featured,
+		verified: r.skill.verified,
 		publishedAt: (r.version.publishedAt ?? r.version.createdAt).toISOString(),
 	};
 }

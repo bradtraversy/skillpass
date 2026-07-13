@@ -75,6 +75,8 @@ const skill: SkillRow = {
 	maintainerId: 1,
 	attributedTo: null,
 	status: 'published',
+	featured: false,
+	verified: false,
 	latestVersionId: 1,
 	createdAt: NOW,
 	updatedAt: NOW,
@@ -153,8 +155,20 @@ describe('GET /skills', () => {
 			version: '1.0.0',
 			maintainer: 'bradtraversy',
 			attributedTo: null,
+			featured: false,
+			verified: false,
 			publishedAt: NOW.toISOString(),
 		});
+	});
+
+	it('passes featured and verified through from the skill row', async () => {
+		vi.mocked(listPublishedSkills).mockResolvedValue([
+			{ ...record, skill: { ...skill, featured: true, verified: true } },
+		]);
+		const res = await app.request('/skills');
+		const body = (await res.json()) as { data: { featured: boolean; verified: boolean }[] };
+		expect(body.data[0].featured).toBe(true);
+		expect(body.data[0].verified).toBe(true);
 	});
 
 	it('leaks no internal fields', async () => {

@@ -88,6 +88,8 @@ const skillRow: SkillRow = {
 	maintainerId: 7,
 	attributedTo: null,
 	status: 'published',
+	featured: false,
+	verified: false,
 	latestVersionId: null,
 	createdAt: new Date('2026-07-07T15:00:00Z'),
 	updatedAt: new Date('2026-07-07T15:00:00Z'),
@@ -140,6 +142,7 @@ describe('publishSubmission', () => {
 			maintainerId: 7,
 			attributedTo: null,
 			status: 'published',
+			verified: false,
 		});
 		expect(createSkillVersion).toHaveBeenCalledWith(db, {
 			skillId: 3,
@@ -181,6 +184,26 @@ describe('publishSubmission', () => {
 			vi.mocked(setSubmissionStatus).mock.invocationCallOrder[0],
 		];
 		expect(order).toEqual([...order].sort((a, b) => a - b));
+	});
+
+	it('creates the skill verified when the input is verified (admin-curated add)', async () => {
+		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
+		vi.mocked(createSkill).mockResolvedValue(skillRow);
+		vi.mocked(findLatestVersionForSkill).mockResolvedValue(undefined);
+		vi.mocked(createSkillVersion).mockResolvedValue(versionRow());
+
+		await publishSubmission(db, {
+			submission: githubSubmission,
+			report: reportRow,
+			name: 'Clean Skill',
+			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
+			attributedTo: 'octocat',
+			verified: true,
+			now: NOW,
+		});
+
+		expect(createSkill).toHaveBeenCalledWith(db, expect.objectContaining({ verified: true }));
 	});
 
 	it('re-publish by the same maintainer bumps the major on the existing skill', async () => {

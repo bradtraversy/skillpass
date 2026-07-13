@@ -150,6 +150,28 @@ export function unflagSkill(slug: string): Promise<ApiResult<{ slug: string; sta
 	return request(`/admin/skills/${encodeURIComponent(slug)}/unflag`, { method: 'POST' });
 }
 
+export function setFeatured(
+	slug: string,
+	value: boolean,
+): Promise<ApiResult<{ slug: string; featured: boolean }>> {
+	return request(`/admin/skills/${encodeURIComponent(slug)}/feature`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ value }),
+	});
+}
+
+export function setVerified(
+	slug: string,
+	value: boolean,
+): Promise<ApiResult<{ slug: string; verified: boolean }>> {
+	return request(`/admin/skills/${encodeURIComponent(slug)}/verify`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ value }),
+	});
+}
+
 export function logout(): Promise<ApiResult<{ loggedOut: boolean }>> {
 	return request('/auth/logout', { method: 'POST' });
 }

@@ -770,17 +770,18 @@ describe('POST /submissions/:id/publish', () => {
 			install: undefined,
 			manifestInferred: false,
 			attributedTo: null,
+			verified: false,
 		});
 	});
 
-	it('attributes an admin-curated github repo to its owner', async () => {
+	it('attributes an admin-curated github repo to its owner and verifies it', async () => {
 		mockPublishPath();
 		vi.mocked(findById).mockResolvedValue({ ...userRow, role: 'admin' });
 		const res = await publish(1, await sessionCookie(7));
 		expect(res.status).toBe(201);
 		expect(vi.mocked(publishSubmission)).toHaveBeenCalledWith(
 			expect.anything(),
-			expect.objectContaining({ attributedTo: 'octocat' }),
+			expect.objectContaining({ attributedTo: 'octocat', verified: true }),
 		);
 	});
 

@@ -1,4 +1,5 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
+import { z } from 'zod';
 import { parseResolveReportInput, type AdminAbuseReport, type AdminQueue } from 'skill-schema';
 import { requireAuth, requireRole, type AuthVariables } from '../auth/middleware';
 import {
@@ -13,11 +14,44 @@ import {
 	findSkillBySlug,
 	listFlaggedSkills,
 	listSkillValidationHistory,
+	setSkillCuration,
 	setSkillStatus,
 } from '../db/skills';
 import { adminSubmission, listFailedSubmissions } from '../db/submissions';
 import type { Env } from '../env';
 import { awardReputation } from '../reputation/reputation';
+
+const curationBody = z.object({ value: z.boolean() });
+
+// Toggle a homepage curation flag (featured / verified). Admin-only and
+// published-only, mirroring the flag/unflag guards.
+function curationHandler(db: Db, field: 'featured' | 'verified') {
+	return async (c: Context<{ Variables: AuthVariables }>) => {
+		const slug = c.req.param('slug');
+		if (!slug) {
+			return c.json({ success: false, error: 'not found' }, 404);
+		}
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ success: false, error: 'send a JSON body with a boolean "value"' }, 400);
+		}
+		const parsed = curationBody.safeParse(raw);
+		if (!parsed.success) {
+			return c.json({ success: false, error: '"value" must be a boolean' }, 400);
+		}
+		const skill = await findSkillBySlug(db, slug);
+		if (!skill) {
+			return c.json({ success: false, error: 'not found' }, 404);
+		}
+		if (skill.status !== 'published') {
+			return c.json({ success: false, error: `only a published skill can be ${field}` }, 409);
+		}
+		await setSkillCuration(db, skill.id, { [field]: parsed.data.value });
+		return c.json({ success: true, data: { slug, [field]: parsed.data.value } });
+	};
+}
 
 // Admin-only surfaces: the holding queue and review actions. Every route sits
 // behind requireAuth (401 for anon) then requireRole (403 for non-admin).
@@ -108,6 +142,10 @@ export function adminRoutes(env: Env, db: Db) {
 		await setSkillStatus(db, skill.id, 'published');
 		return c.json({ success: true, data: { slug, status: 'published' } });
 	});
+
+	// Homepage curation flags: feature (Featured tab) and verify (Verified tab).
+	routes.post('/skills/:slug/feature', curationHandler(db, 'featured'));
+	routes.post('/skills/:slug/verify', curationHandler(db, 'verified'));
 
 	// Every version's validation verdict + findings for one skill; the by-slug
 	// lookup includes flagged skills, unlike the public-only helpers.

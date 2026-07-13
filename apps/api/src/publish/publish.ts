@@ -32,6 +32,8 @@ export interface PublishInput {
 	install?: string;
 	manifestInferred?: boolean;
 	attributedTo: string | null;
+	// Admin-curated adds come in verified; a maintainer's own publish does not.
+	verified?: boolean;
 	now?: Date;
 }
 
@@ -62,6 +64,7 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 			maintainerId: submission.userId,
 			attributedTo: input.attributedTo,
 			status: 'published',
+			verified: input.verified ?? false,
 		}));
 
 	const latest = await findLatestVersionForSkill(db, skill.id);

@@ -1,4 +1,5 @@
 import {
+	boolean,
 	integer,
 	jsonb,
 	pgEnum,
@@ -117,6 +118,8 @@ export const skills = pgTable('skills', {
 		.references(() => users.id),
 	attributedTo: text('attributed_to'),
 	status: skillStatus('status').notNull(),
+	featured: boolean('featured').notNull().default(false),
+	verified: boolean('verified').notNull().default(false),
 	latestVersionId: integer('latest_version_id').references((): AnyPgColumn => skillVersions.id),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

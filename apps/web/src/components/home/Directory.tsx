@@ -4,8 +4,6 @@ import { getSkills } from '../../lib/api';
 import { filterSkills } from '../../lib/filterSkills';
 import Row from '../skill/Row';
 
-const TABS = ['Trending', 'New', 'Verified', 'Workflow packs'];
-
 const VERDICT_OPTIONS: { value: ValidationStatus | 'all'; label: string }[] = [
 	{ value: 'all', label: 'Verdict' },
 	{ value: 'passed', label: 'Passed' },
@@ -23,7 +21,6 @@ export default function Directory() {
 	const [query, setQuery] = useState('');
 	const [verdict, setVerdict] = useState<ValidationStatus | 'all'>('all');
 	const [tool, setTool] = useState<Target | 'all'>('all');
-	const [activeTab, setActiveTab] = useState(0);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -42,7 +39,9 @@ export default function Directory() {
 
 	const skills = load.phase === 'ready' ? load.skills : [];
 	const tools = Array.from(new Set(skills.flatMap((s) => s.targets))).sort();
-	const matches = filterSkills(skills, { query, verdict, tool });
+	// Tabs are deferred at launch scale; show all, newest-first. The Featured/Verified
+	// filters stay in filterSkills for when the catalog is large enough to need them.
+	const matches = filterSkills(skills, { query, verdict, tool, tab: 'new' });
 
 	return (
 		<>
@@ -84,20 +83,9 @@ export default function Directory() {
 			</div>
 
 			<div className="mt-[86px] flex items-center gap-[26px] border-b border-border">
-				{TABS.map((tab, i) => (
-					<button
-						key={tab}
-						type="button"
-						onClick={() => setActiveTab(i)}
-						className={`-mb-px cursor-pointer border-b-2 pb-[13px] font-medium ${
-							i === activeTab
-								? 'border-accent text-text'
-								: 'border-transparent text-muted hover:text-text'
-						}`}
-					>
-						{tab}
-					</button>
-				))}
+				<span className="-mb-px border-b-2 border-accent pb-[13px] font-medium text-text">
+					Latest
+				</span>
 				<div className="ml-auto flex gap-2 pb-2">
 					<FilterSelect
 						value={verdict}

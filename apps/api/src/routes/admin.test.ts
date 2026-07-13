@@ -17,6 +17,7 @@ import {
 	findSkillBySlug,
 	listFlaggedSkills,
 	listSkillValidationHistory,
+	setSkillCuration,
 	setSkillStatus,
 	type FlaggedSkillRecord,
 } from '../db/skills';
@@ -42,6 +43,7 @@ vi.mock('../db/skills', async (importOriginal) => ({
 	listFlaggedSkills: vi.fn(),
 	findSkillBySlug: vi.fn(),
 	setSkillStatus: vi.fn(),
+	setSkillCuration: vi.fn(),
 	listSkillValidationHistory: vi.fn(),
 }));
 vi.mock('../db/users', async (importOriginal) => ({
@@ -135,6 +137,8 @@ const publishedSkill: SkillRow = {
 	maintainerId: MAINTAINER_ID,
 	attributedTo: null,
 	status: 'published',
+	featured: false,
+	verified: false,
 	latestVersionId: 100,
 	createdAt: NOW,
 	updatedAt: NOW,
@@ -372,6 +376,63 @@ describe('POST /admin/skills/:slug/unflag', () => {
 		const res = await unflag('bad-skill', await sessionCookie(admin.id));
 		expect(res.status).toBe(409);
 		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
+	});
+});
+
+describe('POST /admin/skills/:slug/{feature,verify}', () => {
+	function curate(action: 'feature' | 'verify', slug: string, body: unknown, cookie?: string) {
+		return app.request(`/admin/skills/${slug}/${action}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
+			body: JSON.stringify(body),
+		});
+	}
+
+	it('403s a non-admin, changing nothing', async () => {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(maintainer.id));
+		expect(res.status).toBe(403);
+		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
+	});
+
+	it('features a published skill', async () => {
+		vi.mocked(findById).mockResolvedValue(admin);
+		vi.mocked(findSkillBySlug).mockResolvedValue(publishedSkill);
+		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(admin.id));
+		expect(res.status).toBe(200);
+		expect((await res.json()).data).toEqual({ slug: 'bad-skill', featured: true });
+		expect(vi.mocked(setSkillCuration)).toHaveBeenCalledWith(expect.anything(), 10, { featured: true });
+	});
+
+	it('verifies, and can unset, a published skill', async () => {
+		vi.mocked(findById).mockResolvedValue(admin);
+		vi.mocked(findSkillBySlug).mockResolvedValue(publishedSkill);
+		const res = await curate('verify', 'bad-skill', { value: false }, await sessionCookie(admin.id));
+		expect(res.status).toBe(200);
+		expect((await res.json()).data).toEqual({ slug: 'bad-skill', verified: false });
+		expect(vi.mocked(setSkillCuration)).toHaveBeenCalledWith(expect.anything(), 10, { verified: false });
+	});
+
+	it('409s a skill that is not published', async () => {
+		vi.mocked(findById).mockResolvedValue(admin);
+		vi.mocked(findSkillBySlug).mockResolvedValue({ ...publishedSkill, status: 'flagged' });
+		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(admin.id));
+		expect(res.status).toBe(409);
+		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
+	});
+
+	it('404s an unknown slug', async () => {
+		vi.mocked(findById).mockResolvedValue(admin);
+		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
+		const res = await curate('feature', 'nope', { value: true }, await sessionCookie(admin.id));
+		expect(res.status).toBe(404);
+	});
+
+	it('400s a non-boolean value, without a lookup', async () => {
+		vi.mocked(findById).mockResolvedValue(admin);
+		const res = await curate('feature', 'bad-skill', { value: 'yes' }, await sessionCookie(admin.id));
+		expect(res.status).toBe(400);
+		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
 	});
 });
 

@@ -2,7 +2,7 @@ import type { PublicSkillSummary } from 'skill-schema';
 import { describe, expect, it } from 'vitest';
 import { filterSkills, type SkillFilters } from './filterSkills';
 
-const base: SkillFilters = { query: '', verdict: 'all', tool: 'all' };
+const base: SkillFilters = { query: '', verdict: 'all', tool: 'all', tab: 'new' };
 
 function summary(overrides: Partial<PublicSkillSummary>): PublicSkillSummary {
 	return {
@@ -15,6 +15,8 @@ function summary(overrides: Partial<PublicSkillSummary>): PublicSkillSummary {
 		version: '1.0.0',
 		maintainer: 'someone',
 		attributedTo: null,
+		featured: false,
+		verified: false,
 		publishedAt: '2026-07-07T18:00:00.000Z',
 		...overrides,
 	};
@@ -84,5 +86,38 @@ describe('filterSkills', () => {
 
 	it('returns an empty array when nothing matches', () => {
 		expect(filterSkills(sample, { ...base, query: 'nonexistent-xyz' })).toEqual([]);
+	});
+});
+
+describe('filterSkills tabs', () => {
+	const a = summary({ slug: 'a', name: 'Alpha', featured: true, verified: false, publishedAt: '2026-01-01T00:00:00.000Z' });
+	const b = summary({ slug: 'b', name: 'Bravo', featured: false, verified: true, publishedAt: '2026-03-01T00:00:00.000Z' });
+	const c = summary({ slug: 'c', name: 'Charlie', featured: true, verified: true, publishedAt: '2026-02-01T00:00:00.000Z' });
+	const skills = [a, b, c];
+
+	it('new: returns all, newest first', () => {
+		expect(filterSkills(skills, { ...base, tab: 'new' }).map((s) => s.slug)).toEqual(['b', 'c', 'a']);
+	});
+
+	it('featured: only featured skills, newest first', () => {
+		expect(filterSkills(skills, { ...base, tab: 'featured' }).map((s) => s.slug)).toEqual(['c', 'a']);
+	});
+
+	it('verified: only verified skills, newest first', () => {
+		expect(filterSkills(skills, { ...base, tab: 'verified' }).map((s) => s.slug)).toEqual(['b', 'c']);
+	});
+
+	it('featured falls back to all (newest first) when nothing is featured', () => {
+		const none = [
+			summary({ slug: 'x', featured: false, publishedAt: '2026-01-01T00:00:00.000Z' }),
+			summary({ slug: 'y', featured: false, publishedAt: '2026-02-01T00:00:00.000Z' }),
+		];
+		expect(filterSkills(none, { ...base, tab: 'featured' }).map((s) => s.slug)).toEqual(['y', 'x']);
+	});
+
+	it('composes the tab with the text query', () => {
+		expect(filterSkills(skills, { ...base, tab: 'verified', query: 'bravo' }).map((s) => s.slug)).toEqual([
+			'b',
+		]);
 	});
 });
