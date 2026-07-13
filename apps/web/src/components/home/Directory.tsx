@@ -79,7 +79,7 @@ export default function Directory() {
 				<span className="mx-[10px] text-border-2">·</span>
 				every version validated
 				<span className="mx-[10px] text-border-2">·</span>
-				same engine in the <span className="text-accent">aiskills</span> CLI
+				same engine in the <span className="text-accent">skillpass</span> CLI
 			</div>
 
 			<div className="mt-[86px] flex items-center gap-[26px] border-b border-border">

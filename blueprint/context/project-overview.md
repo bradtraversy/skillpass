@@ -1,4 +1,4 @@
-# AI Skills Directory - Project Overview
+# SkillPass - Project Overview
 
 > A public, validation-first directory of AI agent skills: discover a skill, see
 > which tools it targets, and inspect exactly what it asks an agent to do before
@@ -60,8 +60,8 @@ list.
    files rendered from the validated snapshot, pinned to the source hash).
 8. **Download pre-flight** - endpoint + UI showing current validation, source
    hash, permissions, permission diffs, and blocking of failed versions.
-9. **CLI scan and report** - `packages/cli` with `aiskills scan` and
-   `aiskills report`, sharing the validator, readable + JSON output.
+9. **CLI scan and report** - `packages/cli` with `skillpass scan` and
+   `skillpass report`, sharing the validator, readable + JSON output.
 10. **Reputation and admin** - maintainer reputation, user profiles, abuse
     reports, admin holding queue, validation history, manual review states.
 11. **Launch seed** - seed real listings through the admin-curate path and feature
@@ -75,9 +75,9 @@ list.
     first-party/maintainer signal, and Workflow packs = multi-skill packs; wire the
     active tab into the filter (today it is set but never applied).
 14. **Docs and CLI onboarding** - docs pages explaining the Skill Passport,
-    validation, the permission taxonomy, and how to submit, plus the `aiskills`
-    install-and-usage guide the skill detail page's `aiskills add` command assumes.
-15. **CLI install lifecycle** - ship `aiskills` (npm or a documented install path)
+    validation, the permission taxonomy, and how to submit, plus the `skillpass`
+    install-and-usage guide the skill detail page's `skillpass add` command assumes.
+15. **CLI install lifecycle** - ship `skillpass` (npm or a documented install path)
     and round out the command set into a local install manager: `add`, `remove`
     (mirror add's target resolution and delete `<target>/<slug>`), and a simple
     `list` of installed skill names.
@@ -268,7 +268,7 @@ Node API endpoints (`apps/api`, names indicative):
 - `/validation/:jobId` - job status feeding the inline progress panel
 - `/download/preflight` - current validation, source hash, permissions, diffs
 
-CLI (not a route): `aiskills scan`, `aiskills report`.
+CLI (not a route): `skillpass scan`, `skillpass report`.
 
 ## Open questions
 

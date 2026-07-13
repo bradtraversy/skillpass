@@ -80,7 +80,7 @@ function stubFetch(overrides: { preflight?: PublicPreflight; zip?: Uint8Array } 
 	}) as unknown as typeof fetch;
 }
 
-const tempTarget = () => join(mkdtempSync(join(tmpdir(), 'aiskills-add-')), 'skill');
+const tempTarget = () => join(mkdtempSync(join(tmpdir(), 'skillpass-add-')), 'skill');
 
 describe('runAdd', () => {
 	it('installs verified files and exits 0', async () => {
@@ -176,7 +176,7 @@ describe('runAdd', () => {
 	});
 
 	it('installs into .claude/skills with --target claude-code', async () => {
-		const cwd = mkdtempSync(join(tmpdir(), 'aiskills-target-'));
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-target-'));
 		const result = await runAdd('smoke-clean', {
 			target: 'claude-code',
 			cwd,
@@ -189,7 +189,7 @@ describe('runAdd', () => {
 	});
 
 	it('warns when the chosen target is not declared by the skill', async () => {
-		const cwd = mkdtempSync(join(tmpdir(), 'aiskills-target-'));
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-target-'));
 		const result = await runAdd('smoke-clean', { target: 'codex', cwd, fetchImpl: stubFetch() });
 		expect(result.exitCode).toBe(0);
 		expect(result.lines.join('\n')).toContain('does not declare codex');
@@ -215,14 +215,14 @@ describe('runAdd', () => {
 	});
 
 	it('tips the mappable target on a default install without a prompt', async () => {
-		const cwd = mkdtempSync(join(tmpdir(), 'aiskills-tip-'));
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-tip-'));
 		const result = await runAdd('smoke-clean', { cwd, fetchImpl: stubFetch() });
 		expect(result.exitCode).toBe(0);
 		expect(result.lines.join('\n')).toContain('tip: --target claude-code');
 	});
 
 	it('asks where to install when interactive and honors the choice', async () => {
-		const cwd = mkdtempSync(join(tmpdir(), 'aiskills-ask-'));
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-ask-'));
 		const promptImpl = vi.fn(async () => '1');
 		const result = await runAdd('smoke-clean', { cwd, promptImpl, fetchImpl: stubFetch() });
 		expect(result.exitCode).toBe(0);
@@ -232,7 +232,7 @@ describe('runAdd', () => {
 	});
 
 	it('defaults to the first choice on an empty answer', async () => {
-		const cwd = mkdtempSync(join(tmpdir(), 'aiskills-ask-'));
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-ask-'));
 		const result = await runAdd('smoke-clean', {
 			cwd,
 			promptImpl: async () => '',
@@ -243,7 +243,7 @@ describe('runAdd', () => {
 	});
 
 	it('installs to the current directory when that choice is picked', async () => {
-		const cwd = mkdtempSync(join(tmpdir(), 'aiskills-ask-'));
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-ask-'));
 		const choices = installChoices(['claude-code'], 'smoke-clean');
 		const result = await runAdd('smoke-clean', {
 			cwd,
@@ -255,7 +255,7 @@ describe('runAdd', () => {
 	});
 
 	it('streams lines through emit and marks the result streamed', async () => {
-		const cwd = mkdtempSync(join(tmpdir(), 'aiskills-emit-'));
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-emit-'));
 		const emitted: string[] = [];
 		const result = await runAdd('smoke-clean', {
 			cwd,

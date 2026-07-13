@@ -36,9 +36,9 @@ describe('renderMarkdown', () => {
 	});
 
 	it('renders inline code, bold, and italic', () => {
-		const out = html('Use `aiskills scan` for a **local** *check*.');
+		const out = html('Use `skillpass scan` for a **local** *check*.');
 		expect(out).toContain('<code');
-		expect(out).toContain('aiskills scan');
+		expect(out).toContain('skillpass scan');
 		expect(out).toContain('<strong');
 		expect(out).toContain('<em>check</em>');
 	});

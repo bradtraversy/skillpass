@@ -1,10 +1,10 @@
 {
-	"name": "cli",
+	"name": "skillpass",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
 	"bin": {
-		"aiskills": "./bin/aiskills.mjs"
+		"skillpass": "./bin/skillpass.mjs"
 	},
 	"exports": {
 		".": "./src/index.ts"

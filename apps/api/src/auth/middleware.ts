@@ -5,7 +5,7 @@ import { findById } from '../db/users';
 import type { UserRow } from '../db/schema';
 import type { Env } from '../env';
 
-export const SESSION_COOKIE = 'aiskills_session';
+export const SESSION_COOKIE = 'skillpass_session';
 
 export type AuthVariables = { user: UserRow };
 

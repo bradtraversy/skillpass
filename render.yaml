@@ -1,4 +1,4 @@
-# Render Blueprint for the AI Skills Directory monorepo.
+# Render Blueprint for the SkillPass monorepo.
 # Launch-lean: two services (static site + API), validation runs inline in the API
 # (VALIDATION_MODE=inline), so no worker or Redis is needed. Neon Postgres and
 # Cloudflare R2 stay external. Env vars marked sync: false are set in the Render
@@ -9,19 +9,19 @@
 # in apps/api/src/worker.ts and src/queue/*).
 services:
   - type: web
-    name: aiskills-web
+    name: skillpass-web
     runtime: static
     buildCommand: corepack enable && corepack prepare pnpm@11.9.0 --activate && pnpm install --frozen-lockfile && pnpm build
     staticPublishPath: apps/web/dist
     envVars:
       - key: NODE_VERSION
         value: 24.18.0
-      # The public URL of aiskills-api; baked in at build time by Astro.
+      # The public URL of skillpass-api; baked in at build time by Astro.
       - key: PUBLIC_API_URL
         sync: false
 
   - type: web
-    name: aiskills-api
+    name: skillpass-api
     runtime: node
     buildCommand: corepack enable && corepack prepare pnpm@11.9.0 --activate && pnpm install --frozen-lockfile
     startCommand: cd apps/api && node --import tsx src/index.ts
@@ -50,6 +50,6 @@ services:
         sync: false
       - key: R2_BUCKET
         sync: false
-      # The public URL of aiskills-web (OAuth redirects + CORS).
+      # The public URL of skillpass-web (OAuth redirects + CORS).
       - key: WEB_ORIGIN
         sync: false

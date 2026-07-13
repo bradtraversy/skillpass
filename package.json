@@ -17,7 +17,7 @@
     "typecheck": "pnpm -C apps/web typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cli": "node packages/cli/bin/aiskills.mjs"
+    "cli": "node packages/cli/bin/skillpass.mjs"
   },
   "keywords": [],
   "author": "",

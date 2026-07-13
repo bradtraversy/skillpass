@@ -79,7 +79,7 @@ export default function InstallBar({ slug, version, distribution, install, homep
 		return (
 			<>
 				<div className="flex items-center gap-3 rounded-md border border-border bg-surface p-[14px]">
-					<CopyBox command={`aiskills add ${slug}`} />
+					<CopyBox command={`skillpass add ${slug}`} />
 					<button type="button" onClick={() => setPreflightOpen((open) => !open)} className={BTN}>
 						<DownloadIcon />
 						Download &amp; pre-flight

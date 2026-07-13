@@ -22,7 +22,7 @@ Secondary users are skill authors, workflow builders, tool maintainers, and team
 - GitHub URL submission as the primary upload path.
 - Zip upload as the fallback upload path.
 - Inline validation progress panel that ends in passed, warning, or failed state.
-- Local CLI named `aiskills` that can scan a skill and emit a report.
+- Local CLI named `skillpass` that can scan a skill and emit a report.
 - GitHub login for maintainers.
 - Maintainer profiles with listed skills and reputation.
 - Admin holding area for failed or flagged submissions.

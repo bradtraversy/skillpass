@@ -59,7 +59,7 @@ async function happyCallback(): Promise<Response> {
 function sessionCookieFrom(res: Response): string {
 	const setCookies = res.headers.getSetCookie();
 	const session = setCookies.find(
-		(c) => c.startsWith('aiskills_session=') && !c.includes('Max-Age=0'),
+		(c) => c.startsWith('skillpass_session=') && !c.includes('Max-Age=0'),
 	);
 	expect(session).toBeDefined();
 	return (session as string).split(';')[0];
@@ -85,7 +85,7 @@ describe('GET /auth/github/callback', () => {
 		expect(res.status).toBe(302);
 		expect(res.headers.get('location')).toBe('http://localhost:4321');
 		const cookie = sessionCookieFrom(res);
-		expect(cookie).toMatch(/^aiskills_session=7\./); // user id + dot + signature
+		expect(cookie).toMatch(/^skillpass_session=7\./); // user id + dot + signature
 		expect(vi.mocked(upsertFromGithub)).toHaveBeenCalledOnce();
 	});
 
@@ -95,7 +95,7 @@ describe('GET /auth/github/callback', () => {
 			headers: { Cookie: 'oauth_state=xyz' },
 		});
 		expect(res.status).toBe(403);
-		expect(res.headers.getSetCookie().join(';')).not.toContain('aiskills_session=7');
+		expect(res.headers.getSetCookie().join(';')).not.toContain('skillpass_session=7');
 		expect(vi.mocked(exchangeCode)).not.toHaveBeenCalled();
 	});
 
@@ -127,7 +127,7 @@ describe('GET /me', () => {
 
 	it('401s with a tampered cookie', async () => {
 		const res = await app.request('/me', {
-			headers: { Cookie: 'aiskills_session=7%2Eforged-signature' },
+			headers: { Cookie: 'skillpass_session=7%2Eforged-signature' },
 		});
 		expect(res.status).toBe(401);
 	});
@@ -150,7 +150,7 @@ describe('POST /auth/logout', () => {
 		const res = await app.request('/auth/logout', { method: 'POST' });
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ success: true, data: { loggedOut: true } });
-		const cleared = res.headers.getSetCookie().find((c) => c.startsWith('aiskills_session='));
+		const cleared = res.headers.getSetCookie().find((c) => c.startsWith('skillpass_session='));
 		expect(cleared).toContain('Max-Age=0'); // expired immediately
 	});
 });

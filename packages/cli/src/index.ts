@@ -5,12 +5,12 @@ import type { CommandResult } from './scan';
 import { runScan } from './scan';
 
 export const USAGE = [
-	'aiskills - validate AI agent skills locally and inspect hosted passports',
+	'skillpass - validate AI agent skills locally and inspect hosted passports',
 	'',
 	'Usage:',
-	'  aiskills scan <path> [--json]              run the validator on a local skill package',
-	'  aiskills report <slug>[@version] [--json]  fetch the hosted passport pre-flight',
-	'  aiskills add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]',
+	'  skillpass scan <path> [--json]              run the validator on a local skill package',
+	'  skillpass report <slug>[@version] [--json]  fetch the hosted passport pre-flight',
+	'  skillpass add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]',
 	'                                             install a skill through the pre-flight gate',
 	'',
 	'Flags:',
@@ -22,7 +22,7 @@ export const USAGE = [
 	'  --yes     skip the confirmation prompt for medium+ risk skills',
 	'  --help    show this message',
 	'',
-	'The report and add commands read the API base URL from AISKILLS_API.',
+	'The report and add commands read the API base URL from SKILLPASS_API.',
 	'Exit codes: 0 ok/warning, 1 failed or blocked, 2 usage/load/network errors.',
 ].join('\n');
 

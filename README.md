@@ -1,4 +1,4 @@
-# AI Skills Directory
+# SkillPass
 
 A public, validation-first directory of AI agent skills: discover a skill, see
 which tools it targets, and inspect exactly what it asks an agent to do before
@@ -31,7 +31,7 @@ Early development, building in the open. Shipped so far:
   dangerous commands, and undeclared permissions, and emits a report
 
 Next up: the submission flow (GitHub OAuth, drafts), queue-backed validation,
-publishing, download pre-flight, and the `aiskills` CLI.
+publishing, download pre-flight, and the `skillpass` CLI.
 
 ## Layout
 
@@ -43,7 +43,7 @@ pnpm monorepo:
 | `apps/api` | Node API: auth, submissions, validation jobs (planned) |
 | `packages/skill-schema` | Shared Zod schemas: manifest, report, passport, permission taxonomy |
 | `packages/validator` | The scan engine ("Skill Authenticator") + fixture packages |
-| `packages/cli` | `aiskills scan` / `aiskills report` (planned) |
+| `packages/cli` | `skillpass scan` / `skillpass report` (planned) |
 
 ## Development
 

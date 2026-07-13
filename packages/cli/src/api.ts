@@ -9,7 +9,7 @@ import type { CommandResult } from './scan';
 export const DEFAULT_API_URL = 'http://localhost:8787';
 
 export function resolveApiUrl(override?: string): string {
-	return (override ?? process.env.AISKILLS_API ?? DEFAULT_API_URL).replace(/\/$/, '');
+	return (override ?? process.env.SKILLPASS_API ?? DEFAULT_API_URL).replace(/\/$/, '');
 }
 
 export function parseSkillRef(ref: string): { slug: string; version?: string } {
