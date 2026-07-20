@@ -11,7 +11,7 @@
 		"dev:worker": "node --env-file=.env --watch --import tsx src/worker.ts",
 		"start": "node --env-file=.env --import tsx src/index.ts",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "node --env-file=.env --import tsx src/db/migrate.ts"
+		"db:migrate": "node --env-file-if-exists=.env --import tsx src/db/migrate.ts"
 	},
 	"dependencies": {
 		"@hono/node-server": "^1.14.0",
@@ -23,13 +23,13 @@
 		"hono": "^4.7.0",
 		"skill-schema": "workspace:*",
 		"tar-stream": "^3.2.0",
+		"tsx": "^4.19.0",
 		"validator": "workspace:*",
 		"zod": "^4.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",
 		"@types/tar-stream": "^3.1.4",
-		"drizzle-kit": "^0.31.10",
-		"tsx": "^4.19.0"
+		"drizzle-kit": "^0.31.10"
 	}
 }

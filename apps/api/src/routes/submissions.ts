@@ -20,6 +20,7 @@ import {
 	markValidationJobError,
 	setValidationJobBullId,
 } from '../db/validation';
+import { triggerRebuild } from '../deploy/rebuild';
 import type { Env } from '../env';
 import { processValidationJob } from '../queue/processor';
 import { enqueueValidation, type ValidationQueue } from '../queue/queue';
@@ -353,6 +354,8 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 		if (!outcome.success) {
 			return c.json({ success: false, error: 'that skill name is already taken' }, 409);
 		}
+		// Rebuild the static site so the new skill/profile pages exist. Best-effort.
+		void triggerRebuild(env.RENDER_DEPLOY_HOOK_URL);
 		return c.json({ success: true, data: outcome.data }, 201);
 	});
 

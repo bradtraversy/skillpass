@@ -16,6 +16,9 @@ const envSchema = z
 		VALIDATION_MODE: z.enum(['queue', 'inline']).default('inline'),
 		REDIS_URL: z.string().min(1).optional(),
 		WEB_ORIGIN: z.url().default('http://localhost:4321'),
+		// Render deploy hook fired after a publish so the static site rebuilds and
+		// the new skill/profile pages exist. Unset (dev) = no rebuild trigger.
+		RENDER_DEPLOY_HOOK_URL: z.url().optional(),
 		PORT: z.coerce.number().int().positive().default(8787),
 	})
 	.superRefine((env, ctx) => {

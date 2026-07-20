@@ -24,6 +24,7 @@ services:
     name: skillpass-api
     runtime: node
     buildCommand: corepack enable && corepack prepare pnpm@11.9.0 --activate && pnpm install --frozen-lockfile
+    preDeployCommand: cd apps/api && pnpm db:migrate
     startCommand: cd apps/api && node --import tsx src/index.ts
     healthCheckPath: /health
     envVars:
@@ -52,4 +53,8 @@ services:
         sync: false
       # The public URL of skillpass-web (OAuth redirects + CORS).
       - key: WEB_ORIGIN
+        sync: false
+      # Deploy hook for skillpass-web (Render dashboard -> web service -> Settings
+      # -> Deploy Hook). Fired after a publish so the static site rebuilds.
+      - key: RENDER_DEPLOY_HOOK_URL
         sync: false
