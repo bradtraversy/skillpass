@@ -51,9 +51,7 @@ Thumbs.db
 
 # Editor folders
 .idea/
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
+.vscode/
 
 # AI tool local state (shared config is committed; per-developer overrides are not)
 .claude/settings.local.json

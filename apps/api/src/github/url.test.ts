@@ -3,9 +3,9 @@ import { parseGithubUrl } from './url';
 
 describe('parseGithubUrl accepted forms', () => {
 	it('parses a plain repo URL', () => {
-		expect(parseGithubUrl('https://github.com/bradtraversy/ai-skills-directory')).toEqual({
+		expect(parseGithubUrl('https://github.com/bradtraversy/skillpass')).toEqual({
 			success: true,
-			data: { owner: 'bradtraversy', repo: 'ai-skills-directory' },
+			data: { owner: 'bradtraversy', repo: 'skillpass' },
 		});
 	});
 

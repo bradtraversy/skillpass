@@ -15,7 +15,7 @@ describe('slugForSkill', () => {
 	});
 
 	it('keeps an already-kebab name unchanged', () => {
-		expect(slugForSkill('repo-triage')).toBe('repo-triage');
+		expect(slugForSkill('maintainer-triage')).toBe('maintainer-triage');
 	});
 
 	it('caps at 60 chars without a trailing hyphen', () => {
@@ -46,7 +46,7 @@ describe('nextVersion', () => {
 
 describe('publishResultSchema', () => {
 	it('parses the locked shape', () => {
-		expect(publishResultSchema.safeParse({ slug: 'repo-triage', version: '1.0.0' }).success).toBe(
+		expect(publishResultSchema.safeParse({ slug: 'maintainer-triage', version: '1.0.0' }).success).toBe(
 			true,
 		);
 	});
