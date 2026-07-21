@@ -19,6 +19,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 24.18.0
+      # Bind to all interfaces; the @astrojs/node standalone server defaults to
+      # localhost, which Render's port scan can't reach.
+      - key: HOST
+        value: 0.0.0.0
       # The public URL of skillpass-api; read at build time (islands) and at
       # request time by the on-demand pages.
       - key: PUBLIC_API_URL
