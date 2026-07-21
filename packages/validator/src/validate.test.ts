@@ -12,14 +12,14 @@ const NOW = new Date('2026-07-03T12:00:00Z');
 const MATRIX = [
 	{ name: 'clean-skill', status: 'passed', riskLevel: 'low', codes: [] },
 	{ name: 'workflow-pack', status: 'passed', riskLevel: 'low', codes: [] },
-	{ name: 'undeclared-network', status: 'warning', riskLevel: 'low', codes: ['undeclared-permission'] },
+	{ name: 'undeclared-network', status: 'passed', riskLevel: 'low', codes: [] },
 	// A bare SKILL.md gets an inferred manifest and passes; a critical capability
 	// in a manifest-less skill stays undeclared and still fails.
 	{ name: 'missing-manifest', status: 'passed', riskLevel: 'low', codes: [] },
-	{ name: 'inferred-critical', status: 'failed', riskLevel: 'critical', codes: ['undeclared-critical-permission'] },
-	{ name: 'broken-manifest', status: 'failed', riskLevel: 'low', codes: ['invalid-manifest'] },
-	{ name: 'leaked-secret', status: 'failed', riskLevel: 'low', codes: ['secret-pattern'] },
-	{ name: 'prompt-injection', status: 'failed', riskLevel: 'low', codes: ['prompt-injection'] },
+	{ name: 'inferred-critical', status: 'passed', riskLevel: 'low', codes: [] },
+	{ name: 'broken-manifest', status: 'failed', riskLevel: 'high', codes: ['invalid-manifest'] },
+	{ name: 'leaked-secret', status: 'failed', riskLevel: 'high', codes: ['secret-pattern'] },
+	{ name: 'prompt-injection', status: 'failed', riskLevel: 'high', codes: ['prompt-injection'] },
 ] as const;
 
 describe('fixture matrix', () => {
@@ -88,7 +88,7 @@ describe('report assembly', () => {
 		expect(parsed.success).toBe(true);
 	});
 
-	it('separates risk from status: a declared critical permission passes at high risk', async () => {
+	it('risk follows the verdict; capabilities surface separately in permissionsDetected', async () => {
 		const dir = mkdtempSync(join(tmpdir(), 'validator-declared-'));
 		try {
 			writeFileSync(
@@ -105,7 +105,9 @@ describe('report assembly', () => {
 			writeFileSync(join(dir, 'SKILL.md'), '# declared-shell\n\nRun the build command for the user.\n');
 			const report = await validatePackage(dir, { now: NOW });
 			expect(report.status).toBe('passed');
-			expect(report.riskLevel).toBe('high');
+			// Passed -> low risk, even though it can run shell. The capability is
+			// still visible in permissionsDetected, just not scored as danger.
+			expect(report.riskLevel).toBe('low');
 			expect(report.permissionsDetected).toEqual(['shell.execute']);
 		} finally {
 			rmSync(dir, { recursive: true, force: true });

@@ -5,6 +5,7 @@ export interface PatternRow {
 	pattern: RegExp;
 	message: string;
 	redact?: boolean; // strip the matched text from the snippet (secrets)
+	severity?: 'warning' | 'failure'; // defaults to failure
 }
 
 export const SECRET_PATTERNS: readonly PatternRow[] = [
@@ -33,10 +34,15 @@ export const SECRET_PATTERNS: readonly PatternRow[] = [
 		redact: true,
 	},
 	{
+		// Generic assignment: warns rather than fails, and skips obvious doc
+		// placeholders (your-key, <token>, example, changeme). The format-specific
+		// detectors above catch real leaked keys with high confidence and fail.
 		code: 'secret-pattern',
-		pattern: /\b(?:api[_-]?key|secret|token|password)\s*[:=]\s*["'][^"']{12,}["']/i,
+		pattern:
+			/\b(?:api[_-]?key|secret|token|password)\s*[:=]\s*["'](?!(?:your|my|example|sample|dummy|fake|changeme|placeholder|insert|replace|todo|xxx|test)[-_ ]|<)[^"']{12,}["']/i,
 		message: 'assigns a credential-shaped value',
 		redact: true,
+		severity: 'warning',
 	},
 ];
 
@@ -65,9 +71,12 @@ export const DANGEROUS_PATTERNS: readonly PatternRow[] = [
 		message: 'pipes a downloaded script into a shell',
 	},
 	{
+		// Only catastrophic targets: an absolute path (not /tmp), home, or $HOME.
+		// Relative targets like `dist`, `build`, `./out` are normal build cleanup
+		// and must not trip this.
 		code: 'dangerous-command',
-		pattern: /\brm\s+-(?:\S*r\S*f|\S*f\S*r)\S*\s+(?!\/tmp\b|\$TMPDIR\b)/,
-		message: 'recursively force-deletes outside a temp directory',
+		pattern: /\brm\s+-(?:\S*r\S*f|\S*f\S*r)\S*\s+(?:-\S+\s+)*(?:\/(?!tmp\b)|~|\$HOME\b)/,
+		message: 'recursively force-deletes an absolute or home path',
 	},
 	{
 		code: 'dangerous-command',
@@ -86,7 +95,7 @@ export const contentRule: Rule = (pkg) => {
 				if (row.pattern.test(line)) {
 					const snippet = row.redact ? line.trim().replace(row.pattern, '[redacted]') : line.trim();
 					findings.push({
-						severity: 'failure',
+						severity: row.severity ?? 'failure',
 						code: row.code,
 						message: row.message,
 						location: { path: file.path, line: i + 1, snippet },

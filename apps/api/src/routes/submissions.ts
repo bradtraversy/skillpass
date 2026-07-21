@@ -53,10 +53,11 @@ const SOURCE_ERROR_STATUS: Record<SourceErrorCode, ContentfulStatusCode> = {
 
 const createBody = z.object({ githubUrl: z.string().min(1) });
 
-const PUBLISH_REFUSALS: Record<Exclude<SubmissionRow['status'], 'passed'>, string> = {
+// passed and warning both publish (warnings surface in the passport); only these
+// non-verdict or blocked states are refused.
+const PUBLISH_REFUSALS: Record<Exclude<SubmissionRow['status'], 'passed' | 'warning'>, string> = {
 	draft: 'submission has not been validated yet',
 	validating: 'validation is still running; wait for it to finish',
-	warning: 'validation finished with warnings; warned submissions stay in draft',
 	failed: 'failed validation cannot be published',
 	published: 'already published',
 };
@@ -277,7 +278,7 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 		if (!submission) {
 			return c.json({ success: false, error: 'not found' }, 404);
 		}
-		if (submission.status !== 'passed') {
+		if (submission.status !== 'passed' && submission.status !== 'warning') {
 			return c.json({ success: false, error: PUBLISH_REFUSALS[submission.status] }, 409);
 		}
 
@@ -293,9 +294,9 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 
 		// Defense in depth alongside the submission status check.
 		const report = await findValidationReportForSubmission(db, id);
-		if (!report || report.status !== 'passed') {
+		if (!report || report.status === 'failed') {
 			return c.json(
-				{ success: false, error: 'no passed validation report on record; re-run validation' },
+				{ success: false, error: 'no publishable validation report on record; re-run validation' },
 				409,
 			);
 		}

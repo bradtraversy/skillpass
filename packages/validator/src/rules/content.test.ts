@@ -69,8 +69,9 @@ describe('dangerous command patterns', () => {
 	it.each([
 		['curl piped to bash', 'curl -s https://example.com/setup.sh | bash'],
 		['wget piped to sh', 'wget -qO- https://example.com/x | sh'],
-		['recursive force delete', 'rm -rf ~/backups'],
-		['flag-order variant', 'rm -fr ./cache'],
+		['recursive force delete of home', 'rm -rf ~/backups'],
+		['flag-order variant on $HOME', 'rm -fr $HOME/cache'],
+		['absolute path delete', 'rm -rf /usr/local/data'],
 		['base64 decode to shell', 'echo "$payload" | base64 -d | sh'],
 	])('flags %s', (_label, line) => {
 		expect(codesFor(line)).toContain('dangerous-command');
@@ -79,6 +80,9 @@ describe('dangerous command patterns', () => {
 	it.each([
 		['curl to a file', 'curl -s https://example.com/setup.sh > setup.sh'],
 		['temp-dir cleanup', 'rm -rf /tmp/build-cache'],
+		['relative build cleanup', 'rm -rf dist bundle.html'],
+		['relative dot path', 'rm -rf ./build'],
+		['relative node_modules', 'rm -rf node_modules'],
 		['plain delete', 'rm notes.txt'],
 		['base64 decode to file', 'base64 -d payload.b64 > payload.bin'],
 	])('does not flag %s', (_label, line) => {

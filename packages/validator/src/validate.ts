@@ -4,7 +4,6 @@ import { contentRule } from './rules/content';
 import { detectPermissions, permissionsRule } from './rules/permissions';
 import { structureRule } from './rules/structure';
 import type { Rule, RuleFinding } from './rules/types';
-import { riskLevelFor } from './score';
 
 // Bump together with package.json when the rule set changes.
 export const ENGINE_VERSION = '0.1.0';
@@ -44,14 +43,19 @@ export function buildReport(
 		.map((d) => d.permission)
 		.sort();
 
+	const status = findings.some((f) => f.severity === 'failure')
+		? 'failed'
+		: findings.some((f) => f.severity === 'warning')
+			? 'warning'
+			: 'passed';
+
 	const report: ValidationReport = {
 		schemaVersion: '0.1',
-		status: findings.some((f) => f.severity === 'failure')
-			? 'failed'
-			: findings.some((f) => f.severity === 'warning')
-				? 'warning'
-				: 'passed',
-		riskLevel: riskLevelFor([...declared, ...detected]),
+		status,
+		// Risk follows the verdict so it can never contradict it (no "passed" +
+		// "critical"). What the skill *can do* is surfaced separately as detected
+		// permissions, not conflated into a danger score.
+		riskLevel: status === 'failed' ? 'high' : status === 'warning' ? 'medium' : 'low',
 		sourceHash: pkg.sourceHash,
 		engineVersion: ENGINE_VERSION,
 		permissionsDeclared: declared,

@@ -692,7 +692,7 @@ describe('POST /submissions/:id/publish', () => {
 		expect(vi.mocked(findVersionBySubmission)).not.toHaveBeenCalled();
 	});
 
-	it.each(['draft', 'validating', 'warning', 'failed', 'published'] as const)(
+	it.each(['draft', 'validating', 'failed', 'published'] as const)(
 		'409s a %s submission with a state-specific message',
 		async (status) => {
 			mockPublishPath();
@@ -718,15 +718,27 @@ describe('POST /submissions/:id/publish', () => {
 		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
 	});
 
-	it('409s when the stored report is not passed, despite the submission status', async () => {
+	it('409s when the stored report failed, despite the submission status', async () => {
 		mockPublishPath();
+		vi.mocked(findValidationReportForSubmission).mockResolvedValue({
+			...passedReport,
+			status: 'failed',
+		});
+		const res = await publish(1, await sessionCookie(7));
+		expect(res.status).toBe(409);
+		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
+	});
+
+	it('publishes a warning submission (warnings surface in the passport)', async () => {
+		mockPublishPath();
+		vi.mocked(findSubmissionForUser).mockResolvedValue({ ...submissionRow, status: 'warning' });
 		vi.mocked(findValidationReportForSubmission).mockResolvedValue({
 			...passedReport,
 			status: 'warning',
 		});
 		const res = await publish(1, await sessionCookie(7));
-		expect(res.status).toBe(409);
-		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
+		expect(res.status).toBe(201);
+		expect(vi.mocked(publishSubmission)).toHaveBeenCalledOnce();
 	});
 
 	it('502s when the snapshot cannot be fetched, writing nothing', async () => {

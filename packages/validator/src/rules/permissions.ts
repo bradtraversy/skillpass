@@ -1,5 +1,5 @@
-import { riskWeightOf, type PermissionKey, type ReportFinding } from 'skill-schema';
-import type { Rule, RuleFinding } from './types';
+import type { PermissionKey, ReportFinding } from 'skill-schema';
+import type { Rule } from './types';
 import type { PackageFile } from '../load';
 
 export interface PermissionSignal {
@@ -89,20 +89,11 @@ export function detectPermissions(files: PackageFile[]): DetectedPermission[] {
 
 export const CRITICAL_WEIGHT = 7;
 
-export const permissionsRule: Rule = (pkg) => {
-	const declared = pkg.manifest.state === 'ok' ? pkg.manifest.data.permissions : [];
-	const findings: RuleFinding[] = [];
-	for (const d of detectPermissions(pkg.files)) {
-		if (declared.includes(d.permission)) {
-			continue;
-		}
-		const critical = riskWeightOf(d.permission) >= CRITICAL_WEIGHT;
-		findings.push({
-			severity: critical ? 'failure' : 'warning',
-			code: critical ? 'undeclared-critical-permission' : 'undeclared-permission',
-			message: `content ${d.description} ("${d.permission}") but the manifest does not declare it`,
-			location: d.location,
-		});
-	}
-	return findings;
-};
+// Detected permissions are informational, not findings. Running shell, fetching
+// data, or writing files is normal for a skill - flagging it as a warning cries
+// wolf on legitimate skills. The detected set is surfaced neutrally in the
+// passport (report.permissionsDetected) so a visitor sees what the skill can do
+// and can review the source. Genuinely harmful patterns (leaked secrets, prompt
+// injection, piped-shell installs, catastrophic deletes) are the content rule's
+// job, and those are what fail or warn.
+export const permissionsRule: Rule = () => [];

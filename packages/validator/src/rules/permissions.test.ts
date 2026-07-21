@@ -67,33 +67,13 @@ describe('permissionsRule', () => {
 		expect(permissionsRule(pkgWith('Fetch the notes.', ['network.fetch']))).toEqual([]);
 	});
 
-	it('warns on an undeclared low-risk permission', () => {
-		const findings = permissionsRule(pkgWith('Fetch the notes.'));
-		expect(findings).toEqual([
-			expect.objectContaining({
-				severity: 'warning',
-				code: 'undeclared-permission',
-				message: expect.stringContaining('network.fetch'),
-			}),
-		]);
-	});
-
-	it('fails on an undeclared critical permission', () => {
-		const findings = permissionsRule(pkgWith('Run this shell command to start.'));
-		expect(findings).toEqual([
-			expect.objectContaining({
-				severity: 'failure',
-				code: 'undeclared-critical-permission',
-				message: expect.stringContaining('shell.execute'),
-			}),
-		]);
-	});
-
-	it('warns on the undeclared-network fixture', () => {
-		const findings = permissionsRule(loadPackage(fixture('undeclared-network')));
-		expect(findings).toEqual([
-			expect.objectContaining({ severity: 'warning', code: 'undeclared-permission' }),
-		]);
+	it('emits no findings even for undeclared permissions (detection is informational)', () => {
+		// Running shell or fetching data is normal for a skill, not a warning. The
+		// detected set surfaces in the passport (detectPermissions, tested above);
+		// the rule itself no longer flags anything.
+		expect(permissionsRule(pkgWith('Fetch the notes.'))).toEqual([]);
+		expect(permissionsRule(pkgWith('Run this shell command to start.'))).toEqual([]);
+		expect(permissionsRule(loadPackage(fixture('undeclared-network')))).toEqual([]);
 	});
 
 	it('reports nothing for the clean fixtures', () => {
