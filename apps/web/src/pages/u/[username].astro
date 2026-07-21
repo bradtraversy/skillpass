@@ -2,25 +2,13 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Nav from '../../components/nav/Nav.astro';
 import Profile from '../../components/profile/Profile';
-import { API_URL } from '../../lib/api';
 
-// Build-time route discovery only; the island fetches fresh data at runtime.
-// An unreachable API means no pre-built pages, never a failed build. In dev,
-// Astro re-runs this per request, so new maintainers get pages immediately.
-export async function getStaticPaths() {
-	try {
-		const res = await fetch(`${API_URL}/skills`);
-		const body = (await res.json()) as { success: boolean; data: { maintainer: string }[] };
-		if (!body.success) throw new Error('skills list returned an error');
-		const usernames = [...new Set(body.data.map((skill) => skill.maintainer))];
-		return usernames.map((username) => ({ params: { username } }));
-	} catch (err) {
-		console.warn('getStaticPaths(/u/[username]): API unreachable, building no profile pages', err);
-		return [];
-	}
-}
+// Rendered on demand so a maintainer's profile exists as soon as they publish;
+// the island fetches fresh data at runtime.
+export const prerender = false;
 
 const { username } = Astro.params;
+if (!username) return new Response(null, { status: 404 });
 ---
 
 <BaseLayout title={`${username} - Maintainer Profile`}>

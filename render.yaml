@@ -10,13 +10,17 @@
 services:
   - type: web
     name: skillpass-web
-    runtime: static
+    runtime: node
+    # Node service (not static) so the per-entity skill/profile pages render on
+    # demand via @astrojs/node. Starter so it never spins down.
+    plan: starter
     buildCommand: corepack enable && corepack prepare pnpm@11.9.0 --activate && pnpm install --frozen-lockfile && pnpm build
-    staticPublishPath: apps/web/dist
+    startCommand: cd apps/web && node ./dist/server/entry.mjs
     envVars:
       - key: NODE_VERSION
         value: 24.18.0
-      # The public URL of skillpass-api; baked in at build time by Astro.
+      # The public URL of skillpass-api; read at build time (islands) and at
+      # request time by the on-demand pages.
       - key: PUBLIC_API_URL
         sync: false
 
@@ -53,8 +57,4 @@ services:
         sync: false
       # The public URL of skillpass-web (OAuth redirects + CORS).
       - key: WEB_ORIGIN
-        sync: false
-      # Deploy hook for skillpass-web (Render dashboard -> web service -> Settings
-      # -> Deploy Hook). Fired after a publish so the static site rebuilds.
-      - key: RENDER_DEPLOY_HOOK_URL
         sync: false

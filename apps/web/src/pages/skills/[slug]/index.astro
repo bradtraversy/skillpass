@@ -2,24 +2,13 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Nav from '../../../components/nav/Nav.astro';
 import SkillDetail from '../../../components/skill/SkillDetail';
-import { API_URL } from '../../../lib/api';
 
-// Build-time route discovery only; the island fetches fresh data at runtime.
-// An unreachable API means no pre-built pages, never a failed build. In dev,
-// Astro re-runs this per request, so new publishes get pages immediately.
-export async function getStaticPaths() {
-	try {
-		const res = await fetch(`${API_URL}/skills`);
-		const body = (await res.json()) as { success: boolean; data: { slug: string }[] };
-		if (!body.success) throw new Error('skills list returned an error');
-		return body.data.map((skill) => ({ params: { slug: skill.slug } }));
-	} catch (err) {
-		console.warn('getStaticPaths(/skills/[slug]): API unreachable, building no detail pages', err);
-		return [];
-	}
-}
+// Rendered on demand so a skill published after the last build has a page
+// immediately; the island fetches fresh data at runtime.
+export const prerender = false;
 
 const { slug } = Astro.params;
+if (!slug) return new Response(null, { status: 404 });
 ---
 
 <BaseLayout title={`${slug} - Skill Passport`}>

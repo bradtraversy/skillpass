@@ -2,38 +2,13 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Nav from '../../../components/nav/Nav.astro';
 import SkillDetail from '../../../components/skill/SkillDetail';
-import { API_URL } from '../../../lib/api';
 
-// Version permalinks: one page per published version, discovered from the API
-// at build time with the same unreachable-API fallback as the slug page.
-export async function getStaticPaths() {
-	try {
-		const listRes = await fetch(`${API_URL}/skills`);
-		const list = (await listRes.json()) as { success: boolean; data: { slug: string }[] };
-		if (!list.success) throw new Error('skills list returned an error');
-		const paths: { params: { slug: string; version: string } }[] = [];
-		for (const skill of list.data) {
-			const detailRes = await fetch(`${API_URL}/skills/${skill.slug}`);
-			const detail = (await detailRes.json()) as {
-				success: boolean;
-				data: { versions: { version: string }[] };
-			};
-			if (!detail.success) continue;
-			for (const v of detail.data.versions) {
-				paths.push({ params: { slug: skill.slug, version: v.version } });
-			}
-		}
-		return paths;
-	} catch (err) {
-		console.warn(
-			'getStaticPaths(/skills/[slug]/[version]): API unreachable, building no permalinks',
-			err,
-		);
-		return [];
-	}
-}
+// Rendered on demand so a version permalink works the moment it publishes;
+// the island fetches fresh data at runtime.
+export const prerender = false;
 
 const { slug, version } = Astro.params;
+if (!slug || !version) return new Response(null, { status: 404 });
 ---
 
 <BaseLayout title={`${slug} v${version} - Skill Passport`}>
