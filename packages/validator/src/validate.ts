@@ -1,7 +1,7 @@
 import { validationReportSchema, type ReportFinding, type ValidationReport } from 'skill-schema';
 import { loadPackage, type LoadedPackage } from './load';
 import { contentRule } from './rules/content';
-import { detectPermissions, permissionsRule } from './rules/permissions';
+import { detectPermissions } from './rules/permissions';
 import { structureRule } from './rules/structure';
 import type { Rule, RuleFinding } from './rules/types';
 
@@ -19,7 +19,6 @@ export interface ValidatorRule {
 export const RULES: ValidatorRule[] = [
 	{ key: 'structure', label: 'Check package structure', run: structureRule },
 	{ key: 'content', label: 'Scan content for risky patterns', run: contentRule },
-	{ key: 'permissions', label: 'Compare declared and detected permissions', run: permissionsRule },
 ];
 
 function toReportFindings(findings: RuleFinding[]): ReportFinding[] {

@@ -1,10 +1,7 @@
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Manifest, PermissionKey } from 'skill-schema';
-import { loadPackage, type LoadedPackage } from '../load';
-import { detectPermissions, permissionsRule } from './permissions';
-
-const fixture = (name: string) => join(import.meta.dirname, '..', '..', 'fixtures', name);
+import type { LoadedPackage } from '../load';
+import { detectPermissions } from './permissions';
 
 function pkgWith(content: string, permissions: PermissionKey[] = []): LoadedPackage {
 	const manifest: Manifest = {
@@ -59,25 +56,5 @@ describe('permission signals', () => {
 		const fetches = detected.filter((d) => d.permission === 'network.fetch');
 		expect(fetches).toHaveLength(1);
 		expect(fetches[0].location.line).toBe(1);
-	});
-});
-
-describe('permissionsRule', () => {
-	it('reports nothing when the detected permission is declared', () => {
-		expect(permissionsRule(pkgWith('Fetch the notes.', ['network.fetch']))).toEqual([]);
-	});
-
-	it('emits no findings even for undeclared permissions (detection is informational)', () => {
-		// Running shell or fetching data is normal for a skill, not a warning. The
-		// detected set surfaces in the passport (detectPermissions, tested above);
-		// the rule itself no longer flags anything.
-		expect(permissionsRule(pkgWith('Fetch the notes.'))).toEqual([]);
-		expect(permissionsRule(pkgWith('Run this shell command to start.'))).toEqual([]);
-		expect(permissionsRule(loadPackage(fixture('undeclared-network')))).toEqual([]);
-	});
-
-	it('reports nothing for the clean fixtures', () => {
-		expect(permissionsRule(loadPackage(fixture('clean-skill')))).toEqual([]);
-		expect(permissionsRule(loadPackage(fixture('workflow-pack')))).toEqual([]);
 	});
 });

@@ -122,7 +122,7 @@ describe('processValidationJob', () => {
 		);
 		expect(vi.mocked(setSubmissionStatus)).toHaveBeenLastCalledWith(db, 1, 'passed');
 		expect(vi.mocked(markValidationJobDone)).toHaveBeenCalledWith(db, 55, expect.anything());
-		expect(doneProgress().map((s) => s.state)).toEqual(['ok', 'ok', 'ok', 'ok', 'ok']);
+		expect(doneProgress().map((s) => s.state)).toEqual(['ok', 'ok', 'ok', 'ok']);
 		expect(vi.mocked(markValidationJobError)).not.toHaveBeenCalled();
 	});
 

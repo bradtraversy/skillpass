@@ -1,7 +1,8 @@
 import { riskWeightOf, type PermissionKey, type RiskLevel } from 'skill-schema';
 
-// Same thresholds as the validator's riskLevelFor, duplicated because the web
-// bundle must not import the validator. Candidate for a taxonomy-level move.
+// Maps a permission to a risk level by its taxonomy weight, for the passport's
+// per-permission chip. Lives in the web bundle, which must not import server code;
+// a taxonomy-level home for these thresholds is a future option.
 export function permissionLevel(key: PermissionKey): RiskLevel {
 	const weight = riskWeightOf(key);
 	if (weight >= 9) return 'critical';

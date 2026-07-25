@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { parseManifest, riskWeightOf, type Manifest, type Target } from 'skill-schema';
-import { CRITICAL_WEIGHT, detectPermissions } from './rules/permissions';
+import { parseManifest, type Manifest, type Target } from 'skill-schema';
+import { detectPermissions } from './rules/permissions';
 
 export interface PackageFile {
 	path: string; // relative to the package dir, posix separators
@@ -127,19 +127,13 @@ function inferTargets(files: PackageFile[]): Target[] {
 }
 
 // Synthesize a manifest for a bare SKILL.md so it lists without an author-written
-// skill.json. Declares only non-critical detected permissions - critical ones stay
-// undeclared so the permission rule still fails a dangerous manifest-less skill.
+// skill.json. Detected permissions are declared as-is and shown informationally on
+// the passport; flagging harmful intent is the content rule's job, not this list's.
 function inferManifest(files: PackageFile[], fallbackName: string): Manifest {
 	const skillFile = files.find((f) => f.path === 'SKILL.md');
 	const meta = skillFile ? readSkillMeta(skillFile.content) : {};
 	const name = slugify(meta.name ?? fallbackName);
-	const permissions = [
-		...new Set(
-			detectPermissions(files)
-				.map((d) => d.permission)
-				.filter((p) => riskWeightOf(p) < CRITICAL_WEIGHT),
-		),
-	];
+	const permissions = [...new Set(detectPermissions(files).map((d) => d.permission))];
 	return {
 		schemaVersion: '0.1',
 		name,
