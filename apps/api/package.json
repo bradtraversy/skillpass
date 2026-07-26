@@ -16,6 +16,7 @@
 		"db:backfill-descriptions": "node --env-file-if-exists=.env --import tsx src/seed/backfill-descriptions.ts"
 	},
 	"dependencies": {
+		"@anthropic-ai/sdk": "^0.115.0",
 		"@hono/node-server": "^1.14.0",
 		"@neondatabase/serverless": "^1.1.0",
 		"aws4fetch": "^1.0.20",

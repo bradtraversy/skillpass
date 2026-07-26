@@ -47,6 +47,11 @@ describe('loadEnv', () => {
 		expect(loadEnv({ ...valid, GITHUB_TOKEN: 'ghp_x' }).GITHUB_TOKEN).toBe('ghp_x');
 	});
 
+	it('accepts an optional ANTHROPIC_API_KEY', () => {
+		expect(loadEnv(valid).ANTHROPIC_API_KEY).toBeUndefined();
+		expect(loadEnv({ ...valid, ANTHROPIC_API_KEY: 'sk-ant-x' }).ANTHROPIC_API_KEY).toBe('sk-ant-x');
+	});
+
 	it('rejects a short SESSION_SECRET', () => {
 		expect(() => loadEnv({ ...valid, SESSION_SECRET: 'short' })).toThrow();
 	});

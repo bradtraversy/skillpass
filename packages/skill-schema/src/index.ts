@@ -4,6 +4,7 @@ export * from './result';
 export * from './manifest';
 export * from './report';
 export * from './passport';
+export * from './ai-review';
 export * from './submission';
 export * from './validation';
 export * from './publish';

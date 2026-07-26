@@ -7,6 +7,9 @@ const envSchema = z
 		GITHUB_CLIENT_SECRET: z.string().min(1),
 		SESSION_SECRET: z.string().min(32, 'use a long random string, e.g. openssl rand -hex 32'),
 		GITHUB_TOKEN: z.string().optional(),
+		// Optional: enables the AI skill reviewer (feature 18). Absent -> the
+		// reviewer returns null and publishing proceeds without an AI review.
+		ANTHROPIC_API_KEY: z.string().optional(),
 		R2_ACCOUNT_ID: z.string().min(1),
 		R2_ACCESS_KEY_ID: z.string().min(1),
 		R2_SECRET_ACCESS_KEY: z.string().min(1),
