@@ -91,6 +91,41 @@ describe('loadPackageFromFiles', () => {
 	});
 });
 
+describe('frontmatter description parsing', () => {
+	const describeFor = (content: string) => {
+		const pkg = loadPackageFromFiles([{ path: 'SKILL.md', content }], 'fallback-name');
+		return pkg.manifest.state === 'ok' ? pkg.manifest.data.description : undefined;
+	};
+
+	it.each([
+		['a plain value', 'name: x\ndescription: A plain one-line description.\n', 'A plain one-line description.'],
+		['a quoted value', 'name: x\ndescription: "A quoted description."\n', 'A quoted description.'],
+		[
+			'a folded (>-) block scalar',
+			'name: x\ndescription: >-\n  First line of the folded\n  description continues here.\n',
+			'First line of the folded description continues here.',
+		],
+		[
+			'a folded (>) block scalar',
+			'name: x\ndescription: >\n  Wycheproof provides test vectors.\n  Use when testing crypto code.\n',
+			'Wycheproof provides test vectors. Use when testing crypto code.',
+		],
+		[
+			'a literal (|) block scalar',
+			'name: x\ndescription: |\n  Line one.\n  Line two.\n',
+			'Line one.\nLine two.',
+		],
+	])('reads %s', (_label, content, expected) => {
+		expect(describeFor(`---\n${content}---\n\n# Heading\n`)).toBe(expected);
+	});
+
+	it('does not leak a later key into a folded description block', () => {
+		const content =
+			'---\nname: x\ndescription: >-\n  Folded description body.\nallowed-tools: Read Grep\n---\n\n# Heading\n';
+		expect(describeFor(content)).toBe('Folded description body.');
+	});
+});
+
 describe('loadPackage errors', () => {
 	it('throws a typed error for a nonexistent directory', () => {
 		expect(() => loadPackage('/nonexistent/skill-package')).toThrow(PackageReadError);

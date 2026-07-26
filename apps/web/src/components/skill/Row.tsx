@@ -1,23 +1,8 @@
-import type { PublicSkillSummary, RiskLevel } from 'skill-schema';
+import type { PublicSkillSummary } from 'skill-schema';
 import { monogram, timeAgo } from '../../lib/format';
-import Stamp from './Stamp';
-
-const RISK_LABEL: Record<RiskLevel, string> = {
-	low: 'low risk',
-	medium: 'medium',
-	high: 'high',
-	critical: 'critical',
-};
-
-const RISK_DOT: Record<RiskLevel, string> = {
-	low: 'bg-risk-low',
-	medium: 'bg-risk-med',
-	high: 'bg-risk-high',
-	critical: 'bg-risk-crit',
-};
 
 export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: number }) {
-	const failed = skill.validationStatus === 'failed';
+	const noteCount = skill.noteCount ?? 0;
 	return (
 		<a
 			href={`/skills/${skill.slug}`}
@@ -27,11 +12,7 @@ export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: 
 				{String(rank).padStart(2, '0')}
 			</span>
 
-			<span
-				className={`grid size-[34px] place-items-center rounded-[9px] border bg-surface-2 font-mono text-[13px] font-semibold ${
-					failed ? 'border-fail-line text-fail' : 'border-border-2 text-muted'
-				}`}
-			>
+			<span className="grid size-[34px] place-items-center rounded-[9px] border border-border-2 bg-surface-2 font-mono text-[13px] font-semibold text-muted">
 				{monogram(skill.name)}
 			</span>
 
@@ -54,12 +35,44 @@ export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: 
 				</div>
 			</div>
 
-			<div className="flex items-center gap-3">
-				<Stamp verdict={skill.validationStatus} />
-				<span className="inline-flex w-[82px] items-center gap-[6px] text-[11.5px] text-muted">
-					<span className={`size-[7px] rounded-full ${RISK_DOT[skill.riskLevel]}`} />
-					{RISK_LABEL[skill.riskLevel]}
+			<div className="flex items-center justify-end gap-[14px] text-[11.5px] text-muted">
+				<span className="inline-flex items-center gap-[5px]">
+					<svg
+						width="13"
+						height="13"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2.2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						className="flex-none text-accent"
+						aria-hidden="true"
+					>
+						<path d="M20 6 9 17l-5-5" />
+					</svg>
+					validated
 				</span>
+				{noteCount > 0 && (
+					<span className="inline-flex items-center gap-[5px] text-faint">
+						<svg
+							width="12"
+							height="12"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className="flex-none"
+							aria-hidden="true"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<path d="M12 16v-4M12 8h.01" />
+						</svg>
+						{noteCount} to note
+					</span>
+				)}
 			</div>
 
 			<div className="w-24 text-right font-mono text-[11.5px] text-faint">

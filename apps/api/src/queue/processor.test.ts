@@ -116,7 +116,7 @@ describe('processValidationJob', () => {
 				submissionId: 1,
 				status: 'passed',
 				riskLevel: 'low',
-				engineVersion: '0.2.0',
+				engineVersion: '0.3.0',
 				sourceHash: expect.stringMatching(/^sha256:/),
 			}),
 		);

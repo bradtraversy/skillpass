@@ -152,6 +152,7 @@ describe('GET /skills', () => {
 			targets: ['claude-code'],
 			validationStatus: 'passed',
 			riskLevel: 'low',
+			noteCount: 0,
 			version: '1.0.0',
 			maintainer: 'bradtraversy',
 			attributedTo: null,
@@ -159,6 +160,28 @@ describe('GET /skills', () => {
 			verified: false,
 			publishedAt: NOW.toISOString(),
 		});
+	});
+
+	it('reports noteCount from the passport advisory findings', async () => {
+		const warned: PublishedSkillRecord = {
+			...record,
+			passport: {
+				...passport,
+				validationStatus: 'warning',
+				passport: {
+					...passport.passport,
+					validationStatus: 'warning',
+					warningsSummary: [
+						{ code: 'dangerous-command', message: 'pipes a downloaded script into a shell' },
+						{ code: 'credential-harvesting', message: 'searches the machine for secrets' },
+					],
+				},
+			},
+		};
+		vi.mocked(listPublishedSkills).mockResolvedValue([warned]);
+		const res = await app.request('/skills');
+		const body = (await res.json()) as { data: { noteCount: number }[] };
+		expect(body.data[0].noteCount).toBe(2);
 	});
 
 	it('passes featured and verified through from the skill row', async () => {

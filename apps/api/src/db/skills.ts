@@ -228,6 +228,7 @@ export function publicSkillSummary(r: PublishedSkillRecord): PublicSkillSummary 
 		targets: r.version.targets,
 		validationStatus: r.passport.validationStatus,
 		riskLevel: r.passport.riskLevel,
+		noteCount: r.passport.passport.warningsSummary.length,
 		version: r.version.version,
 		maintainer: r.maintainer.username,
 		attributedTo: r.skill.attributedTo,

@@ -6,7 +6,7 @@ import { structureRule } from './rules/structure';
 import type { Rule, RuleFinding } from './rules/types';
 
 // Bump together with package.json when the rule set changes.
-export const ENGINE_VERSION = '0.2.0';
+export const ENGINE_VERSION = '0.3.0';
 
 export interface ValidatorRule {
 	key: string;

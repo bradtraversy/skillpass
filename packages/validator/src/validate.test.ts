@@ -19,7 +19,9 @@ const MATRIX = [
 	{ name: 'inferred-critical', status: 'passed', riskLevel: 'low', codes: [] },
 	{ name: 'broken-manifest', status: 'failed', riskLevel: 'high', codes: ['invalid-manifest'] },
 	{ name: 'leaked-secret', status: 'failed', riskLevel: 'high', codes: ['secret-pattern'] },
-	{ name: 'prompt-injection', status: 'failed', riskLevel: 'high', codes: ['prompt-injection'] },
+	// Injection is advisory now: it publishes with a warning, not a block. Only a
+	// concrete leaked secret value hard-fails.
+	{ name: 'prompt-injection', status: 'warning', riskLevel: 'medium', codes: ['prompt-injection'] },
 ] as const;
 
 describe('fixture matrix', () => {
@@ -72,7 +74,7 @@ describe('report assembly', () => {
 	it('stamps the injected clock, engine version, and source hash', async () => {
 		const report = await validatePackage(fixture('clean-skill'), { now: NOW });
 		expect(report.createdAt).toBe('2026-07-03T12:00:00.000Z');
-		expect(report.engineVersion).toBe('0.2.0');
+		expect(report.engineVersion).toBe('0.3.0');
 		expect(report.sourceHash).toMatch(/^sha256:/);
 	});
 

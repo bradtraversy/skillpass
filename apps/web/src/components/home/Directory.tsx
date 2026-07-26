@@ -1,15 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { PublicSkillSummary, Target, ValidationStatus } from 'skill-schema';
+import type { PublicSkillSummary, Target } from 'skill-schema';
 import { getSkills } from '../../lib/api';
 import { filterSkills } from '../../lib/filterSkills';
 import Row from '../skill/Row';
-
-const VERDICT_OPTIONS: { value: ValidationStatus | 'all'; label: string }[] = [
-	{ value: 'all', label: 'Verdict' },
-	{ value: 'passed', label: 'Passed' },
-	{ value: 'warning', label: 'Warning' },
-	{ value: 'failed', label: 'Failed' },
-];
 
 type LoadState =
 	| { phase: 'loading' }
@@ -19,7 +12,6 @@ type LoadState =
 export default function Directory() {
 	const [load, setLoad] = useState<LoadState>({ phase: 'loading' });
 	const [query, setQuery] = useState('');
-	const [verdict, setVerdict] = useState<ValidationStatus | 'all'>('all');
 	const [tool, setTool] = useState<Target | 'all'>('all');
 
 	useEffect(() => {
@@ -41,7 +33,7 @@ export default function Directory() {
 	const tools = Array.from(new Set(skills.flatMap((s) => s.targets))).sort();
 	// Tabs are deferred at launch scale; show all, newest-first. The Featured/Verified
 	// filters stay in filterSkills for when the catalog is large enough to need them.
-	const matches = filterSkills(skills, { query, verdict, tool, tab: 'new' });
+	const matches = filterSkills(skills, { query, verdict: 'all', tool, tab: 'new' });
 
 	return (
 		<>
@@ -87,11 +79,6 @@ export default function Directory() {
 					Latest
 				</span>
 				<div className="ml-auto flex gap-2 pb-2">
-					<FilterSelect
-						value={verdict}
-						onChange={(value) => setVerdict(value as ValidationStatus | 'all')}
-						options={VERDICT_OPTIONS}
-					/>
 					<FilterSelect
 						value={tool}
 						onChange={(value) => setTool(value as Target | 'all')}
