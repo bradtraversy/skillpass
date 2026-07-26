@@ -85,18 +85,37 @@ function readManifest(files: PackageFile[]): ManifestState {
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---/;
 
 // name/description only; deliberately not a full YAML parser. Reads SKILL.md
-// frontmatter, then falls back to the first prose line for a description.
+// frontmatter (including `>`/`|` block scalars, common for descriptions), then
+// falls back to the first prose line for a description.
 function readSkillMeta(content: string): { name?: string; description?: string } {
 	const out: { name?: string; description?: string } = {};
 	const fm = FRONTMATTER_RE.exec(content);
 	const body = fm ? content.slice(fm[0].length) : content;
 	if (fm) {
-		for (const line of fm[1].split('\n')) {
-			const kv = /^(name|description):\s*(.+?)\s*$/.exec(line);
+		const lines = fm[1].split('\n');
+		for (let i = 0; i < lines.length; i++) {
+			const kv = /^(name|description):\s*(.*?)\s*$/.exec(lines[i]);
 			if (!kv) continue;
-			const value = kv[2].replace(/^["']|["']$/g, '');
-			if (kv[1] === 'name' && !out.name) out.name = value;
-			if (kv[1] === 'description' && !out.description) out.description = value;
+			const key = kv[1] as 'name' | 'description';
+			if (out[key]) continue;
+			const block = /^([|>])[+-]?$/.exec(kv[2]);
+			if (block) {
+				// YAML block scalar: gather the following more-indented lines. Folded
+				// (`>`) joins with spaces, literal (`|`) keeps newlines.
+				const gathered: string[] = [];
+				for (let j = i + 1; j < lines.length; j++) {
+					if (lines[j].trim() === '') gathered.push('');
+					else if (/^\s/.test(lines[j])) gathered.push(lines[j].trim());
+					else break;
+				}
+				const text =
+					block[1] === '>'
+						? gathered.join(' ').replace(/\s+/g, ' ').trim()
+						: gathered.join('\n').trim();
+				if (text) out[key] = text;
+			} else {
+				out[key] = kv[2].replace(/^["']|["']$/g, '');
+			}
 		}
 	}
 	if (!out.description) {
