@@ -40,18 +40,33 @@ describe('seedListingSchema', () => {
 });
 
 describe('SEED_LISTINGS', () => {
-	it('is a valid manifest of the 17 Anthropic skills', () => {
+	it('is a valid manifest of all five waves', () => {
 		expect(seedManifestSchema.safeParse(SEED_LISTINGS).success).toBe(true);
-		expect(SEED_LISTINGS).toHaveLength(17);
+		expect(SEED_LISTINGS).toHaveLength(135);
 	});
 
-	it('attributes every entry to anthropics via a subpath URL', () => {
+	it('carries the expected count per source, each via a subpath URL', () => {
+		const counts = new Map<string, number>();
 		for (const l of SEED_LISTINGS) {
-			expect(l.attributedTo).toBe('anthropics');
+			counts.set(l.attributedTo, (counts.get(l.attributedTo) ?? 0) + 1);
 			expect(l.githubUrl).toMatch(
-				/^https:\/\/github\.com\/anthropics\/skills\/tree\/main\/skills\/[a-z-]+$/,
+				new RegExp(
+					`^https://github\\.com/${l.attributedTo}/[a-z-]+/tree/main/(?:skills|plugins)/[a-z0-9-]+(?:/skills/[a-z0-9-]+)?$`,
+				),
 			);
 		}
+		expect(Object.fromEntries(counts)).toEqual({
+			anthropics: 17,
+			addyosmani: 24,
+			obra: 14,
+			kepano: 5,
+			trailofbits: 75,
+		});
+	});
+
+	it('has no duplicate source URLs', () => {
+		const urls = SEED_LISTINGS.map((l) => l.githubUrl);
+		expect(new Set(urls).size).toBe(urls.length);
 	});
 
 	it('marks the chosen standouts as featured', () => {
