@@ -92,9 +92,11 @@ export const DANGEROUS_PATTERNS: readonly PatternRow[] = [
 		message: 'instructs deleting all user files or data',
 	},
 	{
+		// `machine(?!-)` so "machine-parseable"/"machine-readable" don't read as a
+		// destruction target.
 		code: 'dangerous-command',
 		pattern:
-			/\b(?:wipes?|erases?|destroys?|formats?|nukes?)\b[^.\n]{0,40}?\b(?:system|disk|drive|machine|computer|home\s+director(?:y|ies))\b/i,
+			/\b(?:wipes?|erases?|destroys?|formats?|nukes?)\b[^.\n]{0,40}?\b(?:system|disk|drive|machine(?!-)|computer|home\s+director(?:y|ies))\b/i,
 		message: 'instructs destroying a system-level target',
 	},
 ];
@@ -150,12 +152,20 @@ export const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
 	},
 ];
 
+// Only a concrete leaked secret *value* hard-fails (republishing it would leak
+// the secret). Every other content signal is advisory: it publishes and surfaces
+// on the passport as "what to look out for" - a regex can't judge intent, so it
+// flags for human review rather than blocking. Feature 18 (LLM review) promotes
+// advisories to blocks with real judgment.
+const advisory = (rows: readonly PatternRow[]): PatternRow[] =>
+	rows.map((row) => ({ ...row, severity: 'warning' }));
+
 const ALL_ROWS = [
 	...SECRET_PATTERNS,
-	...INJECTION_PATTERNS,
-	...DANGEROUS_PATTERNS,
-	...MALWARE_PATTERNS,
-	...CREDENTIAL_PATTERNS,
+	...advisory(INJECTION_PATTERNS),
+	...advisory(DANGEROUS_PATTERNS),
+	...advisory(MALWARE_PATTERNS),
+	...advisory(CREDENTIAL_PATTERNS),
 ];
 
 export const contentRule: Rule = (pkg) => {

@@ -151,9 +151,14 @@ export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 
 				{passport.warningsSummary.length > 0 && (
 					<>
-						<div className="mt-[22px] mb-3 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint">
-							Findings ({passport.warningsSummary.length})
+						<div className="mt-[22px] mb-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint">
+							Things to pay attention to ({passport.warningsSummary.length})
 						</div>
+						<p className="mb-3 text-[12.5px] leading-[1.5] text-muted">
+							Our scanner flagged these lines for your review. Patterns like these are common
+							in legitimate security, DevOps, and automation skills, so a flag here isn't proof
+							of a problem, but it's worth reading before you install.
+						</p>
 						{passport.warningsSummary.map((finding, i) => (
 							<Finding key={i} finding={finding} open={i === 0} />
 						))}

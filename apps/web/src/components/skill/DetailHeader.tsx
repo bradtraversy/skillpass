@@ -1,12 +1,5 @@
-import type { PublicSkillDetail, ValidationStatus } from 'skill-schema';
+import type { PublicSkillDetail } from 'skill-schema';
 import { monogram, repoHandle } from '../../lib/format';
-import { VERDICT_TINT } from '../../lib/verdict';
-
-const BIG_STAMP: Record<ValidationStatus, { main: string; sub: string }> = {
-	passed: { main: 'VERIFIED', sub: 'PASSED' },
-	warning: { main: 'WARNING', sub: "REVIEW REQ'D" },
-	failed: { main: 'FAILED', sub: 'BLOCKED' },
-};
 
 export default function DetailHeader({ detail }: { detail: PublicSkillDetail }) {
 	return (
@@ -46,13 +39,23 @@ export default function DetailHeader({ detail }: { detail: PublicSkillDetail }) 
 				</div>
 			</div>
 
-			<div
-				className={`ml-auto flex rotate-3 flex-col items-center rounded-[8px] border-2 px-[14px] py-2 font-mono text-[15px] leading-[1.15] font-bold tracking-[0.12em] max-[620px]:hidden ${VERDICT_TINT[detail.validationStatus].all}`}
-			>
-				{BIG_STAMP[detail.validationStatus].main}
-				<small className="text-[8.5px] font-semibold tracking-[0.16em] opacity-80">
-					{BIG_STAMP[detail.validationStatus].sub}
-				</small>
+			<div className="ml-auto flex flex-none items-center gap-[7px] rounded-[7px] border border-border-2 bg-surface-2 px-[12px] py-[7px] font-mono text-[12px] font-semibold text-muted max-[620px]:hidden">
+				<svg
+					width="15"
+					height="15"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2.2"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					className="flex-none text-accent"
+					aria-hidden="true"
+				>
+					<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+					<path d="m9 12 2 2 4-4" />
+				</svg>
+				Validated
 			</div>
 		</div>
 	);

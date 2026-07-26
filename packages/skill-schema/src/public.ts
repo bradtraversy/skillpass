@@ -10,6 +10,9 @@ export const publicSkillSummarySchema = z.strictObject({
 	targets: z.array(targetSchema),
 	validationStatus: validationStatusSchema,
 	riskLevel: riskLevelSchema,
+	// Count of advisory findings ("things to pay attention to"); the listing shows
+	// it instead of a pass/warn verdict. Optional so older consumers still parse.
+	noteCount: z.number().int().nonnegative().optional(),
 	version: z.string().min(1),
 	maintainer: z.string().min(1),
 	attributedTo: z.string().min(1).nullable(),
