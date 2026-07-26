@@ -18,6 +18,7 @@ import {
 	SUBMISSION_STATUSES,
 	VALIDATION_JOB_STATES,
 	VALIDATION_STATUSES,
+	type AiReview,
 	type ProgressStep,
 	type SkillPassport,
 	type Target,
@@ -224,3 +225,14 @@ export const skillPassports = pgTable('skill_passports', {
 });
 
 export type SkillPassportRow = typeof skillPassports.$inferSelect;
+
+// The AI skill review (feature 18), cached by source hash so a given snapshot is
+// reviewed once no matter how many versions or skills share it.
+export const aiReviews = pgTable('ai_reviews', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	sourceHash: text('source_hash').notNull().unique(),
+	review: jsonb('review').$type<AiReview>().notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type AiReviewRow = typeof aiReviews.$inferSelect;

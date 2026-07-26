@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { PublicSkillDetail } from 'skill-schema';
 import { getSkill } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
+import AiReview from './AiReview';
 import DetailHeader from './DetailHeader';
 import InstallBar from './InstallBar';
 import Passport from './Passport';
@@ -69,6 +70,7 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 				githubRepoUrl={detail.githubRepoUrl}
 			/>
 			<Passport detail={detail} />
+			<AiReview review={detail.aiReview} />
 
 			<section className="mt-[26px]">
 				<h2 className={SECTION_HEADING}>Source</h2>

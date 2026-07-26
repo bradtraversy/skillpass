@@ -50,6 +50,7 @@ const detail: PublicSkillDetail = {
 			publishedAt: '2026-07-07T18:24:19.337Z',
 		},
 	],
+	aiReview: null,
 };
 
 describe('publicSkillSummarySchema', () => {

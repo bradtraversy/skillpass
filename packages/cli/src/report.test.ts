@@ -41,6 +41,7 @@ const detail: PublicSkillDetail = {
 	versions: [
 		{ version: '2.0.0', validationStatus: 'passed', riskLevel: 'low', publishedAt: '2026-07-07T18:24:19.337Z' },
 	],
+	aiReview: null,
 };
 
 const preflight: PublicPreflight = {

@@ -2,6 +2,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import type {
 	AdminSkillRef,
 	AdminVersionHistory,
+	AiReview,
 	PublicSkillDetail,
 	PublicSkillSummary,
 } from 'skill-schema';
@@ -241,6 +242,7 @@ export function publicSkillSummary(r: PublishedSkillRecord): PublicSkillSummary 
 export function publicSkillDetail(
 	r: PublishedSkillRecord,
 	versions: VersionWithPassport[],
+	aiReview: AiReview | null = null,
 ): PublicSkillDetail {
 	return {
 		...publicSkillSummary(r),
@@ -257,6 +259,7 @@ export function publicSkillDetail(
 			riskLevel: v.passport.riskLevel,
 			publishedAt: (v.version.publishedAt ?? v.version.createdAt).toISOString(),
 		})),
+		aiReview,
 	};
 }
 

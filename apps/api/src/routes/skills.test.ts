@@ -14,6 +14,7 @@ import { createApp } from '../app';
 import { SESSION_COOKIE } from '../auth/middleware';
 import { createAbuseReport, findOpenReportBySkillAndReporter } from '../db/abuse';
 import { recordDownload } from '../db/downloads';
+import { findAiReviewByHash } from '../db/reviews';
 import { findById } from '../db/users';
 import { BLOCKED_REASON } from './skills';
 import type { Db } from '../db/client';
@@ -41,6 +42,7 @@ vi.mock('../storage/r2', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../storage/r2')>()),
 	getSnapshotDocument: vi.fn(),
 }));
+vi.mock('../db/reviews', () => ({ findAiReviewByHash: vi.fn() }));
 vi.mock('../db/downloads', () => ({ recordDownload: vi.fn() }));
 vi.mock('../db/abuse', () => ({
 	createAbuseReport: vi.fn(),
@@ -235,6 +237,29 @@ describe('GET /skills/:slug', () => {
 				publishedAt: NOW.toISOString(),
 			},
 		]);
+		expect(detail.aiReview).toBeNull();
+	});
+
+	it('includes the cached AI review when one exists for the version source hash', async () => {
+		const aiReview = {
+			summary: 'Formats markdown tables.',
+			verdict: 'clear' as const,
+			reasoning: 'Read-only, project-scoped, cosmetic changes.',
+			model: 'claude-haiku-4-5',
+			reviewedAt: NOW.toISOString(),
+		};
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([{ version, passport }]);
+		vi.mocked(findAiReviewByHash).mockResolvedValue({
+			id: 1,
+			sourceHash: version.sourceHash,
+			review: aiReview,
+			createdAt: NOW,
+		});
+		const res = await app.request('/skills/smoke-clean');
+		const body = (await res.json()) as { data: unknown };
+		expect(findAiReviewByHash).toHaveBeenCalledWith(expect.anything(), version.sourceHash);
+		expect(publicSkillDetailSchema.parse(body.data).aiReview).toEqual(aiReview);
 	});
 
 	it('leaks no internal fields on the detail', async () => {

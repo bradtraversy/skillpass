@@ -13,7 +13,8 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "node --env-file-if-exists=.env --import tsx src/db/migrate.ts",
 		"db:seed": "node --env-file-if-exists=.env --import tsx src/seed/run.ts",
-		"db:backfill-descriptions": "node --env-file-if-exists=.env --import tsx src/seed/backfill-descriptions.ts"
+		"db:backfill-descriptions": "node --env-file-if-exists=.env --import tsx src/seed/backfill-descriptions.ts",
+		"db:backfill-ai-reviews": "node --env-file-if-exists=.env --import tsx src/seed/backfill-ai-reviews.ts"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.115.0",

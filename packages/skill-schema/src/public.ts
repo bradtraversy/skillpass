@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { aiReviewSchema } from './ai-review';
 import { riskLevelSchema, targetSchema, validationStatusSchema } from './enums';
 import { skillPassportSchema } from './passport';
 
@@ -40,6 +41,8 @@ export const publicSkillDetailSchema = publicSkillSummarySchema.extend({
 		avatarUrl: z.string().min(1),
 	}),
 	versions: z.array(publicSkillVersionSchema),
+	// The cached AI review for this version's source hash; null until generated.
+	aiReview: aiReviewSchema.nullable(),
 });
 
 // What GET /skills/:slug/:version/source returns - the pinned snapshot the

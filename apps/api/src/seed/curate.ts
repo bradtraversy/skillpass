@@ -83,6 +83,7 @@ export async function curateSkill(env: Env, db: Db, input: CurateInput): Promise
 			manifestInferred: pkg.manifest.inferred ?? false,
 			attributedTo: input.attributedTo,
 			verified: true,
+			env,
 		});
 		if (!outcome.success) return { slug, status: 'failed', reason: outcome.error };
 

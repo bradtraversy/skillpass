@@ -12,6 +12,7 @@ import { readSessionUserId, requireAuth, type AuthVariables } from '../auth/midd
 import type { Db } from '../db/client';
 import { createAbuseReport, findOpenReportBySkillAndReporter } from '../db/abuse';
 import { recordDownload } from '../db/downloads';
+import { findAiReviewByHash } from '../db/reviews';
 import {
 	findPublishedSkillBySlug,
 	findVersionWithPassport,
@@ -214,11 +215,13 @@ export function skillRoutes(env: Env, db: Db) {
 			return c.json({ success: false, error: 'not found' }, 404);
 		}
 		const versions = await listVersionsWithPassports(db, record.skill.id);
+		const review = (await findAiReviewByHash(db, pinned.version.sourceHash))?.review ?? null;
 		return c.json({
 			success: true,
 			data: publicSkillDetail(
 				{ ...record, version: pinned.version, passport: pinned.passport },
 				versions,
+				review,
 			),
 		});
 	});
@@ -229,7 +232,8 @@ export function skillRoutes(env: Env, db: Db) {
 			return c.json({ success: false, error: 'not found' }, 404);
 		}
 		const versions = await listVersionsWithPassports(db, record.skill.id);
-		return c.json({ success: true, data: publicSkillDetail(record, versions) });
+		const review = (await findAiReviewByHash(db, record.version.sourceHash))?.review ?? null;
+		return c.json({ success: true, data: publicSkillDetail(record, versions, review) });
 	});
 
 	return routes;

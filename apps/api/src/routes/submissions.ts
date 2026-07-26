@@ -333,6 +333,7 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 				manifestInferred: pkg.manifest.inferred ?? false,
 				attributedTo: attributionFor(c.get('user'), submission),
 				verified: c.get('user').role === 'admin',
+				env,
 			});
 		} catch (err) {
 			// Concurrent publish race: the unique constraints are the backstop.

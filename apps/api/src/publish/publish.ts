@@ -16,7 +16,9 @@ import {
 	setLatestVersion,
 } from '../db/skills';
 import { setSubmissionStatus } from '../db/submissions';
+import type { Env } from '../env';
 import { awardReputation } from '../reputation/reputation';
+import { ensureAiReview } from '../review/ensure';
 import { buildPassport } from './passport';
 
 export interface PublishInput {
@@ -34,6 +36,9 @@ export interface PublishInput {
 	attributedTo: string | null;
 	// Admin-curated adds come in verified; a maintainer's own publish does not.
 	verified?: boolean;
+	// When provided, an AI review is generated and cached for this source hash.
+	// Absent -> publish proceeds with no review (existing callers, tests).
+	env?: Env;
 	now?: Date;
 }
 
@@ -104,6 +109,10 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 
 	await setLatestVersion(db, skill.id, versionRow.id, { name: input.name, summary: input.summary }, now);
 	await setSubmissionStatus(db, submission.id, 'published');
+
+	if (input.env) {
+		await ensureAiReview(input.env, db, submission.sourceHash, submission.snapshotKey, input.report.report);
+	}
 
 	try {
 		await awardReputation(db, submission.userId, existing ? 'version_published' : 'skill_published');

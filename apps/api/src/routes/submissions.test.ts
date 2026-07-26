@@ -783,6 +783,7 @@ describe('POST /submissions/:id/publish', () => {
 			manifestInferred: false,
 			attributedTo: null,
 			verified: false,
+			env: expect.anything(),
 		});
 	});
 
