@@ -79,6 +79,7 @@ const skill: SkillRow = {
 	category: null,
 	displayName: null,
 	tagline: null,
+	integrations: null,
 	status: 'published',
 	featured: false,
 	verified: false,
@@ -161,6 +162,7 @@ describe('GET /skills', () => {
 			category: null,
 			displayName: null,
 			tagline: null,
+			integrations: null,
 			version: '1.0.0',
 			maintainer: 'bradtraversy',
 			attributedTo: null,
@@ -209,6 +211,15 @@ describe('GET /skills', () => {
 		const res = await app.request('/skills');
 		const body = (await res.json()) as { data: { category: string | null }[] };
 		expect(body.data[0].category).toBe('security-review');
+	});
+
+	it('passes integrations through from the skill row', async () => {
+		vi.mocked(listPublishedSkills).mockResolvedValue([
+			{ ...record, skill: { ...skill, integrations: ['obsidian', 'github'] } },
+		]);
+		const res = await app.request('/skills');
+		const body = (await res.json()) as { data: { integrations: string[] | null }[] };
+		expect(body.data[0].integrations).toEqual(['obsidian', 'github']);
 	});
 
 	it('passes display copy through from the skill row', async () => {

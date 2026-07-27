@@ -1,5 +1,5 @@
-import { CATEGORIES, type PublicSkillSummary, type Target } from 'skill-schema';
-import type { CategoryFilter } from '../../lib/filterSkills';
+import { CATEGORIES, INTEGRATIONS, type PublicSkillSummary, type Target } from 'skill-schema';
+import type { CategoryFilter, IntegrationFilter } from '../../lib/filterSkills';
 
 const GROUP_HEADING = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint';
 
@@ -7,12 +7,16 @@ export default function FilterSidebar({
 	skills,
 	category,
 	onCategoryChange,
+	integration,
+	onIntegrationChange,
 	tool,
 	onToolChange,
 }: {
 	skills: PublicSkillSummary[];
 	category: CategoryFilter;
 	onCategoryChange: (category: CategoryFilter) => void;
+	integration: IntegrationFilter;
+	onIntegrationChange: (integration: IntegrationFilter) => void;
 	tool: Target | 'all';
 	onToolChange: (tool: Target | 'all') => void;
 }) {
@@ -20,6 +24,13 @@ export default function FilterSidebar({
 	for (const skill of skills) {
 		const key = skill.category ?? 'uncategorized';
 		counts.set(key, (counts.get(key) ?? 0) + 1);
+	}
+	// Counts always derive from the full unfiltered list, same as categories.
+	const integrationCounts = new Map<string, number>();
+	for (const skill of skills) {
+		for (const slug of skill.integrations ?? []) {
+			integrationCounts.set(slug, (integrationCounts.get(slug) ?? 0) + 1);
+		}
 	}
 	const tools = Array.from(new Set(skills.flatMap((s) => s.targets))).sort();
 
@@ -33,6 +44,15 @@ export default function FilterSidebar({
 		...(counts.has('uncategorized')
 			? [{ value: 'uncategorized' as CategoryFilter, label: 'Uncategorized', count: counts.get('uncategorized') ?? 0 }]
 			: []),
+	];
+
+	const integrationRows: { value: IntegrationFilter; label: string; count: number }[] = [
+		{ value: 'all', label: 'All skills', count: skills.length },
+		...INTEGRATIONS.filter((i) => integrationCounts.has(i.slug)).map((i) => ({
+			value: i.slug as IntegrationFilter,
+			label: i.label,
+			count: integrationCounts.get(i.slug) ?? 0,
+		})),
 	];
 
 	return (
@@ -57,6 +77,31 @@ export default function FilterSidebar({
 					);
 				})}
 			</nav>
+
+			{integrationCounts.size > 0 && (
+				<>
+					<div className={`mt-7 ${GROUP_HEADING}`}>Works with</div>
+					<nav className="flex flex-col gap-[2px]">
+						{integrationRows.map((row) => {
+							const active = integration === row.value;
+							return (
+								<button
+									key={row.value}
+									type="button"
+									onClick={() => onIntegrationChange(row.value)}
+									aria-pressed={active}
+									className={`flex items-center justify-between rounded-sm px-[10px] py-[6px] text-left text-[13px] ${
+										active ? 'bg-hover font-medium text-text' : 'text-muted hover:bg-hover hover:text-text'
+									}`}
+								>
+									<span className={active ? 'text-accent' : undefined}>{row.label}</span>
+									<span className="font-mono text-[11px] text-faint">{row.count}</span>
+								</button>
+							);
+						})}
+					</nav>
+				</>
+			)}
 
 			<div className={`mt-7 ${GROUP_HEADING}`}>Tool</div>
 			<ToolSelect value={tool} onChange={onToolChange} tools={tools} />

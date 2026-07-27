@@ -2,7 +2,14 @@ import type { PublicSkillSummary } from 'skill-schema';
 import { describe, expect, it } from 'vitest';
 import { filterSkills, type SkillFilters } from './filterSkills';
 
-const base: SkillFilters = { query: '', verdict: 'all', tool: 'all', category: 'all', tab: 'new' };
+const base: SkillFilters = {
+	query: '',
+	verdict: 'all',
+	tool: 'all',
+	category: 'all',
+	integration: 'all',
+	tab: 'new',
+};
 
 function summary(overrides: Partial<PublicSkillSummary>): PublicSkillSummary {
 	return {
@@ -140,5 +147,43 @@ describe('filterSkills tabs', () => {
 		expect(filterSkills(skills, { ...base, tab: 'verified', query: 'bravo' }).map((s) => s.slug)).toEqual([
 			'b',
 		]);
+	});
+});
+
+describe('integration filter', () => {
+	const skills = [
+		summary({ slug: 'vault-notes', integrations: ['obsidian'] }),
+		summary({ slug: 'pr-bot', integrations: ['github', 'slack'] }),
+		summary({ slug: 'classified-none', integrations: [] }),
+		summary({ slug: 'never-classified', integrations: null }),
+		summary({ slug: 'absent-field' }),
+	];
+
+	it('matches skills whose list contains the selected integration', () => {
+		expect(filterSkills(skills, { ...base, integration: 'github' }).map((s) => s.slug)).toEqual([
+			'pr-bot',
+		]);
+	});
+
+	it('passes everything through on all', () => {
+		expect(filterSkills(skills, { ...base, integration: 'all' })).toHaveLength(5);
+	});
+
+	it('excludes none, null, and absent integrations from a slug filter', () => {
+		const result = filterSkills(skills, { ...base, integration: 'obsidian' }).map((s) => s.slug);
+		expect(result).toEqual(['vault-notes']);
+	});
+
+	it('ANDs with the category filter', () => {
+		const mixed = [
+			summary({ slug: 'match', category: 'knowledge-notes', integrations: ['obsidian'] }),
+			summary({ slug: 'wrong-category', category: 'fuzzing', integrations: ['obsidian'] }),
+			summary({ slug: 'wrong-integration', category: 'knowledge-notes', integrations: [] }),
+		];
+		expect(
+			filterSkills(mixed, { ...base, category: 'knowledge-notes', integration: 'obsidian' }).map(
+				(s) => s.slug,
+			),
+		).toEqual(['match']);
 	});
 });

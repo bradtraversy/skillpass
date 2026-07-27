@@ -44,6 +44,7 @@ const skill: SkillRow = {
 	category: null,
 	displayName: null,
 	tagline: null,
+	integrations: null,
 	status: 'published',
 	featured: false,
 	verified: false,

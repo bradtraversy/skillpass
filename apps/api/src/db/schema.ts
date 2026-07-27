@@ -20,6 +20,7 @@ import {
 	VALIDATION_STATUSES,
 	type AiReview,
 	type CategorySlug,
+	type IntegrationSlug,
 	type ProgressStep,
 	type SkillPassport,
 	type Target,
@@ -124,6 +125,8 @@ export const skills = pgTable('skills', {
 	// Human display copy from generateDisplayCopy; null until generated.
 	displayName: text('display_name'),
 	tagline: text('tagline'),
+	// Works-with facet; null = never classified, [] = classified as none.
+	integrations: text('integrations').array().$type<IntegrationSlug[]>(),
 	status: skillStatus('status').notNull(),
 	featured: boolean('featured').notNull().default(false),
 	verified: boolean('verified').notNull().default(false),

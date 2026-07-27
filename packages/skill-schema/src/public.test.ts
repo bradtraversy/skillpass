@@ -103,6 +103,27 @@ describe('publicSkillSummarySchema', () => {
 		expect(publicSkillSummarySchema.safeParse({ ...summary, displayName: '' }).success).toBe(false);
 		expect(publicSkillSummarySchema.safeParse({ ...summary, tagline: '' }).success).toBe(false);
 	});
+
+	it('parses integrations as a list, empty, null, and absent', () => {
+		expect(
+			publicSkillSummarySchema.parse({ ...summary, integrations: ['obsidian', 'github'] })
+				.integrations,
+		).toEqual(['obsidian', 'github']);
+		expect(publicSkillSummarySchema.parse({ ...summary, integrations: [] }).integrations).toEqual(
+			[],
+		);
+		expect(
+			publicSkillSummarySchema.parse({ ...summary, integrations: null }).integrations,
+		).toBeNull();
+		expect(publicSkillSummarySchema.parse(summary).integrations).toBeUndefined();
+	});
+
+	it('rejects a list containing an unknown integration', () => {
+		expect(
+			publicSkillSummarySchema.safeParse({ ...summary, integrations: ['obsidian', 'vscode'] })
+				.success,
+		).toBe(false);
+	});
 });
 
 describe('publicSkillDetailSchema', () => {

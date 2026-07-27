@@ -1,8 +1,11 @@
-import type { PublicSkillDetail } from 'skill-schema';
+import { INTEGRATIONS, type PublicSkillDetail } from 'skill-schema';
 import { monogram, repoHandle } from '../../lib/format';
 
 export default function DetailHeader({ detail }: { detail: PublicSkillDetail }) {
 	const title = detail.displayName ?? detail.name;
+	const worksWith = (detail.integrations ?? [])
+		.map((slug) => INTEGRATIONS.find((i) => i.slug === slug)?.label)
+		.filter((label): label is string => label != null);
 	return (
 		<div className="flex items-start gap-[18px] pt-5 pb-6">
 			<div className="grid size-[52px] flex-none place-items-center rounded-[13px] border border-border-2 bg-surface-2 font-mono font-semibold text-accent">
@@ -26,6 +29,20 @@ export default function DetailHeader({ detail }: { detail: PublicSkillDetail }) 
 							{target}
 						</span>
 					))}
+					{worksWith.length > 0 && (
+						<span className="inline-flex items-center gap-[6px]">
+							<span aria-hidden="true">·</span>
+							<span className="text-faint">works with</span>
+							{worksWith.map((label) => (
+								<span
+									key={label}
+									className="rounded-[4px] border border-border px-[6px] py-px font-mono text-[10.5px] text-muted"
+								>
+									{label}
+								</span>
+							))}
+						</span>
+					)}
 					{detail.githubRepoUrl && (
 						<span className="inline-flex items-center gap-[6px]">
 							<span aria-hidden="true">·</span>

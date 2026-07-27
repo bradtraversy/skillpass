@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { aiReviewSchema } from './ai-review';
 import { categorySlugSchema } from './categories';
 import { riskLevelSchema, targetSchema, validationStatusSchema } from './enums';
+import { integrationSlugSchema } from './integrations';
 import { skillPassportSchema } from './passport';
 
 // What GET /skills returns per row; 7c pages and the CLI consume it.
@@ -22,6 +23,8 @@ export const publicSkillSummarySchema = z.strictObject({
 	// optional for the same deploy-skew reason as category.
 	displayName: z.string().min(1).nullable().optional(),
 	tagline: z.string().min(1).nullable().optional(),
+	// Works-with facet; null = never classified, [] = classified as none.
+	integrations: z.array(integrationSlugSchema).nullable().optional(),
 	version: z.string().min(1),
 	maintainer: z.string().min(1),
 	attributedTo: z.string().min(1).nullable(),

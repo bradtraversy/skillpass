@@ -1,11 +1,12 @@
-import type { CategorySlug, ValidationReport } from 'skill-schema';
+import type { CategorySlug, IntegrationSlug, ValidationReport } from 'skill-schema';
 import { loadPackageFromFiles } from 'validator';
 import type { Db } from '../db/client';
 import { findAiReviewByHash, upsertAiReview } from '../db/reviews';
-import { setSkillCategory, setSkillDisplayCopy } from '../db/skills';
+import { setSkillCategory, setSkillDisplayCopy, setSkillIntegrations } from '../db/skills';
 import type { Env } from '../env';
 import { getSnapshotDocument } from '../storage/r2';
 import { classifyCategory } from './classify';
+import { classifyIntegrations } from './classify-integrations';
 import { generateDisplayCopy } from './display-copy';
 import { reviewSkill } from './review';
 
@@ -71,5 +72,31 @@ export async function ensureDisplayCopy(
 		if (copy) await setSkillDisplayCopy(db, skill.id, copy);
 	} catch (err) {
 		console.error(`ensureDisplayCopy: generate for ${skill.slug} failed: ${err}`);
+	}
+}
+
+// Classify and store the works-with facet for a never-classified skill. null
+// means unclassified and triggers the call; [] means "classified as none" and
+// skips - collapsing them would make every backfill re-bill the whole catalog.
+export async function ensureIntegrations(
+	env: Env,
+	db: Db,
+	skill: {
+		id: number;
+		slug: string;
+		integrations: IntegrationSlug[] | null;
+		name: string;
+		summary: string;
+	},
+): Promise<void> {
+	if (!env.ANTHROPIC_API_KEY || skill.integrations !== null) return;
+	try {
+		const integrations = await classifyIntegrations(env, {
+			name: skill.name,
+			summary: skill.summary,
+		});
+		if (integrations) await setSkillIntegrations(db, skill.id, integrations);
+	} catch (err) {
+		console.error(`ensureIntegrations: classify for ${skill.slug} failed: ${err}`);
 	}
 }

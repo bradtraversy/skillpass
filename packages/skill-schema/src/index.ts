@@ -1,6 +1,7 @@
 export * from './categories';
 export * from './enums';
 export * from './findings';
+export * from './integrations';
 export * from './permissions';
 export * from './result';
 export * from './manifest';

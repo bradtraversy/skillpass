@@ -18,7 +18,12 @@ import {
 import { setSubmissionStatus } from '../db/submissions';
 import type { Env } from '../env';
 import { awardReputation } from '../reputation/reputation';
-import { ensureAiReview, ensureCategory, ensureDisplayCopy } from '../review/ensure';
+import {
+	ensureAiReview,
+	ensureCategory,
+	ensureDisplayCopy,
+	ensureIntegrations,
+} from '../review/ensure';
 import { buildPassport } from './passport';
 
 export interface PublishInput {
@@ -124,6 +129,13 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 			slug,
 			displayName: skill.displayName,
 			tagline: skill.tagline,
+			name: input.name,
+			summary: input.summary,
+		});
+		await ensureIntegrations(input.env, db, {
+			id: skill.id,
+			slug,
+			integrations: skill.integrations,
 			name: input.name,
 			summary: input.summary,
 		});

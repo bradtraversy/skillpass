@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { PublicSkillSummary, Target } from 'skill-schema';
 import { getSkills } from '../../lib/api';
-import { filterSkills, type CategoryFilter } from '../../lib/filterSkills';
+import { filterSkills, type CategoryFilter, type IntegrationFilter } from '../../lib/filterSkills';
 import Row from '../skill/Row';
 import FilterSidebar from './FilterSidebar';
 
@@ -17,6 +17,7 @@ export default function Directory() {
 	const [query, setQuery] = useState('');
 	const [tool, setTool] = useState<Target | 'all'>('all');
 	const [category, setCategory] = useState<CategoryFilter>('all');
+	const [integration, setIntegration] = useState<IntegrationFilter>('all');
 	// Desktop sidebar visibility, persisted. Starts true and reads the stored
 	// choice in an effect so the server render and hydration always agree.
 	const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -54,7 +55,14 @@ export default function Directory() {
 	const skills = load.phase === 'ready' ? load.skills : [];
 	// Tabs are deferred at launch scale; show all, newest-first. The Featured/Verified
 	// filters stay in filterSkills for when the catalog is large enough to need them.
-	const matches = filterSkills(skills, { query, verdict: 'all', tool, category, tab: 'new' });
+	const matches = filterSkills(skills, {
+		query,
+		verdict: 'all',
+		tool,
+		category,
+		integration,
+		tab: 'new',
+	});
 
 	return (
 		<>
@@ -113,6 +121,11 @@ export default function Directory() {
 						category={category}
 						onCategoryChange={(value) => {
 							setCategory(value);
+							setDrawerOpen(false);
+						}}
+						integration={integration}
+						onIntegrationChange={(value) => {
+							setIntegration(value);
 							setDrawerOpen(false);
 						}}
 						tool={tool}
@@ -190,6 +203,8 @@ export default function Directory() {
 							skills={skills}
 							category={category}
 							onCategoryChange={setCategory}
+							integration={integration}
+							onIntegrationChange={setIntegration}
 							tool={tool}
 							onToolChange={setTool}
 						/>

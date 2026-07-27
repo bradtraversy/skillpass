@@ -2,19 +2,25 @@ import type { AiReview, ValidationReport } from 'skill-schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Db } from '../db/client';
 import { findAiReviewByHash, upsertAiReview } from '../db/reviews';
-import { setSkillCategory, setSkillDisplayCopy } from '../db/skills';
+import { setSkillCategory, setSkillDisplayCopy, setSkillIntegrations } from '../db/skills';
 import { loadEnv } from '../env';
 import { getSnapshotDocument } from '../storage/r2';
 import { RAW_TEST_ENV } from '../testing/env';
 import { classifyCategory } from './classify';
+import { classifyIntegrations } from './classify-integrations';
 import { generateDisplayCopy } from './display-copy';
-import { ensureAiReview, ensureCategory, ensureDisplayCopy } from './ensure';
+import { ensureAiReview, ensureCategory, ensureDisplayCopy, ensureIntegrations } from './ensure';
 import { reviewSkill } from './review';
 
 vi.mock('../db/reviews', () => ({ findAiReviewByHash: vi.fn(), upsertAiReview: vi.fn() }));
-vi.mock('../db/skills', () => ({ setSkillCategory: vi.fn(), setSkillDisplayCopy: vi.fn() }));
+vi.mock('../db/skills', () => ({
+	setSkillCategory: vi.fn(),
+	setSkillDisplayCopy: vi.fn(),
+	setSkillIntegrations: vi.fn(),
+}));
 vi.mock('../storage/r2', () => ({ getSnapshotDocument: vi.fn() }));
 vi.mock('./classify', () => ({ classifyCategory: vi.fn() }));
+vi.mock('./classify-integrations', () => ({ classifyIntegrations: vi.fn() }));
 vi.mock('./display-copy', () => ({ generateDisplayCopy: vi.fn() }));
 vi.mock('./review', () => ({ reviewSkill: vi.fn() }));
 
@@ -207,5 +213,69 @@ describe('ensureDisplayCopy', () => {
 
 		await expect(ensureDisplayCopy(envWithKey, db, uncopied)).resolves.toBeUndefined();
 		expect(setSkillDisplayCopy).not.toHaveBeenCalled();
+	});
+});
+
+const unclassified = {
+	id: 5,
+	slug: 'clean-skill',
+	integrations: null,
+	name: 'clean-skill',
+	summary: 'A tidy demo skill.',
+};
+
+describe('ensureIntegrations', () => {
+	it('classifies and stores a list for a never-classified skill', async () => {
+		vi.mocked(classifyIntegrations).mockResolvedValue(['obsidian']);
+
+		await ensureIntegrations(envWithKey, db, unclassified);
+
+		expect(classifyIntegrations).toHaveBeenCalledWith(envWithKey, {
+			name: 'clean-skill',
+			summary: 'A tidy demo skill.',
+		});
+		expect(setSkillIntegrations).toHaveBeenCalledWith(db, 5, ['obsidian']);
+	});
+
+	it('stores an empty list as a valid "none" classification', async () => {
+		vi.mocked(classifyIntegrations).mockResolvedValue([]);
+
+		await ensureIntegrations(envWithKey, db, unclassified);
+
+		expect(setSkillIntegrations).toHaveBeenCalledWith(db, 5, []);
+	});
+
+	it('skips a skill already classified as none (empty list, not null)', async () => {
+		await ensureIntegrations(envWithKey, db, { ...unclassified, integrations: [] });
+
+		expect(classifyIntegrations).not.toHaveBeenCalled();
+		expect(setSkillIntegrations).not.toHaveBeenCalled();
+	});
+
+	it('skips a skill with integrations already set', async () => {
+		await ensureIntegrations(envWithKey, db, { ...unclassified, integrations: ['github'] });
+
+		expect(classifyIntegrations).not.toHaveBeenCalled();
+	});
+
+	it('is a no-op without an API key', async () => {
+		await ensureIntegrations(envNoKey, db, unclassified);
+
+		expect(classifyIntegrations).not.toHaveBeenCalled();
+	});
+
+	it('stores nothing when the classifier returns null', async () => {
+		vi.mocked(classifyIntegrations).mockResolvedValue(null);
+
+		await ensureIntegrations(envWithKey, db, unclassified);
+
+		expect(setSkillIntegrations).not.toHaveBeenCalled();
+	});
+
+	it('swallows a thrown error and stores nothing', async () => {
+		vi.mocked(classifyIntegrations).mockRejectedValue(new Error('boom'));
+
+		await expect(ensureIntegrations(envWithKey, db, unclassified)).resolves.toBeUndefined();
+		expect(setSkillIntegrations).not.toHaveBeenCalled();
 	});
 });

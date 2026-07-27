@@ -1,13 +1,21 @@
-import type { CategorySlug, PublicSkillSummary, Target, ValidationStatus } from 'skill-schema';
+import type {
+	CategorySlug,
+	IntegrationSlug,
+	PublicSkillSummary,
+	Target,
+	ValidationStatus,
+} from 'skill-schema';
 
 export type DirectoryTab = 'featured' | 'new' | 'verified';
 export type CategoryFilter = CategorySlug | 'all' | 'uncategorized';
+export type IntegrationFilter = IntegrationSlug | 'all';
 
 export interface SkillFilters {
 	query: string;
 	verdict: ValidationStatus | 'all';
 	tool: Target | 'all';
 	category: CategoryFilter;
+	integration: IntegrationFilter;
 	tab: DirectoryTab;
 }
 
@@ -33,6 +41,8 @@ export function filterSkills(
 			if (filters.category === 'uncategorized' ? category !== null : category !== filters.category)
 				return false;
 		}
+		if (filters.integration !== 'all' && !(skill.integrations ?? []).includes(filters.integration))
+			return false;
 		if (!query) return true;
 
 		const haystack = [skill.name, skill.summary, skill.maintainer, ...skill.targets]

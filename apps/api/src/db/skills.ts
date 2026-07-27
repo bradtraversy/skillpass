@@ -4,6 +4,7 @@ import type {
 	AdminVersionHistory,
 	AiReview,
 	CategorySlug,
+	IntegrationSlug,
 	PublicSkillDetail,
 	PublicSkillSummary,
 } from 'skill-schema';
@@ -234,6 +235,7 @@ export function publicSkillSummary(r: PublishedSkillRecord): PublicSkillSummary 
 		category: r.skill.category,
 		displayName: r.skill.displayName,
 		tagline: r.skill.tagline,
+		integrations: r.skill.integrations,
 		version: r.version.version,
 		maintainer: r.maintainer.username,
 		attributedTo: r.skill.attributedTo,
@@ -296,4 +298,12 @@ export async function setSkillDisplayCopy(
 	copy: { displayName: string; tagline: string },
 ): Promise<void> {
 	await db.update(skills).set(copy).where(eq(skills.id, skillId));
+}
+
+export async function setSkillIntegrations(
+	db: Db,
+	skillId: number,
+	integrations: IntegrationSlug[],
+): Promise<void> {
+	await db.update(skills).set({ integrations }).where(eq(skills.id, skillId));
 }
