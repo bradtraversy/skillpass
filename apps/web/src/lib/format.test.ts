@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { monogram, repoHandle, timeAgo } from './format';
+import { firstSentence, monogram, repoHandle, timeAgo } from './format';
 
 describe('monogram', () => {
 	it('uses first and last word initials', () => {
@@ -57,6 +57,32 @@ describe('repoHandle', () => {
 		expect(repoHandle('not a url')).toBe('not a url');
 		expect(repoHandle('https://gitlab.com/aria-dev/pr-review-bot')).toBe(
 			'https://gitlab.com/aria-dev/pr-review-bot',
+		);
+	});
+});
+
+describe('firstSentence', () => {
+	it('drops the trigger clause after the first sentence', () => {
+		expect(
+			firstSentence('Finds similar bugs across codebases. Use when hunting bug variants.'),
+		).toBe('Finds similar bugs across codebases.');
+	});
+
+	it('returns a single sentence unchanged', () => {
+		expect(firstSentence('Detects missing zeroization of sensitive data.')).toBe(
+			'Detects missing zeroization of sensitive data.',
+		);
+	});
+
+	it('returns the whole text when there is no terminator', () => {
+		expect(firstSentence('Mutation-driven test vector generation')).toBe(
+			'Mutation-driven test vector generation',
+		);
+	});
+
+	it('does not split on a dot inside a version or path', () => {
+		expect(firstSentence('Targets Node 22.12 runtimes and up. Second sentence.')).toBe(
+			'Targets Node 22.12 runtimes and up.',
 		);
 	});
 });

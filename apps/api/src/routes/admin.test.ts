@@ -137,6 +137,8 @@ const publishedSkill: SkillRow = {
 	maintainerId: MAINTAINER_ID,
 	attributedTo: null,
 	category: null,
+	displayName: null,
+	tagline: null,
 	status: 'published',
 	featured: false,
 	verified: false,

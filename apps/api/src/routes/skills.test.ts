@@ -77,6 +77,8 @@ const skill: SkillRow = {
 	maintainerId: 1,
 	attributedTo: null,
 	category: null,
+	displayName: null,
+	tagline: null,
 	status: 'published',
 	featured: false,
 	verified: false,
@@ -157,6 +159,8 @@ describe('GET /skills', () => {
 			riskLevel: 'low',
 			noteCount: 0,
 			category: null,
+			displayName: null,
+			tagline: null,
 			version: '1.0.0',
 			maintainer: 'bradtraversy',
 			attributedTo: null,
@@ -205,6 +209,19 @@ describe('GET /skills', () => {
 		const res = await app.request('/skills');
 		const body = (await res.json()) as { data: { category: string | null }[] };
 		expect(body.data[0].category).toBe('security-review');
+	});
+
+	it('passes display copy through from the skill row', async () => {
+		vi.mocked(listPublishedSkills).mockResolvedValue([
+			{
+				...record,
+				skill: { ...skill, displayName: 'Smoke Clean', tagline: 'Scrubs smoke-test residue.' },
+			},
+		]);
+		const res = await app.request('/skills');
+		const body = (await res.json()) as { data: { displayName: string; tagline: string }[] };
+		expect(body.data[0].displayName).toBe('Smoke Clean');
+		expect(body.data[0].tagline).toBe('Scrubs smoke-test residue.');
 	});
 
 	it('leaks no internal fields', async () => {

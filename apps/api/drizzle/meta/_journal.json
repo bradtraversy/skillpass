@@ -85,6 +85,13 @@
       "when": 1785095965392,
       "tag": "0011_huge_captain_cross",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785148816891,
+      "tag": "0012_sturdy_bulldozer",
+      "breakpoints": true
     }
   ]
 }

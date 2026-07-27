@@ -18,6 +18,10 @@ export const publicSkillSummarySchema = z.strictObject({
 	// Fixed-taxonomy browse category; null until classified. Optional so clients
 	// still parse responses from an API predating categories.
 	category: categorySlugSchema.nullable().optional(),
+	// Human display copy generated at publish/backfill; null until generated,
+	// optional for the same deploy-skew reason as category.
+	displayName: z.string().min(1).nullable().optional(),
+	tagline: z.string().min(1).nullable().optional(),
 	version: z.string().min(1),
 	maintainer: z.string().min(1),
 	attributedTo: z.string().min(1).nullable(),

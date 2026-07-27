@@ -232,6 +232,8 @@ export function publicSkillSummary(r: PublishedSkillRecord): PublicSkillSummary 
 		riskLevel: r.passport.riskLevel,
 		noteCount: r.passport.passport.warningsSummary.length,
 		category: r.skill.category,
+		displayName: r.skill.displayName,
+		tagline: r.skill.tagline,
 		version: r.version.version,
 		maintainer: r.maintainer.username,
 		attributedTo: r.skill.attributedTo,
@@ -286,4 +288,12 @@ export async function setSkillCategory(
 	category: CategorySlug,
 ): Promise<void> {
 	await db.update(skills).set({ category }).where(eq(skills.id, skillId));
+}
+
+export async function setSkillDisplayCopy(
+	db: Db,
+	skillId: number,
+	copy: { displayName: string; tagline: string },
+): Promise<void> {
+	await db.update(skills).set(copy).where(eq(skills.id, skillId));
 }

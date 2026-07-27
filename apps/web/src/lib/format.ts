@@ -29,3 +29,11 @@ export function repoHandle(url: string): string {
 	const match = url.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/i);
 	return match ? `${match[1]}/${match[2]}` : url;
 }
+
+// Listing fallback when a skill has no tagline: the first sentence of the
+// agent-facing summary, dropping its "Use when..." trigger clause. The
+// terminator must be followed by whitespace so "22.12" or "e.g" don't split.
+export function firstSentence(text: string): string {
+	const match = text.match(/^.*?[.!?](?=\s|$)/);
+	return (match?.[0] ?? text).trim();
+}

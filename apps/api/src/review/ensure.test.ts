@@ -2,18 +2,20 @@ import type { AiReview, ValidationReport } from 'skill-schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Db } from '../db/client';
 import { findAiReviewByHash, upsertAiReview } from '../db/reviews';
-import { setSkillCategory } from '../db/skills';
+import { setSkillCategory, setSkillDisplayCopy } from '../db/skills';
 import { loadEnv } from '../env';
 import { getSnapshotDocument } from '../storage/r2';
 import { RAW_TEST_ENV } from '../testing/env';
 import { classifyCategory } from './classify';
-import { ensureAiReview, ensureCategory } from './ensure';
+import { generateDisplayCopy } from './display-copy';
+import { ensureAiReview, ensureCategory, ensureDisplayCopy } from './ensure';
 import { reviewSkill } from './review';
 
 vi.mock('../db/reviews', () => ({ findAiReviewByHash: vi.fn(), upsertAiReview: vi.fn() }));
-vi.mock('../db/skills', () => ({ setSkillCategory: vi.fn() }));
+vi.mock('../db/skills', () => ({ setSkillCategory: vi.fn(), setSkillDisplayCopy: vi.fn() }));
 vi.mock('../storage/r2', () => ({ getSnapshotDocument: vi.fn() }));
 vi.mock('./classify', () => ({ classifyCategory: vi.fn() }));
+vi.mock('./display-copy', () => ({ generateDisplayCopy: vi.fn() }));
 vi.mock('./review', () => ({ reviewSkill: vi.fn() }));
 
 const envWithKey = loadEnv({ ...RAW_TEST_ENV, ANTHROPIC_API_KEY: 'sk-ant-test' });
@@ -143,5 +145,67 @@ describe('ensureCategory', () => {
 
 		await expect(ensureCategory(envWithKey, db, uncategorized)).resolves.toBeUndefined();
 		expect(setSkillCategory).not.toHaveBeenCalled();
+	});
+});
+
+const uncopied = {
+	id: 4,
+	slug: 'clean-skill',
+	displayName: null,
+	tagline: null,
+	name: 'clean-skill',
+	summary: 'A tidy demo skill.',
+};
+
+const copy = { displayName: 'Clean Skill', tagline: 'Tidies demo residue.' };
+
+describe('ensureDisplayCopy', () => {
+	it('generates and stores copy for a skill without any', async () => {
+		vi.mocked(generateDisplayCopy).mockResolvedValue(copy);
+
+		await ensureDisplayCopy(envWithKey, db, uncopied);
+
+		expect(generateDisplayCopy).toHaveBeenCalledWith(envWithKey, {
+			name: 'clean-skill',
+			summary: 'A tidy demo skill.',
+		});
+		expect(setSkillDisplayCopy).toHaveBeenCalledWith(db, 4, copy);
+	});
+
+	it('is a no-op when both fields are already set (does not call the model)', async () => {
+		await ensureDisplayCopy(envWithKey, db, { ...uncopied, ...copy });
+
+		expect(generateDisplayCopy).not.toHaveBeenCalled();
+		expect(setSkillDisplayCopy).not.toHaveBeenCalled();
+	});
+
+	it('regenerates when only one field is set', async () => {
+		vi.mocked(generateDisplayCopy).mockResolvedValue(copy);
+
+		await ensureDisplayCopy(envWithKey, db, { ...uncopied, displayName: 'Clean Skill' });
+
+		expect(setSkillDisplayCopy).toHaveBeenCalledWith(db, 4, copy);
+	});
+
+	it('is a no-op without an API key', async () => {
+		await ensureDisplayCopy(envNoKey, db, uncopied);
+
+		expect(generateDisplayCopy).not.toHaveBeenCalled();
+		expect(setSkillDisplayCopy).not.toHaveBeenCalled();
+	});
+
+	it('stores nothing when the generator returns null', async () => {
+		vi.mocked(generateDisplayCopy).mockResolvedValue(null);
+
+		await ensureDisplayCopy(envWithKey, db, uncopied);
+
+		expect(setSkillDisplayCopy).not.toHaveBeenCalled();
+	});
+
+	it('swallows a thrown error and stores nothing', async () => {
+		vi.mocked(generateDisplayCopy).mockRejectedValue(new Error('boom'));
+
+		await expect(ensureDisplayCopy(envWithKey, db, uncopied)).resolves.toBeUndefined();
+		expect(setSkillDisplayCopy).not.toHaveBeenCalled();
 	});
 });

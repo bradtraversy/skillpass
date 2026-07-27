@@ -88,6 +88,21 @@ describe('publicSkillSummarySchema', () => {
 			publicSkillSummarySchema.safeParse({ ...summary, category: 'hacking' }).success,
 		).toBe(false);
 	});
+
+	it('parses display copy present, null, and absent', () => {
+		const copy = { ...summary, displayName: 'Zeroize Audit', tagline: 'Finds unwiped secrets.' };
+		const parsed = publicSkillSummarySchema.parse(copy);
+		expect(parsed.displayName).toBe('Zeroize Audit');
+		expect(parsed.tagline).toBe('Finds unwiped secrets.');
+		expect(publicSkillSummarySchema.parse({ ...summary, displayName: null }).displayName).toBeNull();
+		expect(publicSkillSummarySchema.parse(summary).displayName).toBeUndefined();
+		expect(publicSkillSummarySchema.parse(summary).tagline).toBeUndefined();
+	});
+
+	it('rejects an empty display name or tagline', () => {
+		expect(publicSkillSummarySchema.safeParse({ ...summary, displayName: '' }).success).toBe(false);
+		expect(publicSkillSummarySchema.safeParse({ ...summary, tagline: '' }).success).toBe(false);
+	});
 });
 
 describe('publicSkillDetailSchema', () => {

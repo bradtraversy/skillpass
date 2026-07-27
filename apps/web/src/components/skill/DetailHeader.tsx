@@ -2,14 +2,20 @@ import type { PublicSkillDetail } from 'skill-schema';
 import { monogram, repoHandle } from '../../lib/format';
 
 export default function DetailHeader({ detail }: { detail: PublicSkillDetail }) {
+	const title = detail.displayName ?? detail.name;
 	return (
 		<div className="flex items-start gap-[18px] pt-5 pb-6">
 			<div className="grid size-[52px] flex-none place-items-center rounded-[13px] border border-border-2 bg-surface-2 font-mono font-semibold text-accent">
-				{monogram(detail.name)}
+				{monogram(title)}
 			</div>
 
 			<div className="min-w-0">
-				<h1 className="text-[27px] font-[640] tracking-[-0.02em]">{detail.name}</h1>
+				<div className="flex flex-wrap items-baseline gap-x-3">
+					<h1 className="text-[27px] font-[640] tracking-[-0.02em]">{title}</h1>
+					{detail.displayName && (
+						<span className="font-mono text-[13px] text-faint">{detail.slug}</span>
+					)}
+				</div>
 				<p className="mt-[5px] text-[15px] text-muted">{detail.summary}</p>
 				<div className="mt-3 flex flex-wrap items-center gap-3 text-[12.5px] text-muted">
 					{detail.targets.map((target) => (

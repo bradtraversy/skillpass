@@ -121,6 +121,9 @@ export const skills = pgTable('skills', {
 	attributedTo: text('attributed_to'),
 	// Fixed-taxonomy slug from skill-schema CATEGORIES; null until classified.
 	category: text('category').$type<CategorySlug>(),
+	// Human display copy from generateDisplayCopy; null until generated.
+	displayName: text('display_name'),
+	tagline: text('tagline'),
 	status: skillStatus('status').notNull(),
 	featured: boolean('featured').notNull().default(false),
 	verified: boolean('verified').notNull().default(false),

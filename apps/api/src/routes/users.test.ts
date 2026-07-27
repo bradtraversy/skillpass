@@ -42,6 +42,8 @@ const skill: SkillRow = {
 	maintainerId: 1,
 	attributedTo: null,
 	category: null,
+	displayName: null,
+	tagline: null,
 	status: 'published',
 	featured: false,
 	verified: false,

@@ -1,48 +1,53 @@
-import { CATEGORIES, type PublicSkillSummary } from 'skill-schema';
-import { monogram, timeAgo } from '../../lib/format';
+import { CATEGORIES, type CategorySlug, type PublicSkillSummary } from 'skill-schema';
+import { firstSentence, monogram, timeAgo } from '../../lib/format';
+
+// Static class strings so Tailwind's JIT sees them; tints stay soft enough
+// that verdict color still reads as the loudest signal on the page.
+const TILE_TINTS: Record<CategorySlug, string> = {
+	'security-review': 'border-rose-400/25 bg-rose-400/10 text-rose-300',
+	fuzzing: 'border-orange-400/25 bg-orange-400/10 text-orange-300',
+	blockchain: 'border-cyan-400/25 bg-cyan-400/10 text-cyan-300',
+	cryptography: 'border-teal-400/25 bg-teal-400/10 text-teal-300',
+	'code-analysis': 'border-sky-400/25 bg-sky-400/10 text-sky-300',
+	testing: 'border-lime-400/25 bg-lime-400/10 text-lime-300',
+	'agent-workflow': 'border-violet-400/25 bg-violet-400/10 text-violet-300',
+	'dev-practices': 'border-indigo-400/25 bg-indigo-400/10 text-indigo-300',
+	'docs-writing': 'border-amber-400/25 bg-amber-400/10 text-amber-300',
+	'design-creative': 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300',
+	'knowledge-notes': 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
+	'dev-tooling': 'border-blue-400/25 bg-blue-400/10 text-blue-300',
+};
 
 export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: number }) {
-	const noteCount = skill.noteCount ?? 0;
 	const categoryLabel = CATEGORIES.find((c) => c.slug === skill.category)?.label;
+	const title = skill.displayName ?? skill.name;
+	const tint = skill.category ? TILE_TINTS[skill.category] : undefined;
 	return (
 		<a
 			href={`/skills/${skill.slug}`}
-			className="grid cursor-pointer grid-cols-[30px_34px_1fr_auto_auto] items-center gap-4 rounded-md border-b border-border px-3 py-[15px] hover:bg-surface"
+			className="grid cursor-pointer grid-cols-[30px_34px_1fr_auto] items-center gap-4 rounded-md border-b border-border px-3 py-[15px] hover:bg-surface"
 		>
 			<span className="text-right font-mono text-[13px] text-faint">
 				{String(rank).padStart(2, '0')}
 			</span>
 
-			<span className="grid size-[34px] place-items-center rounded-[9px] border border-border-2 bg-surface-2 font-mono text-[13px] font-semibold text-muted">
-				{monogram(skill.name)}
+			<span
+				className={`grid size-[34px] place-items-center rounded-[9px] border font-mono text-[13px] font-semibold ${
+					tint ?? 'border-border-2 bg-surface-2 text-muted'
+				}`}
+			>
+				{monogram(title)}
 			</span>
 
 			<div className="min-w-0">
-				<div className="flex items-center gap-[10px]">
-					<b className="font-semibold tracking-[-0.01em]">{skill.name}</b>
-					<span className="flex gap-[5px]">
-						{skill.targets.map((target) => (
-							<span
-								key={target}
-								className="rounded-[4px] border border-border px-[6px] py-px font-mono text-[10.5px] text-muted"
-							>
-								{target}
-							</span>
-						))}
-					</span>
-				</div>
-				<div className="mt-[3px] flex items-center gap-2 text-[12.5px] text-muted">
-					{categoryLabel && (
-						<span className="flex-none font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">
-							{categoryLabel}
-						</span>
-					)}
-					<span className="min-w-0 max-w-[46ch] truncate">{skill.summary}</span>
+				<b className="block truncate font-semibold tracking-[-0.01em]">{title}</b>
+				<div className="mt-[3px] line-clamp-2 text-[12.5px] text-muted">
+					{skill.tagline ?? firstSentence(skill.summary)}
 				</div>
 			</div>
 
-			<div className="flex items-center justify-end gap-[14px] text-[11.5px] text-muted">
-				<span className="inline-flex items-center gap-[5px]">
+			<div className="text-right text-[11.5px]">
+				<div className="inline-flex items-center gap-[6px] font-mono">
 					<svg
 						width="13"
 						height="13"
@@ -57,33 +62,14 @@ export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: 
 					>
 						<path d="M20 6 9 17l-5-5" />
 					</svg>
-					validated
-				</span>
-				{noteCount > 0 && (
-					<span className="inline-flex items-center gap-[5px] text-faint">
-						<svg
-							width="12"
-							height="12"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							className="flex-none"
-							aria-hidden="true"
-						>
-							<circle cx="12" cy="12" r="10" />
-							<path d="M12 16v-4M12 8h.01" />
-						</svg>
-						{noteCount} to note
-					</span>
+					<span className="text-faint">{timeAgo(skill.publishedAt)}</span>
+				</div>
+				{categoryLabel && (
+					<div className="mt-[3px] font-mono text-[10px] uppercase tracking-[0.08em] text-faint">
+						{categoryLabel}
+					</div>
 				)}
-			</div>
-
-			<div className="w-24 text-right font-mono text-[11.5px] text-faint">
-				<b className="block text-[13px] font-semibold text-muted">v{skill.version}</b>
-				{timeAgo(skill.publishedAt)}
+				<div className="mt-[2px] text-faint">by {skill.attributedTo ?? skill.maintainer}</div>
 			</div>
 		</a>
 	);
