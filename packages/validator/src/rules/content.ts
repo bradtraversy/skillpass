@@ -124,7 +124,7 @@ export const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
 			String.raw`\b(?:greps?|search(?:es)?|scans?|finds?|locates?|enumerates?|collects?|gathers?)\b[^.\n]{0,60}?(?:${SECRET_STORE})`,
 			'i',
 		),
-		message: 'searches for a credential file or store',
+		message: 'matches a credential-file search phrase',
 	},
 	{
 		code: 'credential-harvesting',
@@ -132,23 +132,25 @@ export const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
 			String.raw`\b(?:greps?|search(?:es)?|scans?|finds?|locates?|enumerates?|collects?|gathers?)\b(?=[^.\n]*\b(?:filesystem|file\s+system|home\s+dir(?:ectory)?|machine|disk|computer)\b)(?=[^.\n]*${SECRET_NOUN})`,
 			'i',
 		),
-		message: 'searches the machine for secrets',
+		message: 'matches a machine-wide secret-search phrase',
+	},
+	{
+		code: 'credential-harvesting',
+		// The ::/. lookbehinds skip code identifiers (`Box::leak(secret)`,
+		// `.leak(`) so security docs naming anti-patterns don't flag.
+		pattern: new RegExp(
+			String.raw`(?<!\b(?:never|not|don'?t|avoids?|prevents?|stops?)\s)(?<!::)(?<!\.)\b(?:exfiltrates?|steals?|harvests?|dumps?|leaks?)\b[^.\n]{0,60}?${SECRET_NOUN}`,
+			'i',
+		),
+		message: 'matches a credential-exfiltration phrase',
 	},
 	{
 		code: 'credential-harvesting',
 		pattern: new RegExp(
-			String.raw`(?<!\b(?:never|not|don'?t)\s)\b(?:exfiltrates?|steals?|harvests?|dumps?|leaks?)\b[^.\n]{0,60}?${SECRET_NOUN}`,
+			String.raw`^(?=.*(?:${SECRET_STORE}))(?=.*(?<!\b(?:never|not|don'?t|avoids?|prevents?|stops?)\s)\b(?:post|send|curl|transmit|exfiltrate)s?\b)`,
 			'i',
 		),
-		message: 'exfiltrates or steals credentials',
-	},
-	{
-		code: 'credential-harvesting',
-		pattern: new RegExp(
-			String.raw`^(?=.*(?:${SECRET_STORE}))(?=.*(?<!\b(?:never|not|don'?t|avoid)\s)\b(?:post|send|curl|transmit|exfiltrate)s?\b)`,
-			'i',
-		),
-		message: 'transmits a credential file over the network',
+		message: 'matches a credential-file network-transmission phrase',
 	},
 ];
 

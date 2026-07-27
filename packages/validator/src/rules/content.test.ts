@@ -128,6 +128,11 @@ describe('credential harvesting patterns', () => {
 		['pointing at the dashboard', 'Find your API key in the dashboard.'],
 		['a process.env read', 'Read the PORT from `process.env`.'],
 		['env-var hygiene advice', 'Store the token in an env var, never the repo.'],
+		['remediation advice naming a leak API', 'Avoid `Box::leak` for secrets. Use `Arc<SecretKey>` with proper `Drop`.'],
+		['an anti-pattern heading', '## B3 - `Box::leak(secret)`'],
+		['a method call on a value', 'store.leak(secret_key) frees the guard.'],
+		['avoidance prose', 'Avoid leaks of secret keys by zeroizing buffers.'],
+		['prevention prose', 'Prevents dumps of passwords reaching the logs.'],
 	])('does not flag %s', (_label, line) => {
 		expect(codesFor(line)).not.toContain('credential-harvesting');
 	});
