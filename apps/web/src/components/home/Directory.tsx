@@ -1,18 +1,40 @@
 import { useEffect, useState } from 'react';
 import type { PublicSkillSummary, Target } from 'skill-schema';
 import { getSkills } from '../../lib/api';
-import { filterSkills } from '../../lib/filterSkills';
+import { filterSkills, type CategoryFilter } from '../../lib/filterSkills';
 import Row from '../skill/Row';
+import FilterSidebar from './FilterSidebar';
 
 type LoadState =
 	| { phase: 'loading' }
 	| { phase: 'error'; message: string }
 	| { phase: 'ready'; skills: PublicSkillSummary[] };
 
+const SIDEBAR_KEY = 'skillpass:filters-open';
+
 export default function Directory() {
 	const [load, setLoad] = useState<LoadState>({ phase: 'loading' });
 	const [query, setQuery] = useState('');
 	const [tool, setTool] = useState<Target | 'all'>('all');
+	const [category, setCategory] = useState<CategoryFilter>('all');
+	// Desktop sidebar visibility, persisted. Starts true and reads the stored
+	// choice in an effect so the server render and hydration always agree.
+	const [sidebarOpen, setSidebarOpen] = useState(true);
+	const [drawerOpen, setDrawerOpen] = useState(false);
+
+	useEffect(() => {
+		if (localStorage.getItem(SIDEBAR_KEY) === '0') setSidebarOpen(false);
+	}, []);
+
+	function toggleFilters() {
+		if (window.matchMedia('(min-width: 768px)').matches) {
+			const next = !sidebarOpen;
+			setSidebarOpen(next);
+			localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0');
+		} else {
+			setDrawerOpen((open) => !open);
+		}
+	}
 
 	useEffect(() => {
 		let cancelled = false;
@@ -30,10 +52,9 @@ export default function Directory() {
 	}, []);
 
 	const skills = load.phase === 'ready' ? load.skills : [];
-	const tools = Array.from(new Set(skills.flatMap((s) => s.targets))).sort();
 	// Tabs are deferred at launch scale; show all, newest-first. The Featured/Verified
 	// filters stay in filterSkills for when the catalog is large enough to need them.
-	const matches = filterSkills(skills, { query, verdict: 'all', tool, tab: 'new' });
+	const matches = filterSkills(skills, { query, verdict: 'all', tool, category, tab: 'new' });
 
 	return (
 		<>
@@ -74,79 +95,107 @@ export default function Directory() {
 				same engine in the <span className="text-accent">skillpass</span> CLI
 			</div>
 
-			<div className="mt-[86px] flex items-center gap-[26px] border-b border-border">
-				<span className="-mb-px border-b-2 border-accent pb-[13px] font-medium text-text">
-					Latest
-				</span>
-				<div className="ml-auto flex gap-2 pb-2">
-					<FilterSelect
-						value={tool}
-						onChange={(value) => setTool(value as Target | 'all')}
-						options={[{ value: 'all', label: 'Tool' }, ...tools.map((t) => ({ value: t, label: t }))]}
+			<div className="mt-[56px] flex items-start">
+				<div
+					className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 md:hidden ${
+						drawerOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+					}`}
+					onClick={() => setDrawerOpen(false)}
+					aria-hidden="true"
+				/>
+				<div
+					className={`fixed inset-y-0 right-0 z-50 w-[250px] overflow-y-auto border-l border-border bg-bg p-5 transition-transform duration-300 ease-out md:hidden ${
+						drawerOpen ? 'translate-x-0' : 'translate-x-full'
+					}`}
+				>
+					<FilterSidebar
+						skills={skills}
+						category={category}
+						onCategoryChange={(value) => {
+							setCategory(value);
+							setDrawerOpen(false);
+						}}
+						tool={tool}
+						onToolChange={setTool}
 					/>
 				</div>
-			</div>
 
-			<div className="mt-[6px]">
-				{matches.map((skill, i) => (
-					<Row key={skill.slug} skill={skill} rank={i + 1} />
-				))}
-			</div>
+				<div className="min-w-0 flex-1">
+					<div className="flex items-center gap-[26px] border-b border-border">
+						<span className="-mb-px border-b-2 border-accent pb-[13px] font-medium text-text">
+							Latest
+						</span>
+						<button
+							type="button"
+							onClick={toggleFilters}
+							aria-expanded={sidebarOpen || drawerOpen}
+							className="ml-auto flex items-center gap-[7px] rounded-sm border border-border-2 px-[11px] py-[6px] text-[12.5px] text-muted hover:bg-hover hover:text-text"
+						>
+							<svg
+								width="13"
+								height="13"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								aria-hidden="true"
+							>
+								<line x1="4" x2="4" y1="21" y2="14" />
+								<line x1="4" x2="4" y1="10" y2="3" />
+								<line x1="12" x2="12" y1="21" y2="12" />
+								<line x1="12" x2="12" y1="8" y2="3" />
+								<line x1="20" x2="20" y1="21" y2="16" />
+								<line x1="20" x2="20" y1="12" y2="3" />
+								<line x1="2" x2="6" y1="14" y2="14" />
+								<line x1="10" x2="14" y1="8" y2="8" />
+								<line x1="18" x2="22" y1="16" y2="16" />
+							</svg>
+							Filters
+						</button>
+					</div>
 
-			{load.phase === 'loading' && (
-				<p className="py-16 text-center text-[13px] text-muted">Loading skills...</p>
-			)}
-			{load.phase === 'error' && (
-				<p className="py-16 text-center text-[13px] text-fail">
-					Can't reach the API - is it running?
-				</p>
-			)}
-			{load.phase === 'ready' && skills.length === 0 && (
-				<p className="py-16 text-center text-[13px] text-muted">No skills published yet.</p>
-			)}
-			{load.phase === 'ready' && skills.length > 0 && matches.length === 0 && (
-				<p className="py-16 text-center text-[13px] text-muted">No skills match these filters.</p>
-			)}
+					<div className="mt-[6px]">
+						{matches.map((skill, i) => (
+							<Row key={skill.slug} skill={skill} rank={i + 1} />
+						))}
+					</div>
+
+					{load.phase === 'loading' && (
+						<p className="py-16 text-center text-[13px] text-muted">Loading skills...</p>
+					)}
+					{load.phase === 'error' && (
+						<p className="py-16 text-center text-[13px] text-fail">
+							Can't reach the API - is it running?
+						</p>
+					)}
+					{load.phase === 'ready' && skills.length === 0 && (
+						<p className="py-16 text-center text-[13px] text-muted">No skills published yet.</p>
+					)}
+					{load.phase === 'ready' && skills.length > 0 && matches.length === 0 && (
+						<p className="py-16 text-center text-[13px] text-muted">
+							No skills match these filters.
+						</p>
+					)}
+				</div>
+
+				<div
+					className={`hidden shrink-0 overflow-hidden transition-all duration-300 ease-out md:block ${
+						sidebarOpen ? 'ml-9 w-[210px] opacity-100' : 'ml-0 w-0 opacity-0'
+					}`}
+				>
+					<div className="w-[210px]">
+						<FilterSidebar
+							skills={skills}
+							category={category}
+							onCategoryChange={setCategory}
+							tool={tool}
+							onToolChange={setTool}
+						/>
+					</div>
+				</div>
+			</div>
 		</>
-	);
-}
-
-function FilterSelect({
-	value,
-	onChange,
-	options,
-}: {
-	value: string;
-	onChange: (value: string) => void;
-	options: { value: string; label: string }[];
-}) {
-	return (
-		<div className="relative">
-			<select
-				value={value}
-				onChange={(e) => onChange(e.target.value)}
-				className="cursor-pointer appearance-none rounded-sm border border-border-2 bg-transparent py-[6px] pr-7 pl-[11px] text-[12.5px] text-muted hover:bg-hover hover:text-text"
-			>
-				{options.map((opt) => (
-					<option key={opt.value} value={opt.value} className="bg-surface text-text">
-						{opt.label}
-					</option>
-				))}
-			</select>
-			<svg
-				width="12"
-				height="12"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="2"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				className="pointer-events-none absolute top-1/2 right-[9px] -translate-y-1/2 text-faint"
-				aria-hidden="true"
-			>
-				<path d="m6 9 6 6 6-6" />
-			</svg>
-		</div>
 	);
 }

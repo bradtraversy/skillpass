@@ -1,8 +1,9 @@
-import type { PublicSkillSummary } from 'skill-schema';
+import { CATEGORIES, type PublicSkillSummary } from 'skill-schema';
 import { monogram, timeAgo } from '../../lib/format';
 
 export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: number }) {
 	const noteCount = skill.noteCount ?? 0;
+	const categoryLabel = CATEGORIES.find((c) => c.slug === skill.category)?.label;
 	return (
 		<a
 			href={`/skills/${skill.slug}`}
@@ -30,8 +31,13 @@ export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: 
 						))}
 					</span>
 				</div>
-				<div className="mt-[3px] max-w-[46ch] truncate text-[12.5px] text-muted">
-					{skill.summary}
+				<div className="mt-[3px] flex items-center gap-2 text-[12.5px] text-muted">
+					{categoryLabel && (
+						<span className="flex-none font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">
+							{categoryLabel}
+						</span>
+					)}
+					<span className="min-w-0 max-w-[46ch] truncate">{skill.summary}</span>
 				</div>
 			</div>
 

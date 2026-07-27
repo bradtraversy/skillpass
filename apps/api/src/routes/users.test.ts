@@ -41,6 +41,7 @@ const skill: SkillRow = {
 	summary: 'Clean smoke-test skill.',
 	maintainerId: 1,
 	attributedTo: null,
+	category: null,
 	status: 'published',
 	featured: false,
 	verified: false,

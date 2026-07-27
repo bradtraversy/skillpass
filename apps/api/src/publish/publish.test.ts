@@ -87,6 +87,7 @@ const skillRow: SkillRow = {
 	summary: 'A tidy demo skill.',
 	maintainerId: 7,
 	attributedTo: null,
+	category: null,
 	status: 'published',
 	featured: false,
 	verified: false,

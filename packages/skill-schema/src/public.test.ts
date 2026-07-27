@@ -74,6 +74,20 @@ describe('publicSkillSummarySchema', () => {
 			publicSkillSummarySchema.safeParse({ ...summary, targets: ['notepad'] }).success,
 		).toBe(false);
 	});
+
+	it('parses with a category, a null category, and none at all', () => {
+		expect(
+			publicSkillSummarySchema.parse({ ...summary, category: 'security-review' }).category,
+		).toBe('security-review');
+		expect(publicSkillSummarySchema.parse({ ...summary, category: null }).category).toBeNull();
+		expect(publicSkillSummarySchema.parse(summary).category).toBeUndefined();
+	});
+
+	it('rejects an out-of-taxonomy category', () => {
+		expect(
+			publicSkillSummarySchema.safeParse({ ...summary, category: 'hacking' }).success,
+		).toBe(false);
+	});
 });
 
 describe('publicSkillDetailSchema', () => {

@@ -1,0 +1,108 @@
+import { CATEGORIES, type PublicSkillSummary, type Target } from 'skill-schema';
+import type { CategoryFilter } from '../../lib/filterSkills';
+
+const GROUP_HEADING = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint';
+
+export default function FilterSidebar({
+	skills,
+	category,
+	onCategoryChange,
+	tool,
+	onToolChange,
+}: {
+	skills: PublicSkillSummary[];
+	category: CategoryFilter;
+	onCategoryChange: (category: CategoryFilter) => void;
+	tool: Target | 'all';
+	onToolChange: (tool: Target | 'all') => void;
+}) {
+	const counts = new Map<string, number>();
+	for (const skill of skills) {
+		const key = skill.category ?? 'uncategorized';
+		counts.set(key, (counts.get(key) ?? 0) + 1);
+	}
+	const tools = Array.from(new Set(skills.flatMap((s) => s.targets))).sort();
+
+	const rows: { value: CategoryFilter; label: string; count: number }[] = [
+		{ value: 'all', label: 'All skills', count: skills.length },
+		...CATEGORIES.filter((c) => counts.has(c.slug)).map((c) => ({
+			value: c.slug as CategoryFilter,
+			label: c.label,
+			count: counts.get(c.slug) ?? 0,
+		})),
+		...(counts.has('uncategorized')
+			? [{ value: 'uncategorized' as CategoryFilter, label: 'Uncategorized', count: counts.get('uncategorized') ?? 0 }]
+			: []),
+	];
+
+	return (
+		<aside>
+			<div className={GROUP_HEADING}>Categories</div>
+			<nav className="flex flex-col gap-[2px]">
+				{rows.map((row) => {
+					const active = category === row.value;
+					return (
+						<button
+							key={row.value}
+							type="button"
+							onClick={() => onCategoryChange(row.value)}
+							aria-pressed={active}
+							className={`flex items-center justify-between rounded-sm px-[10px] py-[6px] text-left text-[13px] ${
+								active ? 'bg-hover font-medium text-text' : 'text-muted hover:bg-hover hover:text-text'
+							}`}
+						>
+							<span className={active ? 'text-accent' : undefined}>{row.label}</span>
+							<span className="font-mono text-[11px] text-faint">{row.count}</span>
+						</button>
+					);
+				})}
+			</nav>
+
+			<div className={`mt-7 ${GROUP_HEADING}`}>Tool</div>
+			<ToolSelect value={tool} onChange={onToolChange} tools={tools} />
+		</aside>
+	);
+}
+
+function ToolSelect({
+	value,
+	onChange,
+	tools,
+}: {
+	value: Target | 'all';
+	onChange: (value: Target | 'all') => void;
+	tools: Target[];
+}) {
+	return (
+		<div className="relative">
+			<select
+				value={value}
+				onChange={(e) => onChange(e.target.value as Target | 'all')}
+				className="w-full cursor-pointer appearance-none rounded-sm border border-border-2 bg-transparent py-[6px] pr-7 pl-[11px] text-[12.5px] text-muted hover:bg-hover hover:text-text"
+			>
+				<option value="all" className="bg-surface text-text">
+					All tools
+				</option>
+				{tools.map((t) => (
+					<option key={t} value={t} className="bg-surface text-text">
+						{t}
+					</option>
+				))}
+			</select>
+			<svg
+				width="12"
+				height="12"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				className="pointer-events-none absolute top-1/2 right-[9px] -translate-y-1/2 text-faint"
+				aria-hidden="true"
+			>
+				<path d="m6 9 6 6 6-6" />
+			</svg>
+		</div>
+	);
+}

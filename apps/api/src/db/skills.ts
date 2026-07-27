@@ -3,6 +3,7 @@ import type {
 	AdminSkillRef,
 	AdminVersionHistory,
 	AiReview,
+	CategorySlug,
 	PublicSkillDetail,
 	PublicSkillSummary,
 } from 'skill-schema';
@@ -230,6 +231,7 @@ export function publicSkillSummary(r: PublishedSkillRecord): PublicSkillSummary 
 		validationStatus: r.passport.validationStatus,
 		riskLevel: r.passport.riskLevel,
 		noteCount: r.passport.passport.warningsSummary.length,
+		category: r.skill.category,
 		version: r.version.version,
 		maintainer: r.maintainer.username,
 		attributedTo: r.skill.attributedTo,
@@ -276,4 +278,12 @@ export async function setLatestVersion(
 		.update(skills)
 		.set({ latestVersionId: versionId, name: listing.name, summary: listing.summary, updatedAt: now })
 		.where(eq(skills.id, skillId));
+}
+
+export async function setSkillCategory(
+	db: Db,
+	skillId: number,
+	category: CategorySlug,
+): Promise<void> {
+	await db.update(skills).set({ category }).where(eq(skills.id, skillId));
 }

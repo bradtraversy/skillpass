@@ -1,11 +1,13 @@
-import type { PublicSkillSummary, Target, ValidationStatus } from 'skill-schema';
+import type { CategorySlug, PublicSkillSummary, Target, ValidationStatus } from 'skill-schema';
 
 export type DirectoryTab = 'featured' | 'new' | 'verified';
+export type CategoryFilter = CategorySlug | 'all' | 'uncategorized';
 
 export interface SkillFilters {
 	query: string;
 	verdict: ValidationStatus | 'all';
 	tool: Target | 'all';
+	category: CategoryFilter;
 	tab: DirectoryTab;
 }
 
@@ -25,6 +27,12 @@ export function filterSkills(
 	const matched = skills.filter((skill) => {
 		if (filters.verdict !== 'all' && skill.validationStatus !== filters.verdict) return false;
 		if (filters.tool !== 'all' && !skill.targets.includes(filters.tool)) return false;
+		if (filters.category !== 'all') {
+			// The field is optional in the payload schema, so normalize absent to null.
+			const category = skill.category ?? null;
+			if (filters.category === 'uncategorized' ? category !== null : category !== filters.category)
+				return false;
+		}
 		if (!query) return true;
 
 		const haystack = [skill.name, skill.summary, skill.maintainer, ...skill.targets]

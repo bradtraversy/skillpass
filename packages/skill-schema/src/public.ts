@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { aiReviewSchema } from './ai-review';
+import { categorySlugSchema } from './categories';
 import { riskLevelSchema, targetSchema, validationStatusSchema } from './enums';
 import { skillPassportSchema } from './passport';
 
@@ -14,6 +15,9 @@ export const publicSkillSummarySchema = z.strictObject({
 	// Count of advisory findings ("things to pay attention to"); the listing shows
 	// it instead of a pass/warn verdict. Optional so older consumers still parse.
 	noteCount: z.number().int().nonnegative().optional(),
+	// Fixed-taxonomy browse category; null until classified. Optional so clients
+	// still parse responses from an API predating categories.
+	category: categorySlugSchema.nullable().optional(),
 	version: z.string().min(1),
 	maintainer: z.string().min(1),
 	attributedTo: z.string().min(1).nullable(),

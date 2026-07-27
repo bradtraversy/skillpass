@@ -18,7 +18,7 @@ import {
 import { setSubmissionStatus } from '../db/submissions';
 import type { Env } from '../env';
 import { awardReputation } from '../reputation/reputation';
-import { ensureAiReview } from '../review/ensure';
+import { ensureAiReview, ensureCategory } from '../review/ensure';
 import { buildPassport } from './passport';
 
 export interface PublishInput {
@@ -112,6 +112,13 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 
 	if (input.env) {
 		await ensureAiReview(input.env, db, submission.sourceHash, submission.snapshotKey, input.report.report);
+		await ensureCategory(input.env, db, {
+			id: skill.id,
+			slug,
+			category: skill.category,
+			name: input.name,
+			summary: input.summary,
+		});
 	}
 
 	try {

@@ -2,7 +2,7 @@ import type { PublicSkillSummary } from 'skill-schema';
 import { describe, expect, it } from 'vitest';
 import { filterSkills, type SkillFilters } from './filterSkills';
 
-const base: SkillFilters = { query: '', verdict: 'all', tool: 'all', tab: 'new' };
+const base: SkillFilters = { query: '', verdict: 'all', tool: 'all', category: 'all', tab: 'new' };
 
 function summary(overrides: Partial<PublicSkillSummary>): PublicSkillSummary {
 	return {
@@ -77,6 +77,27 @@ describe('filterSkills', () => {
 	it('filters by tool', () => {
 		const result = filterSkills(sample, { ...base, tool: 'aider' });
 		expect(result.map((s) => s.slug)).toEqual(['auto-deploy-runner']);
+	});
+
+	it('filters by category', () => {
+		const skills = [
+			summary({ slug: 'fuzzer', category: 'fuzzing' }),
+			summary({ slug: 'reviewer', category: 'security-review' }),
+		];
+		expect(filterSkills(skills, { ...base, category: 'fuzzing' }).map((s) => s.slug)).toEqual([
+			'fuzzer',
+		]);
+		expect(filterSkills(skills, base)).toHaveLength(2);
+	});
+
+	it('uncategorized matches null and absent categories only', () => {
+		const skills = [
+			summary({ slug: 'tagged', category: 'testing' }),
+			summary({ slug: 'null-cat', category: null }),
+			summary({ slug: 'absent-cat' }),
+		];
+		const result = filterSkills(skills, { ...base, category: 'uncategorized' });
+		expect(result.map((s) => s.slug).sort()).toEqual(['absent-cat', 'null-cat']);
 	});
 
 	it('combines query and verdict (AND semantics)', () => {

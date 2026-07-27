@@ -19,6 +19,7 @@ import {
 	VALIDATION_JOB_STATES,
 	VALIDATION_STATUSES,
 	type AiReview,
+	type CategorySlug,
 	type ProgressStep,
 	type SkillPassport,
 	type Target,
@@ -118,6 +119,8 @@ export const skills = pgTable('skills', {
 		.notNull()
 		.references(() => users.id),
 	attributedTo: text('attributed_to'),
+	// Fixed-taxonomy slug from skill-schema CATEGORIES; null until classified.
+	category: text('category').$type<CategorySlug>(),
 	status: skillStatus('status').notNull(),
 	featured: boolean('featured').notNull().default(false),
 	verified: boolean('verified').notNull().default(false),
