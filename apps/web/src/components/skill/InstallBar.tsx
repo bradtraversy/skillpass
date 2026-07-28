@@ -78,12 +78,20 @@ export default function InstallBar({ slug, version, distribution, install, homep
 	if (distribution === 'skill') {
 		return (
 			<>
-				<div className="flex items-center gap-3 rounded-md border border-border bg-surface p-[14px]">
-					<CopyBox command={`skillpass add ${slug}`} />
-					<button type="button" onClick={() => setPreflightOpen((open) => !open)} className={BTN}>
-						<DownloadIcon />
-						Download &amp; pre-flight
-					</button>
+				<div className="rounded-md border border-border bg-surface p-[14px]">
+					<div className="flex items-center gap-3">
+						<CopyBox command={`skillpass add ${slug}`} />
+						<button type="button" onClick={() => setPreflightOpen((open) => !open)} className={BTN}>
+							<DownloadIcon />
+							Download &amp; pre-flight
+						</button>
+					</div>
+					<p className="mt-[10px] flex flex-wrap items-center gap-[8px] text-[12px] text-faint">
+						<span className="rounded-full border border-accent-line bg-accent-soft px-[8px] py-[2px] font-mono text-[10.5px] tracking-[0.08em] text-accent uppercase">
+							Coming soon
+						</span>
+						The skillpass CLI isn't published yet - use Download &amp; pre-flight in the meantime.
+					</p>
 				</div>
 				{preflightOpen && (
 					<PreflightPanel slug={slug} version={version} onClose={() => setPreflightOpen(false)} />
