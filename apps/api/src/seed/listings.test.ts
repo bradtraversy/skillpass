@@ -40,18 +40,19 @@ describe('seedListingSchema', () => {
 });
 
 describe('SEED_LISTINGS', () => {
-	it('is a valid manifest of all five waves', () => {
+	it('is a valid manifest of all six waves', () => {
 		expect(seedManifestSchema.safeParse(SEED_LISTINGS).success).toBe(true);
-		expect(SEED_LISTINGS).toHaveLength(135);
+		expect(SEED_LISTINGS).toHaveLength(169);
 	});
 
-	it('carries the expected count per source, each via a subpath URL', () => {
+	it('carries the expected count per source, each under its attributed owner', () => {
 		const counts = new Map<string, number>();
 		for (const l of SEED_LISTINGS) {
 			counts.set(l.attributedTo, (counts.get(l.attributedTo) ?? 0) + 1);
+			// Root-repo skills stop at the repo; folder skills address a subpath.
 			expect(l.githubUrl).toMatch(
 				new RegExp(
-					`^https://github\\.com/${l.attributedTo}/[a-z-]+/tree/main/(?:skills|plugins)/[a-z0-9-]+(?:/skills/[a-z0-9-]+)?$`,
+					`^https://github\\.com/${l.attributedTo}/[A-Za-z0-9._-]+(?:/tree/[A-Za-z0-9._-]+/[A-Za-z0-9._/-]+)?$`,
 				),
 			);
 		}
@@ -61,6 +62,17 @@ describe('SEED_LISTINGS', () => {
 			obra: 14,
 			kepano: 5,
 			trailofbits: 75,
+			blader: 1,
+			mvanhorn: 1,
+			DietrichGebert: 6,
+			OthmanAdi: 1,
+			ayghri: 1,
+			'vercel-labs': 4,
+			googleworkspace: 8,
+			makenotion: 1,
+			supabase: 2,
+			cloudflare: 5,
+			expo: 4,
 		});
 	});
 
@@ -73,6 +85,13 @@ describe('SEED_LISTINGS', () => {
 		const featured = SEED_LISTINGS.filter((l) => l.featured).map((l) =>
 			l.githubUrl.split('/').pop(),
 		);
-		expect(featured.sort()).toEqual(['mcp-builder', 'pdf', 'skill-creator']);
+		expect(featured.sort()).toEqual([
+			'humanizer',
+			'last30days',
+			'mcp-builder',
+			'pdf',
+			'ponytail',
+			'skill-creator',
+		]);
 	});
 });

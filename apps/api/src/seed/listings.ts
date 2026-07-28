@@ -167,6 +167,48 @@ const TRAILOFBITS_PATHS = [
 	'plugins/zeroize-audit/skills/zeroize-audit',
 ];
 
+// Wave 6 (curated 2026-07-28): popular, broad-appeal skills - viral singles
+// plus official vendor packs. Large vendor collections are cherry-picked to
+// their widely useful cores, not imported wholesale.
+const PONYTAIL_SKILLS = [
+	'ponytail',
+	'ponytail-review',
+	'ponytail-audit',
+	'ponytail-debt',
+	'ponytail-gain',
+	'ponytail-help',
+];
+
+const VERCEL_SKILLS = [
+	'react-best-practices',
+	'web-design-guidelines',
+	'deploy-to-vercel',
+	'vercel-optimize',
+];
+
+const GOOGLE_WORKSPACE_SKILLS = [
+	'gws-gmail',
+	'gws-calendar',
+	'gws-drive',
+	'gws-docs',
+	'gws-sheets',
+	'gws-slides',
+	'gws-chat',
+	'gws-tasks',
+];
+
+const SUPABASE_SKILLS = ['supabase', 'supabase-postgres-best-practices'];
+
+const CLOUDFLARE_SKILLS = [
+	'cloudflare',
+	'workers-best-practices',
+	'wrangler',
+	'durable-objects',
+	'web-perf',
+];
+
+const EXPO_SKILLS = ['expo-router', 'expo-project-structure', 'expo-data-fetching', 'expo-upgrade'];
+
 const skillsUnder = (repo: string, names: readonly string[], attributedTo: string) =>
 	names.map((name) => ({
 		githubUrl: `https://github.com/${repo}/tree/main/skills/${name}`,
@@ -185,5 +227,34 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 	...TRAILOFBITS_PATHS.map((path) => ({
 		githubUrl: `https://github.com/trailofbits/skills/tree/main/${path}`,
 		attributedTo: 'trailofbits',
+	})),
+	{ githubUrl: 'https://github.com/blader/humanizer', attributedTo: 'blader', featured: true },
+	{
+		githubUrl: 'https://github.com/mvanhorn/last30days-skill/tree/main/skills/last30days',
+		attributedTo: 'mvanhorn',
+		featured: true,
+	},
+	...skillsUnder('DietrichGebert/ponytail', PONYTAIL_SKILLS, 'DietrichGebert').map((l) =>
+		l.githubUrl.endsWith('/ponytail') ? { ...l, featured: true } : l,
+	),
+	{
+		githubUrl:
+			'https://github.com/OthmanAdi/planning-with-files/tree/master/skills/planning-with-files',
+		attributedTo: 'OthmanAdi',
+	},
+	// op7418/guizang-ppt-skill was considered but its root skill bundles a >1MB
+	// showcase image, which the snapshot pipeline rejects.
+	{
+		githubUrl: 'https://github.com/ayghri/i-have-adhd/tree/main/skills/i-have-adhd',
+		attributedTo: 'ayghri',
+	},
+	...skillsUnder('vercel-labs/agent-skills', VERCEL_SKILLS, 'vercel-labs'),
+	...skillsUnder('googleworkspace/cli', GOOGLE_WORKSPACE_SKILLS, 'googleworkspace'),
+	...skillsUnder('makenotion/skills', ['notion-cli'], 'makenotion'),
+	...skillsUnder('supabase/agent-skills', SUPABASE_SKILLS, 'supabase'),
+	...skillsUnder('cloudflare/skills', CLOUDFLARE_SKILLS, 'cloudflare'),
+	...EXPO_SKILLS.map((name) => ({
+		githubUrl: `https://github.com/expo/skills/tree/main/plugins/expo/skills/${name}`,
+		attributedTo: 'expo',
 	})),
 ]);
