@@ -40,9 +40,9 @@ describe('seedListingSchema', () => {
 });
 
 describe('SEED_LISTINGS', () => {
-	it('is a valid manifest of all six waves', () => {
+	it('is a valid manifest of all seven waves', () => {
 		expect(seedManifestSchema.safeParse(SEED_LISTINGS).success).toBe(true);
-		expect(SEED_LISTINGS).toHaveLength(169);
+		expect(SEED_LISTINGS).toHaveLength(195);
 	});
 
 	it('carries the expected count per source, each under its attributed owner', () => {
@@ -73,6 +73,15 @@ describe('SEED_LISTINGS', () => {
 			supabase: 2,
 			cloudflare: 5,
 			expo: 4,
+			mattpocock: 5,
+			'multica-ai': 1,
+			nextlevelbuilder: 2,
+			Leonxlnx: 1,
+			coreyhaines31: 8,
+			AgriciDaniel: 1,
+			SawyerHood: 1,
+			'browser-act': 1,
+			aws: 6,
 		});
 	});
 
@@ -92,6 +101,7 @@ describe('SEED_LISTINGS', () => {
 			'pdf',
 			'ponytail',
 			'skill-creator',
+			'ui-ux-pro-max',
 		]);
 	});
 });

@@ -209,6 +209,30 @@ const CLOUDFLARE_SKILLS = [
 
 const EXPO_SKILLS = ['expo-router', 'expo-project-structure', 'expo-data-fetching', 'expo-upgrade'];
 
+// Wave 7 (curated 2026-07-28): big-name community skills plus the official AWS
+// pack; marketing/SEO picks are the first non-dev-audience content.
+const MATTPOCOCK_SKILLS = ['code-review', 'diagnosing-bugs', 'domain-modeling', 'prototype', 'tdd'];
+
+const MARKETING_SKILLS = [
+	'copywriting',
+	'cro',
+	'seo-audit',
+	'content-strategy',
+	'analytics',
+	'pricing',
+	'launch',
+	'emails',
+];
+
+const AWS_SKILLS = [
+	'aws-cdk',
+	'aws-serverless',
+	'aws-iam',
+	'aws-database',
+	'aws-deployment',
+	'amazon-bedrock',
+];
+
 const skillsUnder = (repo: string, names: readonly string[], attributedTo: string) =>
 	names.map((name) => ({
 		githubUrl: `https://github.com/${repo}/tree/main/skills/${name}`,
@@ -256,5 +280,43 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 	...EXPO_SKILLS.map((name) => ({
 		githubUrl: `https://github.com/expo/skills/tree/main/plugins/expo/skills/${name}`,
 		attributedTo: 'expo',
+	})),
+	...MATTPOCOCK_SKILLS.map((name) => ({
+		githubUrl: `https://github.com/mattpocock/skills/tree/main/skills/engineering/${name}`,
+		attributedTo: 'mattpocock',
+	})),
+	{
+		githubUrl:
+			'https://github.com/multica-ai/andrej-karpathy-skills/tree/main/skills/karpathy-guidelines',
+		attributedTo: 'multica-ai',
+	},
+	{
+		githubUrl:
+			'https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/ui-ux-pro-max',
+		attributedTo: 'nextlevelbuilder',
+		featured: true,
+	},
+	{
+		githubUrl:
+			'https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/design-system',
+		attributedTo: 'nextlevelbuilder',
+	},
+	{
+		githubUrl: 'https://github.com/Leonxlnx/taste-skill/tree/main/skills/taste-skill',
+		attributedTo: 'Leonxlnx',
+	},
+	...skillsUnder('coreyhaines31/marketingskills', MARKETING_SKILLS, 'coreyhaines31'),
+	{ githubUrl: 'https://github.com/AgriciDaniel/claude-seo/tree/main/skills/seo', attributedTo: 'AgriciDaniel' },
+	{
+		githubUrl: 'https://github.com/SawyerHood/dev-browser/tree/main/skills/dev-browser',
+		attributedTo: 'SawyerHood',
+	},
+	{
+		githubUrl: 'https://github.com/browser-act/skills/tree/main/browser-act',
+		attributedTo: 'browser-act',
+	},
+	...AWS_SKILLS.map((name) => ({
+		githubUrl: `https://github.com/aws/agent-toolkit-for-aws/tree/main/skills/core-skills/${name}`,
+		attributedTo: 'aws',
 	})),
 ]);
