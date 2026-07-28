@@ -1,4 +1,5 @@
-import { CATEGORIES, INTEGRATIONS, type PublicSkillSummary, type Target } from 'skill-schema';
+import { CATEGORIES, INTEGRATIONS, type CategorySlug, type PublicSkillSummary, type Target } from 'skill-schema';
+import { CATEGORY_SWATCHES } from '../../lib/categoryTints';
 import type { CategoryFilter, IntegrationFilter } from '../../lib/filterSkills';
 
 const GROUP_HEADING = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint';
@@ -34,15 +35,23 @@ export default function FilterSidebar({
 	}
 	const tools = Array.from(new Set(skills.flatMap((s) => s.targets))).sort();
 
-	const rows: { value: CategoryFilter; label: string; count: number }[] = [
-		{ value: 'all', label: 'All skills', count: skills.length },
+	const rows: { value: CategoryFilter; label: string; count: number; swatch: string }[] = [
+		{ value: 'all', label: 'All skills', count: skills.length, swatch: 'bg-accent' },
 		...CATEGORIES.filter((c) => counts.has(c.slug)).map((c) => ({
 			value: c.slug as CategoryFilter,
 			label: c.label,
 			count: counts.get(c.slug) ?? 0,
+			swatch: CATEGORY_SWATCHES[c.slug as CategorySlug],
 		})),
 		...(counts.has('uncategorized')
-			? [{ value: 'uncategorized' as CategoryFilter, label: 'Uncategorized', count: counts.get('uncategorized') ?? 0 }]
+			? [
+					{
+						value: 'uncategorized' as CategoryFilter,
+						label: 'Uncategorized',
+						count: counts.get('uncategorized') ?? 0,
+						swatch: 'bg-faint',
+					},
+				]
 			: []),
 	];
 
@@ -71,7 +80,10 @@ export default function FilterSidebar({
 								active ? 'bg-hover font-medium text-text' : 'text-muted hover:bg-hover hover:text-text'
 							}`}
 						>
-							<span className={active ? 'text-accent' : undefined}>{row.label}</span>
+							<span className="flex items-center gap-[8px]">
+								<span className={`size-2 flex-none rounded-[3px] ${row.swatch}`} aria-hidden="true" />
+								<span className={active ? 'text-accent' : undefined}>{row.label}</span>
+							</span>
 							<span className="font-mono text-[11px] text-faint">{row.count}</span>
 						</button>
 					);

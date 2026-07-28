@@ -9,25 +9,26 @@
   --font-sans: "Geist Variable", "Inter Variable", system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 
-  /* base - warm graphite, faint iris cast */
-  --color-bg: #0f0e13;
-  --color-bg-well: #0b0a0e;
-  --color-surface: #16151d;
-  --color-surface-2: #1b1a24;
-  --color-hover: #201e2a;
-  --color-border: #262433;
-  --color-border-2: #332f43;
+  /* base - cool graphite, faint blue cast to match the logo tile */
+  --color-bg: #0d0f16;
+  --color-bg-well: #090b10;
+  --color-surface: #131622;
+  --color-surface-2: #181c2a;
+  --color-hover: #1d2231;
+  --color-border: #242a3c;
+  --color-border-2: #303950;
 
-  --color-text: #ece9f3;
-  --color-muted: #9a94a8;
-  --color-faint: #615c70;
+  --color-text: #e9eefa;
+  --color-muted: #96a0b4;
+  --color-faint: #5d6579;
 
-  /* brand accent - iris, used sparingly (links, active, focus, primary) */
-  --color-accent: #8f7bfb;
-  --color-accent-hover: #a998ff;
-  --color-accent-ink: #0c0a15;
-  --color-accent-soft: rgba(143, 123, 251, 0.13);
-  --color-accent-line: rgba(143, 123, 251, 0.34);
+  /* brand accent - periwinkle blue from the logo glyph, used sparingly
+     (links, active, focus, primary) */
+  --color-accent: #7fa8ff;
+  --color-accent-hover: #9dc0ff;
+  --color-accent-ink: #0a0f1d;
+  --color-accent-soft: rgba(127, 168, 255, 0.13);
+  --color-accent-line: rgba(127, 168, 255, 0.34);
 
   /* verdict - the only other color on the page, always meaningful */
   --color-pass: #46d3a0;
@@ -39,9 +40,9 @@
   --color-fail: #f0656a;
   --color-fail-soft: rgba(240, 101, 106, 0.12);
   --color-fail-line: rgba(240, 101, 106, 0.32);
-  --color-unv: #8b8598;
-  --color-unv-soft: rgba(139, 133, 152, 0.12);
-  --color-unv-line: rgba(139, 133, 152, 0.28);
+  --color-unv: #8791a3;
+  --color-unv-soft: rgba(135, 145, 163, 0.12);
+  --color-unv-line: rgba(135, 145, 163, 0.28);
 
   /* risk ramp - low -> critical */
   --color-risk-low: #46d3a0;
@@ -59,7 +60,7 @@
 
 /* effect values that don't map onto a Tailwind utility scale */
 :root {
-  --ring: rgba(143, 123, 251, 0.45);
+  --ring: rgba(127, 168, 255, 0.45);
   --shadow: 0 12px 44px -20px rgba(0, 0, 0, 0.85);
 }
 
