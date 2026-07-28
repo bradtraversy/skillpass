@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PublicSkillSummary, Target } from 'skill-schema';
 import { getSkills } from '../../lib/api';
 import { filterSkills, type CategoryFilter, type IntegrationFilter } from '../../lib/filterSkills';
+import { pageItems, paginate } from '../../lib/paginate';
 import Row from '../skill/Row';
 import FilterSidebar from './FilterSidebar';
 
@@ -22,10 +23,22 @@ export default function Directory() {
 	// choice in an effect so the server render and hydration always agree.
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [page, setPage] = useState(1);
+	const listTopRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (localStorage.getItem(SIDEBAR_KEY) === '0') setSidebarOpen(false);
 	}, []);
+
+	// Any filter change starts back at page 1.
+	useEffect(() => {
+		setPage(1);
+	}, [query, tool, category, integration]);
+
+	function goToPage(next: number) {
+		setPage(next);
+		listTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 
 	function toggleFilters() {
 		if (window.matchMedia('(min-width: 768px)').matches) {
@@ -63,6 +76,7 @@ export default function Directory() {
 		integration,
 		tab: 'new',
 	});
+	const paged = paginate(matches, page);
 
 	return (
 		<>
@@ -134,7 +148,7 @@ export default function Directory() {
 				</div>
 
 				<div className="min-w-0 flex-1">
-					<div className="flex items-center gap-[26px] border-b border-border">
+					<div ref={listTopRef} className="scroll-mt-5 flex items-center gap-[26px] border-b border-border">
 						<span className="-mb-px border-b-2 border-accent pb-[13px] font-medium text-text">
 							Latest
 						</span>
@@ -170,10 +184,55 @@ export default function Directory() {
 					</div>
 
 					<div className="mt-[6px]">
-						{matches.map((skill, i) => (
-							<Row key={skill.slug} skill={skill} rank={i + 1} />
+						{paged.items.map((skill, i) => (
+							<Row key={skill.slug} skill={skill} rank={paged.start + i} />
 						))}
 					</div>
+
+					{paged.pageCount > 1 && (
+						<nav
+							aria-label="Pagination"
+							className="mt-7 mb-16 flex items-center justify-center gap-[6px] font-mono text-[12.5px]"
+						>
+							<button
+								type="button"
+								onClick={() => goToPage(paged.page - 1)}
+								disabled={paged.page === 1}
+								className="rounded-sm border border-border-2 px-[10px] py-[6px] text-muted hover:bg-hover hover:text-text disabled:pointer-events-none disabled:opacity-40"
+							>
+								Prev
+							</button>
+							{pageItems(paged.page, paged.pageCount).map((item, i) =>
+								item === 'gap' ? (
+									<span key={`gap-${i}`} className="px-[4px] text-faint">
+										...
+									</span>
+								) : (
+									<button
+										key={item}
+										type="button"
+										onClick={() => goToPage(item)}
+										aria-current={item === paged.page ? 'page' : undefined}
+										className={`min-w-[34px] rounded-sm border px-[9px] py-[6px] ${
+											item === paged.page
+												? 'border-accent-line bg-accent-soft font-medium text-accent'
+												: 'border-border-2 text-muted hover:bg-hover hover:text-text'
+										}`}
+									>
+										{item}
+									</button>
+								),
+							)}
+							<button
+								type="button"
+								onClick={() => goToPage(paged.page + 1)}
+								disabled={paged.page === paged.pageCount}
+								className="rounded-sm border border-border-2 px-[10px] py-[6px] text-muted hover:bg-hover hover:text-text disabled:pointer-events-none disabled:opacity-40"
+							>
+								Next
+							</button>
+						</nav>
+					)}
 
 					{load.phase === 'loading' && (
 						<p className="py-16 text-center text-[13px] text-muted">Loading skills...</p>
