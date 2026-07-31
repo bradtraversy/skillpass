@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { loadPackageFromFiles } from 'validator';
+import { loadPackageFromFiles, type LoadedPackage } from 'validator';
 import { z } from 'zod';
 import { requireAuth, type AuthVariables } from '../auth/middleware';
 import type { Db } from '../db/client';
@@ -28,7 +28,7 @@ import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { parseGithubUrl } from '../github/url';
-import { MAX_ZIP_BYTES, type PublicValidation } from 'skill-schema';
+import { MAX_ZIP_BYTES, type DetectedPackage, type PublicValidation } from 'skill-schema';
 import { publishSubmission, type PublishOutcome } from '../publish/publish';
 import {
 	getSnapshotDocument,
@@ -76,6 +76,15 @@ function attributionFor(user: UserRow, submission: SubmissionRow): string | null
 	}
 	const owner = parsed.data.owner;
 	return owner.toLowerCase() === user.username.toLowerCase() ? null : owner;
+}
+
+function detectPackage(pkg: LoadedPackage): DetectedPackage {
+	return {
+		skillMd: pkg.files.some((f) => f.path === 'SKILL.md'),
+		manifest:
+			pkg.manifest.state === 'ok' ? (pkg.manifest.inferred ? 'inferred' : 'ok') : pkg.manifest.state,
+		name: pkg.manifest.state === 'ok' ? pkg.manifest.data.name : null,
+	};
 }
 
 // Fallback skill name for manifest-less zips; the filename is user input.
@@ -173,7 +182,10 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 			snapshotKey: key,
 		});
 		await startValidation(env, db, queue, row.id);
-		return c.json({ success: true, data: publicSubmission(row) }, 201);
+		return c.json(
+			{ success: true, data: { ...publicSubmission(row), detected: detectPackage(pkg) } },
+			201,
+		);
 	});
 
 	// Zip uploads have no repo owner to verify; they are honor-system under the
@@ -222,7 +234,10 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 			snapshotKey: key,
 		});
 		await startValidation(env, db, queue, row.id);
-		return c.json({ success: true, data: publicSubmission(row) }, 201);
+		return c.json(
+			{ success: true, data: { ...publicSubmission(row), detected: detectPackage(pkg) } },
+			201,
+		);
 	});
 
 	routes.get('/', async (c) => {

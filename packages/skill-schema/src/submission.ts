@@ -30,6 +30,21 @@ export interface PublicSubmission {
 	createdAt: string;
 }
 
+// What the submit endpoint saw in the snapshot, returned once on creation so the
+// form can confirm the package shape before validation finishes. 'inferred' means
+// a bare SKILL.md with no skill.json; name is null unless a manifest resolved.
+export type ManifestDetection = 'ok' | 'inferred' | 'missing' | 'invalid';
+
+export interface DetectedPackage {
+	skillMd: boolean;
+	manifest: ManifestDetection;
+	name: string | null;
+}
+
+export interface CreatedSubmission extends PublicSubmission {
+	detected: DetectedPackage;
+}
+
 // The API's HTTP response wrapper. Structurally like ParseResult, declared
 // separately so the wire contract can grow without touching parse semantics.
 export type ApiEnvelope<T> = { success: true; data: T } | { success: false; error: string };

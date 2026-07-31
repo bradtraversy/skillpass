@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { MAX_ZIP_BYTES, type PublicSubmission } from 'skill-schema';
+import { MAX_ZIP_BYTES, type CreatedSubmission, type DetectedPackage } from 'skill-schema';
 import { getMe, signInUrl, submitGithubUrl, submitZip, type CurrentUser } from '../../lib/api';
 import ValidationProgress from './ValidationProgress';
 
@@ -16,7 +16,7 @@ export default function SubmitForm() {
 	const [url, setUrl] = useState('');
 	const [file, setFile] = useState<File | null>(null);
 	const [submitting, setSubmitting] = useState(false);
-	const [result, setResult] = useState<PublicSubmission | null>(null);
+	const [result, setResult] = useState<CreatedSubmission | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -186,7 +186,24 @@ function SubmitButton({ submitting, label }: { submitting: boolean; label: strin
 	);
 }
 
-function ResultCard({ submission }: { submission: PublicSubmission }) {
+function detectionSummary(detected: DetectedPackage): { tone: string; text: string } {
+	switch (detected.manifest) {
+		case 'ok':
+			return { tone: 'text-pass', text: `skill.json found - will list as "${detected.name}"` };
+		case 'inferred':
+			return { tone: 'text-pass', text: `SKILL.md found - will list as "${detected.name}"` };
+		case 'invalid':
+			return { tone: 'text-warn', text: 'skill.json is not valid - validation will flag it' };
+		case 'missing':
+			return {
+				tone: 'text-warn',
+				text: 'no SKILL.md at the top level - validation will fail; submit the folder that contains it',
+			};
+	}
+}
+
+function ResultCard({ submission }: { submission: CreatedSubmission }) {
+	const detection = detectionSummary(submission.detected);
 	return (
 		<div className="mt-5 rounded-lg border border-border bg-surface p-5">
 			<p className="flex items-center gap-2 font-semibold">
@@ -210,6 +227,8 @@ function ResultCard({ submission }: { submission: PublicSubmission }) {
 				)}
 				<dt className="text-faint">source hash</dt>
 				<dd className="truncate font-mono text-muted">{submission.sourceHash}</dd>
+				<dt className="text-faint">detected</dt>
+				<dd className={detection.tone}>{detection.text}</dd>
 			</dl>
 			<ValidationProgress submissionId={submission.id} />
 			<p className="mt-3 text-[12px] text-faint">

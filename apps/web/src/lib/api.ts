@@ -3,13 +3,13 @@ import type {
 	AdminQueue,
 	AdminVersionHistory,
 	ApiEnvelope,
+	CreatedSubmission,
 	PublicAbuseReport,
 	PublicPreflight,
 	PublicProfile,
 	PublicSkillDetail,
 	PublicSkillSource,
 	PublicSkillSummary,
-	PublicSubmission,
 	PublicValidation,
 	PublishResult,
 } from 'skill-schema';
@@ -93,7 +93,7 @@ export function downloadUrl(slug: string, version: string): string {
 	return `${API_URL}/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/download`;
 }
 
-export function submitGithubUrl(githubUrl: string): Promise<ApiResult<PublicSubmission>> {
+export function submitGithubUrl(githubUrl: string): Promise<ApiResult<CreatedSubmission>> {
 	return request('/submissions', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -101,7 +101,7 @@ export function submitGithubUrl(githubUrl: string): Promise<ApiResult<PublicSubm
 	});
 }
 
-export function submitZip(file: File): Promise<ApiResult<PublicSubmission>> {
+export function submitZip(file: File): Promise<ApiResult<CreatedSubmission>> {
 	const form = new FormData();
 	form.set('file', file);
 	return request('/submissions/zip', { method: 'POST', body: form });

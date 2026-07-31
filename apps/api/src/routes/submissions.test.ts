@@ -188,6 +188,7 @@ describe('POST /submissions', () => {
 				resolvedCommitSha: 'abc123',
 				sourceHash: HASH,
 				createdAt: '2026-07-05T12:00:00.000Z',
+				detected: { skillMd: true, manifest: 'inferred', name: 'hello' },
 			},
 		});
 		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, KEY, { version: 1, files: FILES });
@@ -199,6 +200,40 @@ describe('POST /submissions', () => {
 			sourceHash: HASH,
 			snapshotKey: KEY,
 		});
+	});
+
+	it('reports a missing SKILL.md in detected without failing the draft', async () => {
+		mockHappyPath();
+		vi.mocked(fetchSnapshot).mockResolvedValue({
+			success: true,
+			data: [{ path: 'README.md', content: 'not a skill\n' }],
+		});
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		expect(res.status).toBe(201);
+		const body = (await res.json()) as { data: { detected: unknown } };
+		expect(body.data.detected).toEqual({ skillMd: false, manifest: 'missing', name: null });
+	});
+
+	it('detects an explicit manifest by its declared name', async () => {
+		mockHappyPath();
+		const manifest = {
+			schemaVersion: '0.1',
+			name: 'demo-skill',
+			description: 'A demo',
+			targets: ['claude-code'],
+			permissions: [],
+		};
+		vi.mocked(fetchSnapshot).mockResolvedValue({
+			success: true,
+			data: [
+				{ path: 'SKILL.md', content: '# Demo\n' },
+				{ path: 'skill.json', content: JSON.stringify(manifest) },
+			],
+		});
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		expect(res.status).toBe(201);
+		const body = (await res.json()) as { data: { detected: unknown } };
+		expect(body.data.detected).toEqual({ skillMd: true, manifest: 'ok', name: 'demo-skill' });
 	});
 
 	it('400s on a non-JSON body', async () => {
@@ -359,6 +394,7 @@ describe('POST /submissions/zip', () => {
 				resolvedCommitSha: null,
 				sourceHash: HASH,
 				createdAt: '2026-07-06T09:00:00.000Z',
+				detected: { skillMd: true, manifest: 'inferred', name: 'demo-skill' },
 			},
 		});
 		expect(vi.mocked(putBytes)).toHaveBeenCalledWith(

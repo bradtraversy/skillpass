@@ -73,7 +73,10 @@ export function extractZip(bytes: Uint8Array): SourceResult<PackageFile[]> {
 
 	const names = Object.keys(entries);
 	if (names.length === 0) {
-		return sourceError('empty-package', 'the zip contains no files');
+		return sourceError(
+			'empty-package',
+			'the zip contains no files - zip the skill folder so SKILL.md sits at the top level',
+		);
 	}
 
 	let actualTotal = 0;

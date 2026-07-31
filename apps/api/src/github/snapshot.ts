@@ -126,7 +126,7 @@ export async function extractTarball(
 			'empty-package',
 			subpath === undefined
 				? 'the repository has no files at the pinned commit'
-				: `no files under "${subpath}" at the pinned commit`,
+				: `no files under "${subpath}" at the pinned commit - point the /tree/ URL at the folder that contains SKILL.md`,
 		);
 	}
 	return { success: true, data: files.sort(byPath) };

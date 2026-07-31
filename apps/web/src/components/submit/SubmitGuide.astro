@@ -1,0 +1,68 @@
+<aside class="mt-16 text-[13px] leading-relaxed text-muted">
+	<section>
+		<h2 class="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
+			What we expect
+		</h2>
+		<div class="mt-3 grid gap-4 sm:grid-cols-2">
+			<div class="rounded-lg border border-border bg-surface p-4">
+				<p class="font-medium text-text">A single skill</p>
+				<pre
+					class="mt-2 overflow-x-auto rounded-sm bg-bg-well p-3 font-mono text-[12px] leading-[1.7] text-text">
+your-skill/
+  SKILL.md      <span class="text-faint">required</span>
+  skill.json    <span class="text-faint">optional</span>
+  reference/    <span class="text-faint">anything else ships too</span></pre>
+				<p class="mt-2">
+					<code class="font-mono text-[12px] text-text">SKILL.md</code> needs <code class="font-mono text-[12px] text-text">name</code> and <code class="font-mono text-[12px] text-text">description</code> frontmatter. <code class="font-mono text-[12px] text-text">skill.json</code> adds targets, permissions, and a version.
+				</p>
+			</div>
+			<div class="rounded-lg border border-border bg-surface p-4">
+				<p class="font-medium text-text">One skill in a bigger repo</p>
+				<pre
+					class="mt-2 overflow-x-auto rounded-sm bg-bg-well p-3 font-mono text-[12px] leading-[1.7] text-text">
+github.com/you/repo
+<span class="text-accent">  /tree/main/skills/your-skill</span></pre>
+				<p class="mt-2">
+					Link the folder that contains <code class="font-mono text-[12px] text-text">SKILL.md</code> with a <code class="font-mono text-[12px] text-text">/tree/branch/path</code> URL. Only that folder is snapshotted.
+				</p>
+			</div>
+		</div>
+	</section>
+
+	<div class="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+		<section>
+			<h2 class="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
+				What happens next
+			</h2>
+			<ol class="mt-3 list-none space-y-2">
+				<li class="flex gap-3">
+					<span class="font-mono text-[12px] text-faint">1</span>
+					The commit is pinned - a submission never tracks a moving branch.
+				</li>
+				<li class="flex gap-3">
+					<span class="font-mono text-[12px] text-faint">2</span>
+					The source is snapshotted and hashed.
+				</li>
+				<li class="flex gap-3">
+					<span class="font-mono text-[12px] text-faint">3</span>
+					The validator scans it and writes a Skill Passport. Findings are advisory - only a leaked
+					secret value fails a submission.
+				</li>
+				<li class="flex gap-3">
+					<span class="font-mono text-[12px] text-faint">4</span>
+					Passed submissions can publish; the listing shows the exact source that was reviewed.
+				</li>
+			</ol>
+		</section>
+
+		<section>
+			<h2 class="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">
+				Who can submit
+			</h2>
+			<p class="mt-3">
+				Repositories you own, or org repositories where your GitHub membership is public. Zip
+				uploads are honor-system: you must own or have permission to share what you upload.
+			</p>
+		</section>
+	</div>
+</aside>
