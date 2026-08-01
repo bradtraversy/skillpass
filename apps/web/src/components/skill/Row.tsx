@@ -24,7 +24,14 @@ export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: 
 			</span>
 
 			<div className="min-w-0">
-				<b className="block truncate font-semibold tracking-[-0.01em]">{title}</b>
+				<span className="flex items-center gap-[8px]">
+					<b className="truncate font-semibold tracking-[-0.01em]">{title}</b>
+					{(skill.packSkills?.length ?? 0) > 0 && (
+						<span className="flex-none rounded-[4px] border border-accent-line bg-accent-soft px-[6px] py-[1px] font-mono text-[10px] uppercase tracking-[0.06em] text-accent">
+							Pack · {skill.packSkills?.length}
+						</span>
+					)}
+				</span>
 				<div className="mt-[3px] line-clamp-2 text-[12.5px] text-muted">
 					{skill.tagline ?? firstSentence(skill.summary)}
 				</div>

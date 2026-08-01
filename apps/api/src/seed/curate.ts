@@ -81,6 +81,7 @@ export async function curateSkill(env: Env, db: Db, input: CurateInput): Promise
 			homepage: manifest.homepage,
 			install: manifest.install,
 			manifestInferred: pkg.manifest.inferred ?? false,
+			packSkills: (manifest.skills?.length ?? 0) >= 2 ? manifest.skills : null,
 			attributedTo: input.attributedTo,
 			verified: true,
 			env,

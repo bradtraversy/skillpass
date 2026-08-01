@@ -8,6 +8,7 @@ const base: SkillFilters = {
 	tool: 'all',
 	category: 'all',
 	integration: 'all',
+	type: 'all',
 	tab: 'new',
 };
 
@@ -56,6 +57,34 @@ const sample: PublicSkillSummary[] = [
 		maintainer: 'shipfast',
 	}),
 ];
+
+const withPack: PublicSkillSummary[] = [
+	...sample,
+	summary({
+		slug: 'ai-blueprint',
+		name: 'AI Blueprint',
+		summary: 'Spec-driven workflow pack.',
+		packSkills: ['onboard', 'feature', 'implement'],
+	}),
+];
+
+describe('filterSkills type filter', () => {
+	it('pack keeps only listings with members', () => {
+		const out = filterSkills(withPack, { ...base, type: 'pack' });
+		expect(out.map((s) => s.slug)).toEqual(['ai-blueprint']);
+	});
+
+	it('skill excludes packs', () => {
+		const out = filterSkills(withPack, { ...base, type: 'skill' });
+		expect(out.map((s) => s.slug)).not.toContain('ai-blueprint');
+		expect(out).toHaveLength(3);
+	});
+
+	it('searches pack member names', () => {
+		const out = filterSkills(withPack, { ...base, query: 'implement' });
+		expect(out.map((s) => s.slug)).toEqual(['ai-blueprint']);
+	});
+});
 
 describe('filterSkills', () => {
 	it('returns everything with no filters applied', () => {

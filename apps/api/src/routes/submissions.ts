@@ -79,11 +79,13 @@ function attributionFor(user: UserRow, submission: SubmissionRow): string | null
 }
 
 function detectPackage(pkg: LoadedPackage): DetectedPackage {
+	const skills = pkg.manifest.state === 'ok' ? (pkg.manifest.data.skills ?? []) : [];
 	return {
 		skillMd: pkg.files.some((f) => f.path === 'SKILL.md'),
 		manifest:
 			pkg.manifest.state === 'ok' ? (pkg.manifest.inferred ? 'inferred' : 'ok') : pkg.manifest.state,
 		name: pkg.manifest.state === 'ok' ? pkg.manifest.data.name : null,
+		skillCount: skills.length >= 2 ? skills.length : null,
 	};
 }
 
@@ -325,7 +327,15 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 			);
 		}
 
-		const pkg = loadPackageFromFiles(snapshot.data.files, `submission-${id}`);
+		// The fallback name feeds pack inference (a pack is named from it), so
+		// prefer the repo name over an opaque submission id.
+		const repoName = submission.githubUrl
+			? (() => {
+					const parsed = parseGithubUrl(submission.githubUrl);
+					return parsed.success ? parsed.data.repo : null;
+				})()
+			: null;
+		const pkg = loadPackageFromFiles(snapshot.data.files, repoName ?? `submission-${id}`);
 		if (pkg.manifest.state !== 'ok') {
 			// Passed validation implies a valid manifest; this is stored-state corruption.
 			console.error(
@@ -346,6 +356,8 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 				homepage: pkg.manifest.data.homepage,
 				install: pkg.manifest.data.install,
 				manifestInferred: pkg.manifest.inferred ?? false,
+				packSkills:
+					(pkg.manifest.data.skills?.length ?? 0) >= 2 ? pkg.manifest.data.skills : null,
 				attributedTo: attributionFor(c.get('user'), submission),
 				verified: c.get('user').role === 'admin',
 				env,

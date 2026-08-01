@@ -1,4 +1,4 @@
-import type { ValidationReport } from 'skill-schema';
+import type { SkillEntry, ValidationReport } from 'skill-schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Db } from '../db/client';
 import type { SkillRow, SkillVersionRow, SubmissionRow, ValidationReportRow } from '../db/schema';
@@ -110,6 +110,7 @@ function versionRow(overrides: Partial<SkillVersionRow> = {}): SkillVersionRow {
 		sourceHash: 'sha256:abc',
 		snapshotKey: 'snapshots/abc.json',
 		targets: ['claude-code'],
+		packSkills: null,
 		submissionId: 1,
 		publishedAt: NOW,
 		createdAt: NOW,
@@ -157,6 +158,7 @@ describe('publishSubmission', () => {
 			sourceHash: 'sha256:abc',
 			snapshotKey: 'snapshots/abc.json',
 			targets: ['claude-code'],
+			packSkills: null,
 			submissionId: 1,
 			publishedAt: NOW,
 		});
@@ -188,6 +190,39 @@ describe('publishSubmission', () => {
 			vi.mocked(setSubmissionStatus).mock.invocationCallOrder[0],
 		];
 		expect(order).toEqual([...order].sort((a, b) => a - b));
+	});
+
+	it('round-trips pack members onto the version row', async () => {
+		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
+		vi.mocked(createSkill).mockResolvedValue(skillRow);
+		vi.mocked(findLatestVersionForSkill).mockResolvedValue(undefined);
+		vi.mocked(createSkillVersion).mockResolvedValue(versionRow());
+		const members: SkillEntry[] = [
+			{
+				name: 'plan',
+				entry: '.claude/skills/plan/SKILL.md',
+				targets: ['claude-code', 'codex'],
+				variants: { codex: '.agents/skills/plan/SKILL.md' },
+			},
+			{ name: 'apply', entry: '.claude/skills/apply/SKILL.md', targets: ['claude-code'] },
+		];
+
+		const outcome = await publishSubmission(db, {
+			submission: githubSubmission,
+			report: reportRow,
+			name: 'my-pack',
+			summary: 'A pack of 2 skills',
+			targets: ['claude-code', 'codex'],
+			packSkills: members,
+			attributedTo: null,
+			now: NOW,
+		});
+
+		expect(outcome.success).toBe(true);
+		expect(createSkillVersion).toHaveBeenCalledWith(
+			db,
+			expect.objectContaining({ packSkills: members }),
+		);
 	});
 
 	it('creates the skill verified when the input is verified (admin-curated add)', async () => {

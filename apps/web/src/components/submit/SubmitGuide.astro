@@ -26,6 +26,17 @@ github.com/you/repo
 					Link the folder that contains <code class="font-mono text-[12px] text-text">SKILL.md</code> with a <code class="font-mono text-[12px] text-text">/tree/branch/path</code> URL. Only that folder is snapshotted.
 				</p>
 			</div>
+			<div class="rounded-lg border border-border bg-surface p-4 sm:col-span-2">
+				<p class="font-medium text-text">A workflow pack (multiple skills)</p>
+				<pre
+					class="mt-2 overflow-x-auto rounded-sm bg-bg-well p-3 font-mono text-[12px] leading-[1.7] text-text">
+your-pack/
+  .claude/skills/*/SKILL.md
+  .agents/skills/*/SKILL.md    <span class="text-faint">or skills/*/SKILL.md</span></pre>
+				<p class="mt-2">
+					Submit the repo root - members are detected automatically and the pack lists as one skill with all of them. Same-named folders across the adapter dirs pair up per tool. No manifest required.
+				</p>
+			</div>
 		</div>
 	</section>
 

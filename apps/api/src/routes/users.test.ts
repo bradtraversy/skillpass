@@ -63,6 +63,7 @@ const version: SkillVersionRow = {
 	sourceHash: 'sha256:abc',
 	snapshotKey: 'snapshots/abc.json',
 	targets: ['claude-code'],
+	packSkills: null,
 	submissionId: 18,
 	publishedAt: NOW,
 	createdAt: NOW,

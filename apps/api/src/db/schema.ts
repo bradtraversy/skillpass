@@ -22,6 +22,7 @@ import {
 	type CategorySlug,
 	type IntegrationSlug,
 	type ProgressStep,
+	type SkillEntry,
 	type SkillPassport,
 	type Target,
 	type ValidationReport,
@@ -154,6 +155,10 @@ export const skillVersions = pgTable(
 		sourceHash: text('source_hash').notNull(),
 		snapshotKey: text('snapshot_key').notNull(),
 		targets: jsonb('targets').$type<Target[]>().notNull().default([]),
+		// The manifest's skills[] entries when this version is a multi-skill pack
+		// (>= 2 members); null for single skills. Feature 15's CLI reads variants
+		// from here for per-target installs.
+		packSkills: jsonb('pack_skills').$type<SkillEntry[]>(),
 		submissionId: integer('submission_id')
 			.notNull()
 			.unique()

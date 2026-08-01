@@ -61,6 +61,18 @@ describe('in-memory validation', () => {
 		);
 	});
 
+	it('passes an inferred adapter-dir pack end to end', async () => {
+		const skill = (name: string) => `---\nname: ${name}\ndescription: ${name}.\n---\nBody.\n`;
+		const files: PackageFile[] = [
+			{ path: '.claude/skills/plan/SKILL.md', content: skill('plan') },
+			{ path: '.agents/skills/plan/SKILL.md', content: skill('plan') },
+			{ path: '.claude/skills/apply/SKILL.md', content: skill('apply') },
+		];
+		const report = await validateLoadedPackage(loadPackageFromFiles(files, 'pack'), NOW);
+		expect(report.status).toBe('passed');
+		expect(report.failures).toEqual([]);
+	});
+
 	it('RULES exposes unique keys and labels for progress rendering', () => {
 		expect(new Set(RULES.map((r) => r.key)).size).toBe(RULES.length);
 		for (const rule of RULES) {

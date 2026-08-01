@@ -1,0 +1,1 @@
+ALTER TABLE "skill_versions" ADD COLUMN "pack_skills" jsonb;

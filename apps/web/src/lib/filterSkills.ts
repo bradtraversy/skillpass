@@ -7,6 +7,7 @@ import type {
 } from 'skill-schema';
 
 export type DirectoryTab = 'featured' | 'new' | 'verified';
+export type TypeFilter = 'all' | 'skill' | 'pack';
 export type CategoryFilter = CategorySlug | 'all' | 'uncategorized';
 export type IntegrationFilter = IntegrationSlug | 'all';
 
@@ -16,6 +17,7 @@ export interface SkillFilters {
 	tool: Target | 'all';
 	category: CategoryFilter;
 	integration: IntegrationFilter;
+	type: TypeFilter;
 	tab: DirectoryTab;
 }
 
@@ -43,9 +45,18 @@ export function filterSkills(
 		}
 		if (filters.integration !== 'all' && !(skill.integrations ?? []).includes(filters.integration))
 			return false;
+		const isPack = (skill.packSkills?.length ?? 0) > 0;
+		if (filters.type === 'pack' && !isPack) return false;
+		if (filters.type === 'skill' && isPack) return false;
 		if (!query) return true;
 
-		const haystack = [skill.name, skill.summary, skill.maintainer, ...skill.targets]
+		const haystack = [
+			skill.name,
+			skill.summary,
+			skill.maintainer,
+			...skill.targets,
+			...(skill.packSkills ?? []),
+		]
 			.join(' ')
 			.toLowerCase();
 

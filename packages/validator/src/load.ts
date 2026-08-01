@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { parseManifest, type Manifest, type Target } from 'skill-schema';
+import { parseManifest, type Manifest, type SkillEntry, type Target } from 'skill-schema';
 import { detectPermissions } from './rules/permissions';
 
 export interface PackageFile {
@@ -163,6 +163,110 @@ function inferManifest(files: PackageFile[], fallbackName: string): Manifest {
 	};
 }
 
+const CLAUDE_SKILL_RE = /^\.claude\/skills\/([^/]+)\/SKILL\.md$/;
+const AGENTS_SKILL_RE = /^\.agents\/skills\/([^/]+)\/SKILL\.md$/;
+const PLAIN_SKILL_RE = /^skills\/([^/]+)\/SKILL\.md$/;
+
+interface MemberFiles {
+	folder: string;
+	claudePath?: string;
+	agentsPath?: string;
+	plainPath?: string;
+}
+
+// Adapter dirs win over a plain skills/ dir so a repo carrying both (adapters
+// plus a build output or vendored copy) doesn't double-count members.
+function collectMemberFiles(files: PackageFile[]): MemberFiles[] {
+	const byFolder = new Map<string, MemberFiles>();
+	const add = (folder: string, key: 'claudePath' | 'agentsPath' | 'plainPath', path: string) => {
+		const member = byFolder.get(folder) ?? { folder };
+		member[key] = path;
+		byFolder.set(folder, member);
+	};
+	for (const file of files) {
+		const claude = CLAUDE_SKILL_RE.exec(file.path);
+		if (claude) add(claude[1], 'claudePath', file.path);
+		const agents = AGENTS_SKILL_RE.exec(file.path);
+		if (agents) add(agents[1], 'agentsPath', file.path);
+	}
+	if (byFolder.size > 0) return [...byFolder.values()];
+	for (const file of files) {
+		const plain = PLAIN_SKILL_RE.exec(file.path);
+		if (plain) add(plain[1], 'plainPath', file.path);
+	}
+	return [...byFolder.values()];
+}
+
+function readmeProse(files: PackageFile[]): string | undefined {
+	const readme = files.find((f) => f.path === 'README.md');
+	if (!readme) return undefined;
+	// Skip headings, badge/image lines, and raw HTML (logo blocks atop READMEs).
+	const prose = readme.content
+		.split('\n')
+		.map((line) => line.trim())
+		.find(
+			(line) =>
+				line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('[![') && !line.startsWith('<'),
+		);
+	return prose?.slice(0, 200);
+}
+
+// Synthesize a manifest for a repo whose skills live in nested layouts
+// (.claude/skills + .agents/skills, or skills/) with no root SKILL.md or
+// skill.json. Same-named adapter folders pair into one entry with a codex
+// variant. Returns null when no recognized layout matches.
+function inferNestedManifest(files: PackageFile[], fallbackName: string): Manifest | null {
+	const members = collectMemberFiles(files).sort((a, b) =>
+		a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0,
+	);
+	if (members.length === 0) {
+		return null;
+	}
+
+	const used = new Set<string>();
+	const packTargets = new Set<Target>();
+	const entries: SkillEntry[] = members.map((member) => {
+		const entryPath = member.claudePath ?? member.agentsPath ?? (member.plainPath as string);
+		const file = files.find((f) => f.path === entryPath) as PackageFile;
+		const meta = readSkillMeta(file.content);
+		// Frontmatter names can collide across folders; folder names can't
+		// within a layout, so a duplicate falls back to its folder name.
+		let entryName = slugify(meta.name ?? member.folder);
+		if (used.has(entryName)) entryName = slugify(member.folder);
+		used.add(entryName);
+		const targets: Target[] = member.plainPath
+			? inferTargets(files)
+			: [
+					...(member.claudePath ? (['claude-code'] as const) : []),
+					...(member.agentsPath ? (['codex'] as const) : []),
+				];
+		for (const target of targets) packTargets.add(target);
+		return {
+			name: entryName,
+			...(meta.description ? { description: meta.description } : {}),
+			entry: entryPath,
+			targets,
+			...(member.claudePath && member.agentsPath
+				? { variants: { codex: member.agentsPath } }
+				: {}),
+		};
+	});
+
+	const single = entries.length === 1 ? entries[0] : null;
+	const permissions = [...new Set(detectPermissions(files).map((d) => d.permission))];
+	return {
+		schemaVersion: '0.1',
+		name: single ? single.name : slugify(fallbackName),
+		description: single
+			? (single.description ?? single.name)
+			: (readmeProse(files) ?? `A pack of ${entries.length} skills`),
+		targets: [...packTargets],
+		permissions,
+		distribution: 'skill',
+		skills: entries,
+	};
+}
+
 function resolveEntries(dir: string, manifest: ManifestState, files: PackageFile[]): SkillEntryFile[] {
 	const has = (path: string) => files.some((f) => f.path === path);
 
@@ -196,10 +300,16 @@ export function loadPackageFromFiles(files: PackageFile[], name = 'package'): Lo
 	const sorted = [...files].sort(byPath);
 	let manifest = readManifest(sorted);
 	// No skill.json but a SKILL.md is present: infer a manifest so the skill lists.
-	// A package with neither stays 'missing' and fails on missing-skill-file.
-	if (manifest.state === 'missing' && sorted.some((f) => f.path === 'SKILL.md')) {
-		const data = inferManifest(sorted, name);
-		manifest = { state: 'ok', inferred: true, data, raw: JSON.stringify(data, null, 2) };
+	// A root SKILL.md always wins as a single skill; otherwise nested layouts
+	// infer a (possibly multi-skill) manifest. A package with none of these
+	// stays 'missing' and fails on missing-skill-file.
+	if (manifest.state === 'missing') {
+		const data = sorted.some((f) => f.path === 'SKILL.md')
+			? inferManifest(sorted, name)
+			: inferNestedManifest(sorted, name);
+		if (data) {
+			manifest = { state: 'ok', inferred: true, data, raw: JSON.stringify(data, null, 2) };
+		}
 	}
 	return {
 		dir: name,

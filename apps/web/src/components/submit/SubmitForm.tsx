@@ -187,6 +187,12 @@ function SubmitButton({ submitting, label }: { submitting: boolean; label: strin
 }
 
 function detectionSummary(detected: DetectedPackage): { tone: string; text: string } {
+	if (detected.skillCount) {
+		return {
+			tone: 'text-pass',
+			text: `${detected.skillCount}-skill pack - will list as "${detected.name}"`,
+		};
+	}
 	switch (detected.manifest) {
 		case 'ok':
 			return { tone: 'text-pass', text: `skill.json found - will list as "${detected.name}"` };

@@ -72,6 +72,38 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 			<Passport detail={detail} />
 			<AiReview review={detail.aiReview} />
 
+			{(detail.packMembers?.length ?? 0) > 0 && (
+				<section className="mt-[26px]">
+					<h2 className={SECTION_HEADING}>Skills in this pack</h2>
+					<p className="mb-1 text-[12px] text-faint">
+						{detail.packMembers?.length} skills that install together - the passport above covers
+						the whole pack.
+					</p>
+					<div className="divide-y divide-border">
+						{detail.packMembers?.map((member) => (
+							<div key={member.name} className="flex items-baseline gap-[12px] py-[10px] text-[13px]">
+								<span className="flex-none font-mono text-text">{member.name}</span>
+								{member.targets &&
+									(member.targets.length !== detail.targets.length ||
+										!member.targets.every((t) => detail.targets.includes(t))) && (
+										<span className="flex flex-none gap-[5px]">
+											{member.targets.map((t) => (
+												<span
+													key={t}
+													className="rounded-[5px] border border-border-2 px-[6px] py-[1px] font-mono text-[10px] text-muted"
+												>
+													{t}
+												</span>
+											))}
+										</span>
+									)}
+								<span className="min-w-0 flex-1 truncate text-muted">{member.description}</span>
+							</div>
+						))}
+					</div>
+				</section>
+			)}
+
 			<section className="mt-[26px]">
 				<h2 className={SECTION_HEADING}>Source</h2>
 				<SourceView slug={detail.slug} version={detail.version} />

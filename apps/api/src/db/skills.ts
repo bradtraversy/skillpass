@@ -236,6 +236,7 @@ export function publicSkillSummary(r: PublishedSkillRecord): PublicSkillSummary 
 		displayName: r.skill.displayName,
 		tagline: r.skill.tagline,
 		integrations: r.skill.integrations,
+		packSkills: r.version.packSkills?.map((s) => s.name) ?? null,
 		version: r.version.version,
 		maintainer: r.maintainer.username,
 		attributedTo: r.skill.attributedTo,
@@ -252,6 +253,7 @@ export function publicSkillDetail(
 ): PublicSkillDetail {
 	return {
 		...publicSkillSummary(r),
+		packMembers: r.version.packSkills ?? null,
 		githubRepoUrl: r.version.githubRepoUrl,
 		passport: r.passport.passport,
 		maintainerInfo: {

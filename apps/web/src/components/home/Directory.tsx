@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PublicSkillSummary, Target } from 'skill-schema';
 import { getSkills } from '../../lib/api';
-import { filterSkills, type CategoryFilter, type IntegrationFilter } from '../../lib/filterSkills';
+import {
+	filterSkills,
+	type CategoryFilter,
+	type IntegrationFilter,
+	type TypeFilter,
+} from '../../lib/filterSkills';
 import { pageItems, paginate } from '../../lib/paginate';
 import Row from '../skill/Row';
 import FilterSidebar from './FilterSidebar';
@@ -19,6 +24,7 @@ export default function Directory() {
 	const [tool, setTool] = useState<Target | 'all'>('all');
 	const [category, setCategory] = useState<CategoryFilter>('all');
 	const [integration, setIntegration] = useState<IntegrationFilter>('all');
+	const [type, setType] = useState<TypeFilter>('all');
 	// Desktop sidebar visibility, persisted. Starts true and reads the stored
 	// choice in an effect so the server render and hydration always agree.
 	const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -33,7 +39,7 @@ export default function Directory() {
 	// Any filter change starts back at page 1.
 	useEffect(() => {
 		setPage(1);
-	}, [query, tool, category, integration]);
+	}, [query, tool, category, integration, type]);
 
 	function goToPage(next: number) {
 		setPage(next);
@@ -74,6 +80,7 @@ export default function Directory() {
 		tool,
 		category,
 		integration,
+		type,
 		tab: 'new',
 	});
 	const paged = paginate(matches, page);
@@ -140,6 +147,11 @@ export default function Directory() {
 						integration={integration}
 						onIntegrationChange={(value) => {
 							setIntegration(value);
+							setDrawerOpen(false);
+						}}
+						type={type}
+						onTypeChange={(value) => {
+							setType(value);
 							setDrawerOpen(false);
 						}}
 						tool={tool}
@@ -264,6 +276,8 @@ export default function Directory() {
 							onCategoryChange={setCategory}
 							integration={integration}
 							onIntegrationChange={setIntegration}
+							type={type}
+							onTypeChange={setType}
 							tool={tool}
 							onToolChange={setTool}
 						/>

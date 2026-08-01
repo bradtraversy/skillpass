@@ -7,6 +7,7 @@ import {
 	publicSkillDetailSchema,
 	publicSkillSourceSchema,
 	publicSkillSummarySchema,
+	type SkillEntry,
 } from 'skill-schema';
 import { loadPackageFromFiles } from 'validator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -98,6 +99,7 @@ const version: SkillVersionRow = {
 	sourceHash: 'sha256:abc',
 	snapshotKey: 'snapshots/abc.json',
 	targets: ['claude-code'],
+	packSkills: null,
 	submissionId: 18,
 	publishedAt: NOW,
 	createdAt: NOW,
@@ -163,6 +165,7 @@ describe('GET /skills', () => {
 			displayName: null,
 			tagline: null,
 			integrations: null,
+			packSkills: null,
 			version: '1.0.0',
 			maintainer: 'bradtraversy',
 			attributedTo: null,
@@ -170,6 +173,32 @@ describe('GET /skills', () => {
 			verified: false,
 			publishedAt: NOW.toISOString(),
 		});
+	});
+
+	it('exposes pack member names on the summary and full entries on the detail', async () => {
+		const members: SkillEntry[] = [
+			{
+				name: 'plan',
+				description: 'Plan things.',
+				entry: '.claude/skills/plan/SKILL.md',
+				targets: ['claude-code', 'codex'],
+				variants: { codex: '.agents/skills/plan/SKILL.md' },
+			},
+			{ name: 'apply', entry: '.claude/skills/apply/SKILL.md', targets: ['claude-code'] },
+		];
+		const packVersion = { ...version, packSkills: members };
+		const packRecord: PublishedSkillRecord = { ...record, version: packVersion };
+
+		vi.mocked(listPublishedSkills).mockResolvedValue([packRecord]);
+		const list = await app.request('/skills');
+		const listBody = (await list.json()) as { data: { packSkills: unknown }[] };
+		expect(listBody.data[0].packSkills).toEqual(['plan', 'apply']);
+
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(packRecord);
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([{ version: packVersion, passport }]);
+		const detail = await app.request('/skills/smoke-clean');
+		const detailBody = (await detail.json()) as { data: unknown };
+		expect(publicSkillDetailSchema.parse(detailBody.data).packMembers).toEqual(members);
 	});
 
 	it('reports noteCount from the passport advisory findings', async () => {

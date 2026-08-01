@@ -39,6 +39,8 @@ export interface DetectedPackage {
 	skillMd: boolean;
 	manifest: ManifestDetection;
 	name: string | null;
+	// Member count when the package is a multi-skill pack; null for a single skill.
+	skillCount: number | null;
 }
 
 export interface CreatedSubmission extends PublicSubmission {

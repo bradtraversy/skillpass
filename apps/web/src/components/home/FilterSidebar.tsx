@@ -1,6 +1,6 @@
 import { CATEGORIES, INTEGRATIONS, type CategorySlug, type PublicSkillSummary, type Target } from 'skill-schema';
 import { CATEGORY_SWATCHES } from '../../lib/categoryTints';
-import type { CategoryFilter, IntegrationFilter } from '../../lib/filterSkills';
+import type { CategoryFilter, IntegrationFilter, TypeFilter } from '../../lib/filterSkills';
 
 const GROUP_HEADING = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint';
 
@@ -10,6 +10,8 @@ export default function FilterSidebar({
 	onCategoryChange,
 	integration,
 	onIntegrationChange,
+	type,
+	onTypeChange,
 	tool,
 	onToolChange,
 }: {
@@ -18,6 +20,8 @@ export default function FilterSidebar({
 	onCategoryChange: (category: CategoryFilter) => void;
 	integration: IntegrationFilter;
 	onIntegrationChange: (integration: IntegrationFilter) => void;
+	type: TypeFilter;
+	onTypeChange: (type: TypeFilter) => void;
 	tool: Target | 'all';
 	onToolChange: (tool: Target | 'all') => void;
 }) {
@@ -53,6 +57,13 @@ export default function FilterSidebar({
 					},
 				]
 			: []),
+	];
+
+	const packCount = skills.filter((s) => (s.packSkills?.length ?? 0) > 0).length;
+	const typeRows: { value: TypeFilter; label: string; count: number }[] = [
+		{ value: 'all', label: 'All skills', count: skills.length },
+		{ value: 'skill', label: 'Single skills', count: skills.length - packCount },
+		{ value: 'pack', label: 'Workflow packs', count: packCount },
 	];
 
 	const integrationRows: { value: IntegrationFilter; label: string; count: number }[] = [
@@ -101,6 +112,31 @@ export default function FilterSidebar({
 									key={row.value}
 									type="button"
 									onClick={() => onIntegrationChange(row.value)}
+									aria-pressed={active}
+									className={`flex items-center justify-between rounded-sm px-[10px] py-[6px] text-left text-[13px] ${
+										active ? 'bg-hover font-medium text-text' : 'text-muted hover:bg-hover hover:text-text'
+									}`}
+								>
+									<span className={active ? 'text-accent' : undefined}>{row.label}</span>
+									<span className="font-mono text-[11px] text-faint">{row.count}</span>
+								</button>
+							);
+						})}
+					</nav>
+				</>
+			)}
+
+			{packCount > 0 && (
+				<>
+					<div className={`mt-7 ${GROUP_HEADING}`}>Type</div>
+					<nav className="flex flex-col gap-[2px]">
+						{typeRows.map((row) => {
+							const active = type === row.value;
+							return (
+								<button
+									key={row.value}
+									type="button"
+									onClick={() => onTypeChange(row.value)}
 									aria-pressed={active}
 									className={`flex items-center justify-between rounded-sm px-[10px] py-[6px] text-left text-[13px] ${
 										active ? 'bg-hover font-medium text-text' : 'text-muted hover:bg-hover hover:text-text'

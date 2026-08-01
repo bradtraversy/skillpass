@@ -3,6 +3,7 @@ import {
 	slugForSkill,
 	type Distribution,
 	type PublishResult,
+	type SkillEntry,
 	type Target,
 } from 'skill-schema';
 import type { Db } from '../db/client';
@@ -38,6 +39,9 @@ export interface PublishInput {
 	homepage?: string;
 	install?: string;
 	manifestInferred?: boolean;
+	// The manifest's skills[] when the package is a multi-skill pack; the callers
+	// pass null for single skills (including one-entry skills[] manifests).
+	packSkills?: SkillEntry[] | null;
 	attributedTo: string | null;
 	// Admin-curated adds come in verified; a maintainer's own publish does not.
 	verified?: boolean;
@@ -89,6 +93,7 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 		sourceHash: submission.sourceHash,
 		snapshotKey: submission.snapshotKey,
 		targets: input.targets,
+		packSkills: input.packSkills ?? null,
 		submissionId: submission.id,
 		publishedAt: now,
 	});

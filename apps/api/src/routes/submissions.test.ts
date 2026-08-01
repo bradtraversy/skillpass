@@ -188,7 +188,7 @@ describe('POST /submissions', () => {
 				resolvedCommitSha: 'abc123',
 				sourceHash: HASH,
 				createdAt: '2026-07-05T12:00:00.000Z',
-				detected: { skillMd: true, manifest: 'inferred', name: 'hello' },
+				detected: { skillMd: true, manifest: 'inferred', name: 'hello', skillCount: null },
 			},
 		});
 		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, KEY, { version: 1, files: FILES });
@@ -211,7 +211,7 @@ describe('POST /submissions', () => {
 		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
 		expect(res.status).toBe(201);
 		const body = (await res.json()) as { data: { detected: unknown } };
-		expect(body.data.detected).toEqual({ skillMd: false, manifest: 'missing', name: null });
+		expect(body.data.detected).toEqual({ skillMd: false, manifest: 'missing', name: null, skillCount: null });
 	});
 
 	it('detects an explicit manifest by its declared name', async () => {
@@ -233,7 +233,29 @@ describe('POST /submissions', () => {
 		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
 		expect(res.status).toBe(201);
 		const body = (await res.json()) as { data: { detected: unknown } };
-		expect(body.data.detected).toEqual({ skillMd: true, manifest: 'ok', name: 'demo-skill' });
+		expect(body.data.detected).toEqual({ skillMd: true, manifest: 'ok', name: 'demo-skill', skillCount: null });
+	});
+
+	it('reports a multi-skill pack with its member count', async () => {
+		mockHappyPath();
+		const member = (name: string) => `---\nname: ${name}\ndescription: ${name}.\n---\nBody.\n`;
+		vi.mocked(fetchSnapshot).mockResolvedValue({
+			success: true,
+			data: [
+				{ path: '.claude/skills/plan/SKILL.md', content: member('plan') },
+				{ path: '.agents/skills/plan/SKILL.md', content: member('plan') },
+				{ path: '.claude/skills/apply/SKILL.md', content: member('apply') },
+			],
+		});
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		expect(res.status).toBe(201);
+		const body = (await res.json()) as { data: { detected: unknown } };
+		expect(body.data.detected).toEqual({
+			skillMd: false,
+			manifest: 'inferred',
+			name: 'hello',
+			skillCount: 2,
+		});
 	});
 
 	it('400s on a non-JSON body', async () => {
@@ -379,6 +401,26 @@ describe('POST /submissions/zip', () => {
 		expect(res.status).toBe(401);
 	});
 
+	it('detects a pack inside a zip through the shared loader', async () => {
+		mockHappyPath();
+		vi.mocked(createSubmission).mockResolvedValue(zipRow);
+		const member = (name: string) => `---\nname: ${name}\ndescription: ${name}.\n---\nBody.\n`;
+		const packZip = zipSync({
+			'pack/.claude/skills/plan/SKILL.md': strToU8(member('plan')),
+			'pack/.agents/skills/plan/SKILL.md': strToU8(member('plan')),
+			'pack/.claude/skills/apply/SKILL.md': strToU8(member('apply')),
+		});
+		const res = await postZip(new File([packZip], 'my-pack.zip'), await sessionCookie(7));
+		expect(res.status).toBe(201);
+		const body = (await res.json()) as { data: { detected: unknown } };
+		expect(body.data.detected).toEqual({
+			skillMd: false,
+			manifest: 'inferred',
+			name: 'my-pack',
+			skillCount: 2,
+		});
+	});
+
 	it('creates a zip draft through the real extractor', async () => {
 		mockHappyPath();
 		vi.mocked(createSubmission).mockResolvedValue(zipRow);
@@ -394,7 +436,7 @@ describe('POST /submissions/zip', () => {
 				resolvedCommitSha: null,
 				sourceHash: HASH,
 				createdAt: '2026-07-06T09:00:00.000Z',
-				detected: { skillMd: true, manifest: 'inferred', name: 'demo-skill' },
+				detected: { skillMd: true, manifest: 'inferred', name: 'demo-skill', skillCount: null },
 			},
 		});
 		expect(vi.mocked(putBytes)).toHaveBeenCalledWith(
@@ -672,6 +714,7 @@ describe('POST /submissions/:id/publish', () => {
 		sourceHash: HASH,
 		snapshotKey: KEY,
 		targets: ['claude-code'],
+		packSkills: null,
 		submissionId: 1,
 		publishedAt: new Date('2026-07-07T10:00:00Z'),
 		createdAt: new Date('2026-07-07T10:00:00Z'),
@@ -817,6 +860,7 @@ describe('POST /submissions/:id/publish', () => {
 			homepage: undefined,
 			install: undefined,
 			manifestInferred: false,
+			packSkills: null,
 			attributedTo: null,
 			verified: false,
 			env: expect.anything(),
