@@ -98,29 +98,49 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 			</section>
 
 			<section className="mt-[26px]">
-				<h2 className={SECTION_HEADING}>Maintainer</h2>
-				<a
-					href={`/u/${detail.maintainerInfo.username}`}
-					className="flex items-center gap-[12px] rounded-md hover:bg-surface"
-				>
-					<img
-						src={detail.maintainerInfo.avatarUrl}
-						alt=""
-						className="size-[38px] flex-none rounded-full"
-					/>
-					<div>
-						<div className="font-semibold">{detail.maintainerInfo.username}</div>
-						<div className="mt-[2px] text-[12px] text-faint">
-							{detail.maintainerInfo.displayName}
-							{detail.attributedTo && (
-								<>
-									{' '}
-									· curated from <span className="font-mono">{detail.attributedTo}</span>'s repo
-								</>
-							)}
+				<h2 className={SECTION_HEADING}>{detail.attributedTo ? 'Author' : 'Maintainer'}</h2>
+				{detail.attributedTo ? (
+					<div className="flex items-center gap-[12px]">
+						<img
+							src={`https://github.com/${detail.attributedTo}.png?size=76`}
+							alt=""
+							className="size-[38px] flex-none rounded-full"
+						/>
+						<div>
+							<a
+								href={`https://github.com/${detail.attributedTo}`}
+								target="_blank"
+								rel="noreferrer"
+								className="font-semibold hover:underline"
+							>
+								{detail.attributedTo}
+							</a>
+							<div className="mt-[2px] text-[12px] text-faint">
+								curated by{' '}
+								<a href={`/u/${detail.maintainerInfo.username}`} className="hover:text-text">
+									{detail.maintainerInfo.username}
+								</a>
+							</div>
 						</div>
 					</div>
-				</a>
+				) : (
+					<a
+						href={`/u/${detail.maintainerInfo.username}`}
+						className="flex items-center gap-[12px] rounded-md hover:bg-surface"
+					>
+						<img
+							src={detail.maintainerInfo.avatarUrl}
+							alt=""
+							className="size-[38px] flex-none rounded-full"
+						/>
+						<div>
+							<div className="font-semibold">{detail.maintainerInfo.username}</div>
+							<div className="mt-[2px] text-[12px] text-faint">
+								{detail.maintainerInfo.displayName}
+							</div>
+						</div>
+					</a>
+				)}
 			</section>
 
 			<section className="mt-[22px]">
