@@ -15,7 +15,7 @@ if (!username) return new Response(null, { status: 404 });
 const result = await getProfile(username, { signal: AbortSignal.timeout(4000) });
 const profile = result.success ? result.data : null;
 if (!result.success && result.status === 404) Astro.response.status = 404;
-const title = `${profile?.displayName ?? username} - Maintainer Profile`;
+const title = `${profile?.displayName ?? username} - Skills on SkillPass`;
 const description = profile
 	? `AI agent skills maintained by ${profile.displayName} (@${profile.username}) on SkillPass, each validated and stamped with a Skill Passport.`
 	: undefined;

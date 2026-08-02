@@ -17,7 +17,7 @@ if (!slug) return new Response(null, { status: 404 });
 const result = await getSkill(slug, undefined, { signal: AbortSignal.timeout(4000) });
 const skill = result.success ? result.data : null;
 if (!result.success && result.status === 404) Astro.response.status = 404;
-const title = `${skill?.name ?? slug} - Skill Passport`;
+const title = `${skill?.name ?? slug} - AI Agent Skill - SkillPass`;
 const description = (skill && metaDescription(skill.summary)) || undefined;
 ---
 
