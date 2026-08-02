@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseCliArgs, run, USAGE } from './index';
+import { parseCliArgs, run, USAGE, VERSION } from './index';
 
 describe('parseCliArgs', () => {
 	it('splits command, positionals, and flags', () => {
@@ -8,6 +9,7 @@ describe('parseCliArgs', () => {
 			positional: ['./pkg'],
 			json: true,
 			help: false,
+			version: false,
 			yes: false,
 			global: false,
 			seen: ['--json'],
@@ -20,6 +22,7 @@ describe('parseCliArgs', () => {
 			positional: [],
 			json: false,
 			help: false,
+			version: false,
 			yes: false,
 			global: false,
 			seen: [],
@@ -32,6 +35,7 @@ describe('parseCliArgs', () => {
 			positional: ['smoke-clean'],
 			json: false,
 			help: false,
+			version: false,
 			yes: true,
 			global: false,
 			dir: './here',
@@ -45,6 +49,7 @@ describe('parseCliArgs', () => {
 			positional: ['smoke-clean'],
 			json: false,
 			help: false,
+			version: false,
 			yes: false,
 			global: true,
 			target: 'claude-code',
@@ -131,5 +136,21 @@ describe('run', () => {
 		const result = await run(['add', '--help', '--wat']);
 		expect(result.exitCode).toBe(0);
 		expect(result.lines[0]).toBe(USAGE);
+	});
+
+	it('prints the package version for --version and exits 0', async () => {
+		const result = await run(['--version']);
+		expect(result.exitCode).toBe(0);
+		const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+			version: string;
+		};
+		expect(result.lines).toEqual([pkg.version]);
+		expect(VERSION).toBe(pkg.version);
+	});
+
+	it('rejects positional arguments to list', async () => {
+		const result = await run(['list', 'extra']);
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toBe('error: list takes no arguments');
 	});
 });

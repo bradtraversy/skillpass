@@ -1,5 +1,14 @@
 import { strFromU8, unzipSync } from 'fflate';
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	renameSync,
+	rmdirSync,
+	rmSync,
+	statSync,
+	writeFileSync,
+} from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import type { Target } from 'skill-schema';
 import { loadPackageFromFiles, type PackageFile } from 'validator';
@@ -26,6 +35,15 @@ export interface AddOptions {
 function unsafeEntryPath(path: string): boolean {
 	return isAbsolute(path) || path.split('/').includes('..') || path.includes('\\');
 }
+
+// Mirror the server snapshot caps (apps/api/src/github/snapshot.ts) so the CLI
+// never trusts an oversized response, even from an overridden SKILLPASS_API.
+const MAX_FILES = 500;
+const MAX_FILE_BYTES = 1024 * 1024;
+const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
+const MAX_ZIP_BYTES = 20 * 1024 * 1024;
+
+class OversizedDownloadError extends Error {}
 
 interface InstallChoice {
 	label: string;
@@ -174,10 +192,34 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 		return done(2);
 	}
 
+	const body = new Uint8Array(await res.arrayBuffer());
+	if (body.byteLength > MAX_ZIP_BYTES) {
+		push('', 'error: the download is larger than the expected maximum; nothing was installed');
+		return done(2);
+	}
 	let entries: Record<string, Uint8Array>;
 	try {
-		entries = unzipSync(new Uint8Array(await res.arrayBuffer()));
-	} catch {
+		let fileCount = 0;
+		let totalBytes = 0;
+		entries = unzipSync(body, {
+			filter: (info) => {
+				fileCount += 1;
+				totalBytes += info.originalSize;
+				if (
+					fileCount > MAX_FILES ||
+					info.originalSize > MAX_FILE_BYTES ||
+					totalBytes > MAX_TOTAL_BYTES
+				) {
+					throw new OversizedDownloadError();
+				}
+				return true;
+			},
+		});
+	} catch (err) {
+		if (err instanceof OversizedDownloadError) {
+			push('', 'error: the download exceeds the size caps; nothing was installed');
+			return done(2);
+		}
 		push('', 'error: the download was not a valid zip');
 		return done(2);
 	}
@@ -195,10 +237,24 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 		return done(2);
 	}
 
-	for (const file of files) {
-		const filePath = join(target, file.path);
-		mkdirSync(dirname(filePath), { recursive: true });
-		writeFileSync(filePath, file.content);
+	// Write to a sibling temp dir and rename into place, so a failed write
+	// never leaves a partial install behind.
+	const tempDir = `${target}.tmp-${process.pid}`;
+	try {
+		for (const file of files) {
+			const filePath = join(tempDir, file.path);
+			mkdirSync(dirname(filePath), { recursive: true });
+			writeFileSync(filePath, file.content);
+		}
+		mkdirSync(dirname(target), { recursive: true });
+		if (existsSync(target)) {
+			rmdirSync(target);
+		}
+		renameSync(tempDir, target);
+	} catch {
+		rmSync(tempDir, { recursive: true, force: true });
+		push('', 'error: could not write the install; nothing was installed');
+		return done(2);
 	}
 
 	push(

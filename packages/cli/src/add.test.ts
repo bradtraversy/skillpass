@@ -1,5 +1,12 @@
 import { strToU8, zipSync } from 'fflate';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -137,6 +144,51 @@ describe('runAdd', () => {
 		const result = await runAdd('smoke-clean', { dir, fetchImpl: stubFetch() });
 		expect(result.exitCode).toBe(2);
 		expect(result.lines.join('\n')).toContain('not a directory');
+	});
+
+	it('rejects a zip with too many files without installing', async () => {
+		const bomb = zipSync(
+			Object.fromEntries(Array.from({ length: 501 }, (_, i) => [`f${i}.md`, strToU8('x')])),
+		);
+		const dir = tempTarget();
+		const result = await runAdd('smoke-clean', { dir, fetchImpl: stubFetch({ zip: bomb }) });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines.join('\n')).toContain('exceeds the size caps');
+		expect(existsSync(dir)).toBe(false);
+	});
+
+	it('rejects a zip with an oversized file without installing', async () => {
+		const bomb = zipSync({ 'big.md': strToU8('a'.repeat(1024 * 1024 + 1)) });
+		const dir = tempTarget();
+		const result = await runAdd('smoke-clean', { dir, fetchImpl: stubFetch({ zip: bomb }) });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines.join('\n')).toContain('exceeds the size caps');
+		expect(existsSync(dir)).toBe(false);
+	});
+
+	it('rejects an oversized download body before unzipping', async () => {
+		const huge = new Uint8Array(20 * 1024 * 1024 + 1);
+		const dir = tempTarget();
+		const result = await runAdd('smoke-clean', { dir, fetchImpl: stubFetch({ zip: huge }) });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines.join('\n')).toContain('larger than the expected maximum');
+		expect(existsSync(dir)).toBe(false);
+	});
+
+	it('installs atomically, leaving no temp dir behind', async () => {
+		const dir = tempTarget();
+		const result = await runAdd('smoke-clean', { dir, fetchImpl: stubFetch() });
+		expect(result.exitCode).toBe(0);
+		const parent = join(dir, '..');
+		expect(readdirSync(parent)).toEqual(['skill']);
+	});
+
+	it('installs into an existing empty target directory', async () => {
+		const dir = tempTarget();
+		mkdirSync(dir, { recursive: true });
+		const result = await runAdd('smoke-clean', { dir, fetchImpl: stubFetch() });
+		expect(result.exitCode).toBe(0);
+		expect(readFileSync(join(dir, 'SKILL.md'), 'utf8')).toBe('# smoke-clean\n');
 	});
 
 	it('rejects unsafe entry paths in the zip', async () => {

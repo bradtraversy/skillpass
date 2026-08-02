@@ -327,6 +327,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.0
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/skill-schema:
     dependencies:

@@ -81,14 +81,16 @@ proxy into `apps/web`.
 - API dev server: `pnpm dev:api` (http://localhost:8787, Hono in `apps/api`) - needs `apps/api/.env` (see `apps/api/.env.example`)
 - Validation worker: `pnpm dev:worker` (BullMQ worker for submission validation) - needs `apps/api/.env` and a running Redis (`REDIS_URL`)
 - Dev background control: `pnpm dev:status`, `pnpm dev:stop`, `pnpm dev:logs`
-- Typecheck: `pnpm typecheck` (runs `astro check`)
+- Typecheck: `pnpm typecheck` (runs `astro check`, then `tsc --noEmit` over `packages/cli`)
 - Build: `pnpm build` (runs `astro check && astro build`, so the build type-checks first)
 - Preview production build: `pnpm preview`
 - Astro CLI passthrough: `pnpm astro <cmd>` (e.g. `pnpm astro add react`)
 - Test (Vitest, run once): `pnpm test`
 - Test (watch): `pnpm test:watch`
 - Skills CLI: `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
-  `pnpm cli add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]`
+  `pnpm cli add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]` /
+  `pnpm cli remove <slug> [--target <tool> [--global] | --dir <path>]` /
+  `pnpm cli list` / `pnpm cli --version`
   (or `node packages/cli/bin/skillpass.mjs ...`); `--target claude-code` installs to
   `.claude/skills/`, `--target codex` to `.agents/skills/`; `--json` for machine
   output, `SKILLPASS_API` overrides the API base URL for `report` and `add`

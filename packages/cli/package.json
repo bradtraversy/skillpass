@@ -9,6 +9,9 @@
 	"exports": {
 		".": "./src/index.ts"
 	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
 	"dependencies": {
 		"fflate": "^0.8.3",
 		"skill-schema": "workspace:*",
@@ -16,6 +19,7 @@
 		"validator": "workspace:*"
 	},
 	"devDependencies": {
-		"@types/node": "^22.0.0"
+		"@types/node": "^22.0.0",
+		"typescript": "^6.0.3"
 	}
 }

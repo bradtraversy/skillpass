@@ -1,8 +1,17 @@
+import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
 import { runAdd } from './add';
+import { runList } from './list';
+import { runRemove } from './remove';
 import { runReport } from './report';
 import type { CommandResult } from './scan';
 import { runScan } from './scan';
+
+export const VERSION = (
+	JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+		version: string;
+	}
+).version;
 
 export const USAGE = [
 	'skillpass - validate AI agent skills locally and inspect hosted passports',
@@ -12,6 +21,9 @@ export const USAGE = [
 	'  skillpass report <slug>[@version] [--json]  fetch the hosted passport pre-flight',
 	'  skillpass add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]',
 	'                                             install a skill through the pre-flight gate',
+	'  skillpass remove <slug> [--target <tool> [--global] | --dir <path>]',
+	'                                             remove an installed skill',
+	'  skillpass list                              show installed skills in the known areas',
 	'',
 	'Flags:',
 	'  --json    print machine-readable JSON instead of the readable report',
@@ -20,6 +32,7 @@ export const USAGE = [
 	'  --global  with --target claude-code, install to ~/.claude/skills instead',
 	'  --dir     install target directory (default ./<slug>)',
 	'  --yes     skip the confirmation prompt for medium+ risk skills',
+	'  --version print the CLI version',
 	'  --help    show this message',
 	'',
 	'The report and add commands read the API base URL from SKILLPASS_API.',
@@ -31,6 +44,7 @@ export interface ParsedArgs {
 	positional: string[];
 	json: boolean;
 	help: boolean;
+	version: boolean;
 	yes: boolean;
 	global: boolean;
 	dir?: string;
@@ -45,6 +59,8 @@ const COMMAND_FLAGS: Record<string, string[]> = {
 	scan: ['--json'],
 	report: ['--json'],
 	add: ['--yes', '--target', '--dir', '--global'],
+	remove: ['--target', '--dir', '--global'],
+	list: [],
 };
 
 export function parseCliArgs(argv: string[]): ParsedArgs {
@@ -52,6 +68,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 		positional: [],
 		json: false,
 		help: false,
+		version: false,
 		yes: false,
 		global: false,
 		seen: [],
@@ -82,6 +99,8 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 			}
 		} else if (arg === '--help' || arg === '-h') {
 			parsed.help = true;
+		} else if (arg === '--version') {
+			parsed.version = true;
 		} else if (arg.startsWith('-')) {
 			parsed.invalid ??= `unknown flag "${arg}"`;
 		} else if (parsed.command === undefined) {
@@ -109,8 +128,14 @@ async function confirmViaTty(question: string): Promise<boolean> {
 
 export async function run(argv: string[]): Promise<CommandResult> {
 	const args = parseCliArgs(argv);
-	if (args.help || args.command === undefined) {
-		return { lines: [USAGE], exitCode: args.help ? 0 : 2 };
+	if (args.help) {
+		return { lines: [USAGE], exitCode: 0 };
+	}
+	if (args.version) {
+		return { lines: [VERSION], exitCode: 0 };
+	}
+	if (args.command === undefined) {
+		return { lines: [USAGE], exitCode: 2 };
 	}
 	if (args.invalid) {
 		return { lines: [`error: ${args.invalid}`, '', USAGE], exitCode: 2 };
@@ -126,6 +151,19 @@ export async function run(argv: string[]): Promise<CommandResult> {
 			return { lines: ['error: scan needs a path to a skill package', '', USAGE], exitCode: 2 };
 		}
 		return runScan(path, { json: args.json });
+	}
+	if (args.command === 'remove') {
+		const [slug] = args.positional;
+		if (!slug) {
+			return { lines: ['error: remove needs a skill slug', '', USAGE], exitCode: 2 };
+		}
+		return runRemove(slug, { target: args.target, dir: args.dir, global: args.global });
+	}
+	if (args.command === 'list') {
+		if (args.positional.length > 0) {
+			return { lines: ['error: list takes no arguments', '', USAGE], exitCode: 2 };
+		}
+		return runList();
 	}
 	if (args.command === 'report') {
 		const [ref] = args.positional;
