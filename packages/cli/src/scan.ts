@@ -15,7 +15,10 @@ export async function runScan(path: string, opts: { json?: boolean } = {}): Prom
 		report = await validatePackage(path);
 	} catch (err) {
 		if (err instanceof PackageReadError) {
-			return { lines: [`error: could not read a skill package at ${path}`], exitCode: 2 };
+			return {
+				lines: [`error: could not read a skill package at ${path} (expected a directory)`],
+				exitCode: 2,
+			};
 		}
 		throw err;
 	}

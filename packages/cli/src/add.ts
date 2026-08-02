@@ -1,5 +1,5 @@
 import { strFromU8, unzipSync } from 'fflate';
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import type { Target } from 'skill-schema';
 import { loadPackageFromFiles, type PackageFile } from 'validator';
@@ -76,6 +76,10 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 		push('error: pass --target or --dir, not both');
 		return done(2);
 	}
+	if (opts.global && !opts.target) {
+		push('error: --global needs --target (e.g. --target claude-code)');
+		return done(2);
+	}
 	const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
 	const apiUrl = resolveApiUrl(opts.apiUrl);
 	const fetched = await fetchPreflight(fetchImpl, apiUrl, ref);
@@ -122,9 +126,21 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 		if (opts.promptImpl && choices.length > 1) {
 			push('', 'Install location:');
 			choices.forEach((choice, i) => push(`  ${i + 1}) ${choice.label}`));
-			const answer = await opts.promptImpl(`Where should it go? [1-${choices.length}, default 1] `);
-			const index = Number.parseInt(answer.trim(), 10) - 1;
-			targetDir = (choices[index] ?? choices[0]).dir;
+			while (targetDir === undefined) {
+				const answer = (
+					await opts.promptImpl(`Where should it go? [1-${choices.length}, default 1] `)
+				).trim();
+				if (answer === '') {
+					targetDir = choices[0].dir;
+					break;
+				}
+				const choice = /^\d+$/.test(answer) ? choices[Number.parseInt(answer, 10) - 1] : undefined;
+				if (choice) {
+					targetDir = choice.dir;
+				} else {
+					push(`  answer 1-${choices.length}, or press enter for the default`);
+				}
+			}
 		} else {
 			targetDir = slug;
 			const mappable = mappableDeclaredTargets(detail.targets);
@@ -134,9 +150,15 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 		}
 	}
 	const target = resolve(opts.cwd ?? process.cwd(), targetDir);
-	if (existsSync(target) && readdirSync(target).length > 0) {
-		push('', `error: target directory ${target} already exists and is not empty`);
-		return done(2);
+	if (existsSync(target)) {
+		if (!statSync(target).isDirectory()) {
+			push('', `error: target ${target} already exists and is not a directory`);
+			return done(2);
+		}
+		if (readdirSync(target).length > 0) {
+			push('', `error: target directory ${target} already exists and is not empty`);
+			return done(2);
+		}
 	}
 
 	const downloadUrl = `${apiUrl}/skills/${encodeURIComponent(slug)}/${encodeURIComponent(preflight.version)}/download?source=cli`;

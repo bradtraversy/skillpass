@@ -10,6 +10,7 @@ describe('parseCliArgs', () => {
 			help: false,
 			yes: false,
 			global: false,
+			seen: ['--json'],
 		});
 	});
 
@@ -21,6 +22,7 @@ describe('parseCliArgs', () => {
 			help: false,
 			yes: false,
 			global: false,
+			seen: [],
 		});
 	});
 
@@ -33,6 +35,7 @@ describe('parseCliArgs', () => {
 			yes: true,
 			global: false,
 			dir: './here',
+			seen: ['--dir', '--yes'],
 		});
 	});
 
@@ -45,7 +48,25 @@ describe('parseCliArgs', () => {
 			yes: false,
 			global: true,
 			target: 'claude-code',
+			seen: ['--target', '--global'],
 		});
+	});
+
+	it('marks an unknown flag invalid instead of swallowing it', () => {
+		const parsed = parseCliArgs(['add', 'smoke-clean', '--tarrget', 'claude-code']);
+		expect(parsed.invalid).toBe('unknown flag "--tarrget"');
+	});
+
+	it('marks a flag with a missing value invalid', () => {
+		expect(parseCliArgs(['add', 'smoke-clean', '--target']).invalid).toBe('--target needs a value');
+		expect(parseCliArgs(['add', 'smoke-clean', '--dir', '--yes']).invalid).toBe(
+			'--dir needs a value',
+		);
+	});
+
+	it('keeps the first error when several flags are bad', () => {
+		const parsed = parseCliArgs(['scan', '--wat', '--wut']);
+		expect(parsed.invalid).toBe('unknown flag "--wat"');
 	});
 });
 
@@ -77,5 +98,38 @@ describe('run', () => {
 		const result = await run(['add']);
 		expect(result.exitCode).toBe(2);
 		expect(result.lines[0]).toContain('needs a skill slug');
+	});
+
+	it('rejects a typo-d flag with exit 2 and usage', async () => {
+		const result = await run(['add', 'smoke-clean', '--tarrget', 'claude-code']);
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toBe('error: unknown flag "--tarrget"');
+		expect(result.lines).toContain(USAGE);
+	});
+
+	it('rejects a flag missing its value with exit 2', async () => {
+		const result = await run(['scan', './pkg', '--target']);
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toBe('error: --target needs a value');
+	});
+
+	it('rejects flags a command does not take', async () => {
+		const scanYes = await run(['scan', './pkg', '--yes']);
+		expect(scanYes.exitCode).toBe(2);
+		expect(scanYes.lines[0]).toBe('error: scan does not take --yes');
+
+		const addJson = await run(['add', 'smoke-clean', '--json']);
+		expect(addJson.exitCode).toBe(2);
+		expect(addJson.lines[0]).toBe('error: add does not take --json');
+
+		const reportGlobal = await run(['report', 'smoke-clean', '--global']);
+		expect(reportGlobal.exitCode).toBe(2);
+		expect(reportGlobal.lines[0]).toBe('error: report does not take --global');
+	});
+
+	it('still shows usage for --help next to other flags', async () => {
+		const result = await run(['add', '--help', '--wat']);
+		expect(result.exitCode).toBe(0);
+		expect(result.lines[0]).toBe(USAGE);
 	});
 });

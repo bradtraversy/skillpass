@@ -48,5 +48,12 @@ describe('runScan', () => {
 		const result = await runScan('/nope/definitely-not-a-skill');
 		expect(result.exitCode).toBe(2);
 		expect(result.lines[0]).toContain('could not read a skill package');
+		expect(result.lines[0]).toContain('expected a directory');
+	});
+
+	it('exits 2 cleanly when the path is a file, not a directory', async () => {
+		const result = await runScan(fixture('clean-skill/SKILL.md'));
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toContain('expected a directory');
 	});
 });

@@ -130,6 +130,15 @@ describe('runAdd', () => {
 		expect(result.lines.join('\n')).toContain('not empty');
 	});
 
+	it('refuses a target that exists as a file instead of crashing', async () => {
+		const dir = tempTarget();
+		mkdirSync(join(dir, '..'), { recursive: true });
+		writeFileSync(dir, 'i am a file');
+		const result = await runAdd('smoke-clean', { dir, fetchImpl: stubFetch() });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines.join('\n')).toContain('not a directory');
+	});
+
 	it('rejects unsafe entry paths in the zip', async () => {
 		const evil = zipSync({ '../evil.txt': strToU8('gotcha') });
 		const dir = tempTarget();
@@ -209,6 +218,14 @@ describe('runAdd', () => {
 		expect(result.lines[0]).toContain('not both');
 	});
 
+	it('rejects --global without --target before touching the network', async () => {
+		const fetchImpl = stubFetch();
+		const result = await runAdd('smoke-clean', { global: true, fetchImpl });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toContain('--global needs --target');
+		expect(fetchImpl).not.toHaveBeenCalled();
+	});
+
 	it('exits 2 for a tool without an install area, naming --dir', async () => {
 		const result = await runAdd('smoke-clean', { target: 'cursor', fetchImpl: stubFetch() });
 		expect(result.exitCode).toBe(2);
@@ -230,6 +247,18 @@ describe('runAdd', () => {
 		expect(result.lines.join('\n')).toContain('Install location:');
 		expect(promptImpl).toHaveBeenCalledOnce();
 		expect(existsSync(join(cwd, '.claude', 'skills', 'smoke-clean', 'SKILL.md'))).toBe(true);
+	});
+
+	it('re-prompts on an invalid picker answer instead of defaulting', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-ask-'));
+		const choices = installChoices(['claude-code'], 'smoke-clean');
+		const answers = ['99', 'abc', String(choices.length)];
+		const promptImpl = vi.fn(async () => answers.shift() ?? '');
+		const result = await runAdd('smoke-clean', { cwd, promptImpl, fetchImpl: stubFetch() });
+		expect(result.exitCode).toBe(0);
+		expect(promptImpl).toHaveBeenCalledTimes(3);
+		expect(result.lines.join('\n')).toContain(`answer 1-${choices.length}`);
+		expect(existsSync(join(cwd, 'smoke-clean', 'SKILL.md'))).toBe(true);
 	});
 
 	it('defaults to the first choice on an empty answer', async () => {

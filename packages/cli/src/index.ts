@@ -35,24 +35,55 @@ export interface ParsedArgs {
 	global: boolean;
 	dir?: string;
 	target?: string;
+	// Canonical names of every flag encountered, for per-command validation.
+	seen: string[];
+	// First parse error (unknown flag, missing value); commands must not run.
+	invalid?: string;
 }
 
+const COMMAND_FLAGS: Record<string, string[]> = {
+	scan: ['--json'],
+	report: ['--json'],
+	add: ['--yes', '--target', '--dir', '--global'],
+};
+
 export function parseCliArgs(argv: string[]): ParsedArgs {
-	const parsed: ParsedArgs = { positional: [], json: false, help: false, yes: false, global: false };
+	const parsed: ParsedArgs = {
+		positional: [],
+		json: false,
+		help: false,
+		yes: false,
+		global: false,
+		seen: [],
+	};
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
 		if (arg === '--json') {
 			parsed.json = true;
+			parsed.seen.push(arg);
 		} else if (arg === '--yes' || arg === '-y') {
 			parsed.yes = true;
+			parsed.seen.push('--yes');
 		} else if (arg === '--global') {
 			parsed.global = true;
-		} else if (arg === '--dir') {
-			parsed.dir = argv[++i];
-		} else if (arg === '--target') {
-			parsed.target = argv[++i];
+			parsed.seen.push(arg);
+		} else if (arg === '--dir' || arg === '--target') {
+			parsed.seen.push(arg);
+			const value = argv[i + 1];
+			if (value === undefined || value.startsWith('-')) {
+				parsed.invalid ??= `${arg} needs a value`;
+			} else {
+				i++;
+				if (arg === '--dir') {
+					parsed.dir = value;
+				} else {
+					parsed.target = value;
+				}
+			}
 		} else if (arg === '--help' || arg === '-h') {
 			parsed.help = true;
+		} else if (arg.startsWith('-')) {
+			parsed.invalid ??= `unknown flag "${arg}"`;
 		} else if (parsed.command === undefined) {
 			parsed.command = arg;
 		} else {
@@ -80,6 +111,14 @@ export async function run(argv: string[]): Promise<CommandResult> {
 	const args = parseCliArgs(argv);
 	if (args.help || args.command === undefined) {
 		return { lines: [USAGE], exitCode: args.help ? 0 : 2 };
+	}
+	if (args.invalid) {
+		return { lines: [`error: ${args.invalid}`, '', USAGE], exitCode: 2 };
+	}
+	const allowed = COMMAND_FLAGS[args.command];
+	const disallowed = allowed && args.seen.find((flag) => !allowed.includes(flag));
+	if (disallowed) {
+		return { lines: [`error: ${args.command} does not take ${disallowed}`, '', USAGE], exitCode: 2 };
 	}
 	if (args.command === 'scan') {
 		const [path] = args.positional;
