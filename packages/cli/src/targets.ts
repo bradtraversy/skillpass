@@ -21,12 +21,8 @@ export const MAPPED_TARGETS = Object.keys(installAreas()) as Target[];
 
 export type ResolvedTarget = { ok: true; dir: string } | { ok: false; message: string };
 
-export function resolveTargetDir(
-	target: string,
-	slug: string,
-	global = false,
-	home?: string,
-): ResolvedTarget {
+// The skills area itself (pack fan-outs install N members into it).
+export function resolveTargetArea(target: string, global = false, home?: string): ResolvedTarget {
 	if (!(TARGETS as readonly string[]).includes(target)) {
 		return {
 			ok: false,
@@ -47,9 +43,19 @@ export function resolveTargetDir(
 				message: `${target} has no user-level skills folder; install per project instead`,
 			};
 		}
-		return { ok: true, dir: join(area.global, slug) };
+		return { ok: true, dir: area.global };
 	}
-	return { ok: true, dir: join(area.project, slug) };
+	return { ok: true, dir: area.project };
+}
+
+export function resolveTargetDir(
+	target: string,
+	slug: string,
+	global = false,
+	home?: string,
+): ResolvedTarget {
+	const area = resolveTargetArea(target, global, home);
+	return area.ok ? { ok: true, dir: join(area.dir, slug) } : area;
 }
 
 // The tip shown when no --target/--dir was given but one would apply.

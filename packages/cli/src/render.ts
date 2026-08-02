@@ -52,8 +52,12 @@ export function renderPreflightReport(
 	preflight: PublicPreflight,
 ): string[] {
 	const attribution = detail.attributedTo ? ` (curated from ${detail.attributedTo})` : '';
+	const members = detail.packMembers ?? [];
 	const lines = [
 		`Skill     ${detail.name} by ${detail.maintainer}${attribution}`,
+		...(members.length > 0
+			? [`Pack      ${members.length} skills: ${members.map((m) => m.name).join(', ')}`]
+			: []),
 		`Version   ${preflight.version}`,
 		`Status    ${statusLabel(preflight.validationStatus)}`,
 		`Risk      ${preflight.riskLevel}`,

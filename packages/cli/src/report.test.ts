@@ -103,6 +103,27 @@ describe('runReport', () => {
 		expect(text).toContain('+ network.fetch (new)');
 	});
 
+	it('lists pack members on a pack report and stays silent for singles', async () => {
+		const single = await runReport('smoke-clean', { fetchImpl: stubFetch(happyRoutes) });
+		expect(single.lines.join('\n')).not.toContain('Pack');
+
+		const packDetail = {
+			...detail,
+			packSkills: ['adopt', 'audit'],
+			packMembers: [
+				{ name: 'adopt', entry: '.claude/skills/adopt/SKILL.md' },
+				{ name: 'audit', entry: '.claude/skills/audit/SKILL.md' },
+			],
+		};
+		const result = await runReport('smoke-clean', {
+			fetchImpl: stubFetch({
+				...happyRoutes,
+				'/skills/smoke-clean': { body: { success: true, data: packDetail } },
+			}),
+		});
+		expect(result.lines.join('\n')).toContain('Pack      2 skills: adopt, audit');
+	});
+
 	it('emits schema-valid PublicPreflight with --json', async () => {
 		const result = await runReport('smoke-clean', {
 			json: true,

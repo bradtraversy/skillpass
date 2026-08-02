@@ -73,7 +73,10 @@ const preflight: PublicPreflight = {
 	blockedReason: null,
 };
 
-function stubFetch(overrides: { preflight?: PublicPreflight; zip?: Uint8Array } = {}) {
+function stubFetch(
+	overrides: { detail?: PublicSkillDetail; preflight?: PublicPreflight; zip?: Uint8Array } = {},
+) {
+	const d = overrides.detail ?? detail;
 	const pf = overrides.preflight ?? preflight;
 	return vi.fn(async (input: RequestInfo | URL) => {
 		const url = String(input);
@@ -84,11 +87,49 @@ function stubFetch(overrides: { preflight?: PublicPreflight; zip?: Uint8Array } 
 		if (url.endsWith('/preflight')) {
 			return new Response(JSON.stringify({ success: true, data: pf }), { status: 200 });
 		}
-		return new Response(JSON.stringify({ success: true, data: detail }), { status: 200 });
+		return new Response(JSON.stringify({ success: true, data: d }), { status: 200 });
 	}) as unknown as typeof fetch;
 }
 
 const tempTarget = () => join(mkdtempSync(join(tmpdir(), 'skillpass-add-')), 'skill');
+
+const PACK_FILES = [
+	{ path: '.agents/skills/adopt/SKILL.md', content: '# adopt codex\n' },
+	{ path: '.agents/skills/audit/SKILL.md', content: '# audit codex\n' },
+	{ path: '.claude/skills/adopt/SKILL.md', content: '# adopt claude\n' },
+	{ path: '.claude/skills/adopt/reference.md', content: 'adopt notes\n' },
+	{ path: '.claude/skills/audit/SKILL.md', content: '# audit claude\n' },
+	{ path: '.claude/skills/niche/SKILL.md', content: '# niche claude\n' },
+	{ path: 'README.md', content: 'pack readme\n' },
+];
+const PACK_HASH = loadPackageFromFiles(PACK_FILES).sourceHash;
+const PACK_ZIP = zipSync(Object.fromEntries(PACK_FILES.map((f) => [f.path, strToU8(f.content)])));
+
+const packDetail: PublicSkillDetail = {
+	...detail,
+	slug: 'blueprint-pack',
+	name: 'blueprint-pack',
+	targets: ['claude-code', 'codex'],
+	packSkills: ['adopt', 'audit', 'niche'],
+	packMembers: [
+		{
+			name: 'adopt',
+			entry: '.claude/skills/adopt/SKILL.md',
+			targets: ['claude-code', 'codex'],
+			variants: { codex: '.agents/skills/adopt/SKILL.md' },
+		},
+		{
+			name: 'audit',
+			entry: '.claude/skills/audit/SKILL.md',
+			targets: ['claude-code', 'codex'],
+			variants: { codex: '.agents/skills/audit/SKILL.md' },
+		},
+		{ name: 'niche', entry: '.claude/skills/niche/SKILL.md', targets: ['claude-code'] },
+	],
+	passport: { ...detail.passport, sourceHash: PACK_HASH },
+};
+const packPreflight: PublicPreflight = { ...preflight, sourceHash: PACK_HASH };
+const packStub = () => stubFetch({ detail: packDetail, preflight: packPreflight, zip: PACK_ZIP });
 
 describe('runAdd', () => {
 	it('installs verified files and exits 0', async () => {
@@ -334,6 +375,88 @@ describe('runAdd', () => {
 		});
 		expect(result.exitCode).toBe(0);
 		expect(existsSync(join(cwd, 'smoke-clean', 'SKILL.md'))).toBe(true);
+	});
+
+	it('installs every pack member into the claude-code area', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const result = await runAdd('blueprint-pack', {
+			target: 'claude-code',
+			cwd,
+			fetchImpl: packStub(),
+		});
+		expect(result.exitCode).toBe(0);
+		expect(readFileSync(join(cwd, '.claude', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe(
+			'# adopt claude\n',
+		);
+		expect(readFileSync(join(cwd, '.claude', 'skills', 'adopt', 'reference.md'), 'utf8')).toBe(
+			'adopt notes\n',
+		);
+		expect(readFileSync(join(cwd, '.claude', 'skills', 'niche', 'SKILL.md'), 'utf8')).toBe(
+			'# niche claude\n',
+		);
+		expect(existsSync(join(cwd, '.claude', 'skills', 'README.md'))).toBe(false);
+		expect(result.lines.join('\n')).toContain('Installed 3 skills to');
+	});
+
+	it('uses codex variants and skips unsupported members visibly', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const result = await runAdd('blueprint-pack', { target: 'codex', cwd, fetchImpl: packStub() });
+		expect(result.exitCode).toBe(0);
+		expect(readFileSync(join(cwd, '.agents', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe(
+			'# adopt codex\n',
+		);
+		expect(existsSync(join(cwd, '.agents', 'skills', 'niche'))).toBe(false);
+		const text = result.lines.join('\n');
+		expect(text).toContain('note: niche does not support codex; skipped');
+		expect(text).toContain('Installed 2 skills to');
+	});
+
+	it('aborts the whole pack when any member destination is occupied', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const audit = join(cwd, '.claude', 'skills', 'audit');
+		mkdirSync(audit, { recursive: true });
+		writeFileSync(join(audit, 'keep.md'), 'mine');
+		const result = await runAdd('blueprint-pack', {
+			target: 'claude-code',
+			cwd,
+			fetchImpl: packStub(),
+		});
+		expect(result.exitCode).toBe(2);
+		expect(result.lines.join('\n')).toContain('nothing was installed');
+		expect(existsSync(join(cwd, '.claude', 'skills', 'adopt'))).toBe(false);
+		expect(readFileSync(join(audit, 'keep.md'), 'utf8')).toBe('mine');
+	});
+
+	it('keeps the raw snapshot with --dir on a pack, with a note', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const dir = join(cwd, 'raw');
+		const result = await runAdd('blueprint-pack', { dir, cwd, fetchImpl: packStub() });
+		expect(result.exitCode).toBe(0);
+		expect(result.lines.join('\n')).toContain('raw pack source');
+		expect(readFileSync(join(dir, 'README.md'), 'utf8')).toBe('pack readme\n');
+		expect(readFileSync(join(dir, '.agents', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe(
+			'# adopt codex\n',
+		);
+	});
+
+	it('fans out from the interactive pack picker', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const promptImpl = vi.fn(async () => '1');
+		const result = await runAdd('blueprint-pack', { cwd, promptImpl, fetchImpl: packStub() });
+		expect(result.exitCode).toBe(0);
+		expect(result.lines.join('\n')).toContain('3 skills');
+		expect(existsSync(join(cwd, '.claude', 'skills', 'adopt', 'SKILL.md'))).toBe(true);
+		expect(existsSync(join(cwd, 'blueprint-pack'))).toBe(false);
+	});
+
+	it('defaults to the raw snapshot without a terminal, tipping the fan-out', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const result = await runAdd('blueprint-pack', { cwd, fetchImpl: packStub() });
+		expect(result.exitCode).toBe(0);
+		expect(result.lines.join('\n')).toContain(
+			"tip: --target claude-code installs the 3 skills into the tool's skills folder",
+		);
+		expect(readFileSync(join(cwd, 'blueprint-pack', 'README.md'), 'utf8')).toBe('pack readme\n');
 	});
 
 	it('streams lines through emit and marks the result streamed', async () => {
