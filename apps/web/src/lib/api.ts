@@ -64,13 +64,17 @@ export function getMe(): Promise<ApiResult<CurrentUser>> {
 	return request('/me');
 }
 
-export function getSkills(): Promise<ApiResult<PublicSkillSummary[]>> {
-	return request('/skills');
+export function getSkills(init?: RequestInit): Promise<ApiResult<PublicSkillSummary[]>> {
+	return request('/skills', init);
 }
 
-export function getSkill(slug: string, version?: string): Promise<ApiResult<PublicSkillDetail>> {
+export function getSkill(
+	slug: string,
+	version?: string,
+	init?: RequestInit,
+): Promise<ApiResult<PublicSkillDetail>> {
 	const base = `/skills/${encodeURIComponent(slug)}`;
-	return request(version ? `${base}/${encodeURIComponent(version)}` : base);
+	return request(version ? `${base}/${encodeURIComponent(version)}` : base, init);
 }
 
 export function getSkillSource(
@@ -80,8 +84,8 @@ export function getSkillSource(
 	return request(`/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/source`);
 }
 
-export function getProfile(username: string): Promise<ApiResult<PublicProfile>> {
-	return request(`/users/${encodeURIComponent(username)}`);
+export function getProfile(username: string, init?: RequestInit): Promise<ApiResult<PublicProfile>> {
+	return request(`/users/${encodeURIComponent(username)}`, init);
 }
 
 export function getPreflight(slug: string, version: string): Promise<ApiResult<PublicPreflight>> {

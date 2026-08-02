@@ -4,9 +4,21 @@ import '../styles/global.css';
 
 interface Props {
 	title?: string;
+	description?: string;
+	/** Overrides the canonical URL path, e.g. version-pinned pages point at the unversioned page. */
+	canonicalPath?: string;
+	noindex?: boolean;
 }
 
-const { title = 'SkillPass' } = Astro.props;
+const {
+	title = 'SkillPass',
+	description = 'A validation-first directory of skills for AI coding agents. Every skill is inspected, permission-mapped, and stamped with a Skill Passport before you install it.',
+	canonicalPath,
+	noindex = false,
+} = Astro.props;
+
+const canonical = new URL(canonicalPath ?? Astro.url.pathname, Astro.site);
+const ogImage = new URL('/og.png', Astro.site);
 ---
 
 <!doctype html>
@@ -20,6 +32,16 @@ const { title = 'SkillPass' } = Astro.props;
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+		<meta name="description" content={description} />
+		{noindex && <meta name="robots" content="noindex" />}
+		<link rel="canonical" href={canonical} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:site_name" content="SkillPass" />
+		<meta property="og:image" content={ogImage} />
+		<meta name="twitter:card" content="summary_large_image" />
 	</head>
 	<body class="flex min-h-svh flex-col">
 		<div class="flex-1">

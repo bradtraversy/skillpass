@@ -2,16 +2,26 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Nav from '../../../components/nav/Nav.astro';
 import SkillDetail from '../../../components/skill/SkillDetail';
+import { getSkill } from '../../../lib/api';
+import { metaDescription } from '../../../lib/seo';
 
 // Rendered on demand so a skill published after the last build has a page
-// immediately; the island fetches fresh data at runtime.
+// immediately; the island fetches fresh data at runtime. The head fetches the
+// skill server-side so crawlers and unfurls see the real name and summary; on
+// failure the page still renders with the slug-based title.
 export const prerender = false;
 
 const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
+
+const result = await getSkill(slug, undefined, { signal: AbortSignal.timeout(4000) });
+const skill = result.success ? result.data : null;
+if (!result.success && result.status === 404) Astro.response.status = 404;
+const title = `${skill?.name ?? slug} - Skill Passport`;
+const description = (skill && metaDescription(skill.summary)) || undefined;
 ---
 
-<BaseLayout title={`${slug} - Skill Passport`}>
+<BaseLayout title={title} description={description}>
 	<Nav />
 	<main class="mx-auto max-w-[760px] px-6">
 		<a

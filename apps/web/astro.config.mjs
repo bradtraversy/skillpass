@@ -9,6 +9,7 @@ import tailwindcss from '@tailwindcss/vite';
 // `export const prerender = false` (the per-entity skill/profile pages).
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://skillpass.dev',
   adapter: node({ mode: 'standalone' }),
   integrations: [react()],
   vite: {

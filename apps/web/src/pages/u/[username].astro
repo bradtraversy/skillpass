@@ -2,16 +2,26 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Nav from '../../components/nav/Nav.astro';
 import Profile from '../../components/profile/Profile';
+import { getProfile } from '../../lib/api';
 
 // Rendered on demand so a maintainer's profile exists as soon as they publish;
-// the island fetches fresh data at runtime.
+// the island fetches fresh data at runtime. Head metadata is fetched
+// server-side, falling back to the raw username.
 export const prerender = false;
 
 const { username } = Astro.params;
 if (!username) return new Response(null, { status: 404 });
+
+const result = await getProfile(username, { signal: AbortSignal.timeout(4000) });
+const profile = result.success ? result.data : null;
+if (!result.success && result.status === 404) Astro.response.status = 404;
+const title = `${profile?.displayName ?? username} - Maintainer Profile`;
+const description = profile
+	? `AI agent skills maintained by ${profile.displayName} (@${profile.username}) on SkillPass, each validated and stamped with a Skill Passport.`
+	: undefined;
 ---
 
-<BaseLayout title={`${username} - Maintainer Profile`}>
+<BaseLayout title={title} description={description}>
 	<Nav />
 	<main class="mx-auto max-w-[760px] px-6">
 		<a

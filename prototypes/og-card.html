@@ -1,0 +1,143 @@
+<!doctype html>
+<!-- Source for apps/web/public/og.png. To re-render: copy geist-latin-wght-normal.woff2
+     and geist-mono-latin-wght-normal.woff2 from node_modules/@fontsource-variable next
+     to this file as geist.woff2 / geist-mono.woff2, then:
+     google-chrome --headless=new --allow-file-access-from-files --hide-scrollbars \
+       --window-size=1200,630 --virtual-time-budget=4000 --screenshot=og.png og-card.html -->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: 'Geist Variable';
+    src: url('geist.woff2') format('woff2');
+    font-weight: 100 900;
+  }
+  @font-face {
+    font-family: 'Geist Mono Variable';
+    src: url('geist-mono.woff2') format('woff2');
+    font-weight: 100 900;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: 'Geist Variable', sans-serif;
+    background: #0d0f16;
+    color: #e9eefa;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+  .glow {
+    position: absolute;
+    top: -260px;
+    right: -180px;
+    width: 900px;
+    height: 700px;
+    background: radial-gradient(closest-side, rgba(127, 168, 255, 0.16), transparent 70%);
+  }
+  .glow2 {
+    position: absolute;
+    bottom: -320px;
+    left: -200px;
+    width: 800px;
+    height: 600px;
+    background: radial-gradient(closest-side, rgba(70, 211, 160, 0.07), transparent 70%);
+  }
+  .frame {
+    position: absolute;
+    inset: 26px;
+    border: 1px solid #242a3c;
+    border-radius: 18px;
+  }
+  .content {
+    position: absolute;
+    inset: 0;
+    padding: 92px 96px 84px;
+    display: flex;
+    flex-direction: column;
+  }
+  .brand { display: flex; align-items: center; gap: 20px; }
+  .brand img { width: 62px; height: 62px; border-radius: 15px; }
+  .brand span { font-size: 34px; font-weight: 620; letter-spacing: -0.02em; }
+  .middle { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;
+    border: 1px solid #303950;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: 'Geist Mono Variable', 'JetBrains Mono', monospace;
+    font-size: 16.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #96a0b4;
+    margin-bottom: 34px;
+  }
+  .badge b { color: #7fa8ff; font-weight: 600; }
+  h1 {
+    font-size: 88px;
+    font-weight: 620;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+  .sub {
+    margin-top: 26px;
+    font-size: 27px;
+    line-height: 1.5;
+    color: #96a0b4;
+    max-width: 33em;
+  }
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .url {
+    font-family: 'Geist Mono Variable', 'JetBrains Mono', monospace;
+    font-size: 21px;
+    color: #96a0b4;
+    letter-spacing: 0.02em;
+  }
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(70, 211, 160, 0.3);
+    background: rgba(70, 211, 160, 0.12);
+    color: #46d3a0;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: 'Geist Mono Variable', 'JetBrains Mono', monospace;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .stamp svg { display: block; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="glow2"></div>
+  <div class="frame"></div>
+  <div class="content">
+    <div class="brand">
+      <img src="../apps/web/public/logo.png" alt="" />
+      <span>SkillPass</span>
+    </div>
+    <div class="middle">
+      <span class="badge"><b>//</b> never trust a skill blindly</span>
+      <h1>Validated skills<br />for AI agents.</h1>
+      <p class="sub">Skills for Codex, Claude Code, Cursor and more - inspected, permission-mapped, and stamped with a Skill Passport.</p>
+    </div>
+    <div class="footer">
+      <span class="url">skillpass.dev</span>
+      <span class="stamp">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        skill passport
+      </span>
+    </div>
+  </div>
+</body>
+</html>

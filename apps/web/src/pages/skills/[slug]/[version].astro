@@ -2,16 +2,26 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Nav from '../../../components/nav/Nav.astro';
 import SkillDetail from '../../../components/skill/SkillDetail';
+import { getSkill } from '../../../lib/api';
+import { metaDescription } from '../../../lib/seo';
 
 // Rendered on demand so a version permalink works the moment it publishes;
-// the island fetches fresh data at runtime.
+// the island fetches fresh data at runtime. Head metadata is fetched
+// server-side; canonical points at the unversioned page so pinned permalinks
+// don't compete with it in search.
 export const prerender = false;
 
 const { slug, version } = Astro.params;
 if (!slug || !version) return new Response(null, { status: 404 });
+
+const result = await getSkill(slug, version, { signal: AbortSignal.timeout(4000) });
+const skill = result.success ? result.data : null;
+if (!result.success && result.status === 404) Astro.response.status = 404;
+const title = `${skill?.name ?? slug} v${version} - Skill Passport`;
+const description = (skill && metaDescription(skill.summary)) || undefined;
 ---
 
-<BaseLayout title={`${slug} v${version} - Skill Passport`}>
+<BaseLayout title={title} description={description} canonicalPath={`/skills/${slug}`}>
 	<Nav />
 	<main class="mx-auto max-w-[760px] px-6">
 		<a
