@@ -2,10 +2,12 @@ import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
 import { runAdd } from './add';
 import { runList } from './list';
+import { runOutdated } from './outdated';
 import { runRemove } from './remove';
 import { runReport } from './report';
 import { runSearch } from './search';
 import { styler } from './style';
+import { runUpdate } from './update';
 import type { CommandResult } from './scan';
 import { runScan } from './scan';
 
@@ -28,6 +30,9 @@ export const USAGE = [
 	'  skillpass remove <slug> [--target <tool> [--global] | --dir <path>]',
 	'                                             remove an installed skill',
 	'  skillpass list                              show installed skills in the known areas',
+	'  skillpass outdated                          compare installed skills to the directory',
+	'  skillpass update <slug>[@version] [--target <tool> [--global]] [--yes]',
+	'                                             update an installed skill through the gate',
 	'',
 	'Flags:',
 	'  --json    print machine-readable JSON instead of the readable report',
@@ -42,7 +47,8 @@ export const USAGE = [
 	'  --help    show this message',
 	'',
 	'The search, report, and add commands read the API base URL from SKILLPASS_API.',
-	'Exit codes: 0 ok/warning, 1 failed or blocked, 2 usage/load/network errors.',
+	'Exit codes: 0 ok/warning, 1 failed or blocked, 2 usage/load/network errors',
+	'(outdated exits 1 when updates are available).',
 ].join('\n');
 
 export interface ParsedArgs {
@@ -69,6 +75,8 @@ const COMMAND_FLAGS: Record<string, string[]> = {
 	add: ['--yes', '--target', '--dir', '--global'],
 	remove: ['--target', '--dir', '--global'],
 	list: [],
+	outdated: [],
+	update: ['--yes', '--target', '--global'],
 	search: ['--target', '--category', '--packs', '--json'],
 };
 
@@ -190,6 +198,27 @@ export async function run(argv: string[]): Promise<CommandResult> {
 			return { lines: ['error: list takes no arguments', '', USAGE], exitCode: 2 };
 		}
 		return runList();
+	}
+	if (args.command === 'update') {
+		const [ref] = args.positional;
+		if (!ref) {
+			return { lines: ['error: update needs a skill slug', '', USAGE], exitCode: 2 };
+		}
+		const tty = Boolean(process.stdin.isTTY);
+		return runUpdate(ref, {
+			yes: args.yes,
+			target: args.target,
+			global: args.global,
+			style: styler(Boolean(process.stdout.isTTY)),
+			confirmImpl: tty ? confirmViaTty : undefined,
+			emit: (text) => console.log(text),
+		});
+	}
+	if (args.command === 'outdated') {
+		if (args.positional.length > 0) {
+			return { lines: ['error: outdated takes no arguments', '', USAGE], exitCode: 2 };
+		}
+		return runOutdated();
 	}
 	if (args.command === 'report') {
 		const [ref] = args.positional;

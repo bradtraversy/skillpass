@@ -1,7 +1,8 @@
 import { existsSync, rmSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { readReceipts, removeReceipt } from './receipts';
 import type { CommandResult } from './scan';
-import { installAreas, MAPPED_TARGETS, resolveTargetDir } from './targets';
+import { installAreas, knownAreas, MAPPED_TARGETS, resolveTargetDir } from './targets';
 
 export interface RemoveOptions {
 	target?: string;
@@ -46,6 +47,45 @@ export function runRemove(slug: string, opts: RemoveOptions = {}): CommandResult
 	}
 	const cwd = opts.cwd ?? process.cwd();
 
+	// A pack removes as a family: every member recorded for it in the area.
+	if (!opts.dir) {
+		let areas = knownAreas(cwd, opts.home);
+		if (opts.target) {
+			areas = areas.filter((a) => a.tool === opts.target && a.global === (opts.global ?? false));
+		}
+		const packHits = areas
+			.map((area) => ({
+				area,
+				members: Object.entries(readReceipts(area.dir))
+					.filter(([, r]) => r.pack?.slug === slug)
+					.map(([name]) => name),
+			}))
+			.filter((hit) => hit.members.length > 0);
+		if (packHits.length > 1) {
+			return {
+				lines: [
+					`error: the ${slug} pack is installed in more than one place; pick one with --target:`,
+					...packHits.map((hit) => `  ${hit.area.dir}`),
+				],
+				exitCode: 2,
+			};
+		}
+		if (packHits.length === 1) {
+			const { area, members } = packHits[0];
+			for (const name of members) {
+				rmSync(join(area.dir, name), { recursive: true, force: true });
+				removeReceipt(area.dir, name);
+			}
+			return {
+				lines: [
+					`Removed pack ${slug} (${members.length} skills) from ${area.dir}`,
+					`  ${members.sort().join(', ')}`,
+				],
+				exitCode: 0,
+			};
+		}
+	}
+
 	let dir: string;
 	if (opts.target) {
 		const resolved = resolveTargetDir(opts.target, slug, opts.global, opts.home);
@@ -88,5 +128,6 @@ export function runRemove(slug: string, opts: RemoveOptions = {}): CommandResult
 	}
 
 	rmSync(dir, { recursive: true });
+	removeReceipt(dirname(dir), slug);
 	return { lines: [`Removed ${slug} from ${dir}`], exitCode: 0 };
 }

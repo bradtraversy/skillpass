@@ -25,6 +25,8 @@ skillpass scan <path> [--json]
 skillpass report <slug>[@version] [--json]
 skillpass add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]
 skillpass remove <slug> [--target <tool> [--global] | --dir <path>]
+skillpass update <slug>[@version] [--target <tool> [--global]] [--yes]
+skillpass outdated
 skillpass list
 skillpass --version | --help
 ```
@@ -63,11 +65,22 @@ skills in one verified step.
 
 ### Manage
 
-`skillpass list` shows what is installed in the known skills areas.
-`skillpass remove <slug>` deletes an installed skill; it refuses anything that
-does not look like an installed skill, so a stray `--dir` can never wipe a
-real folder. `skillpass scan <path>` runs the same validator the directory
-uses on any local skill folder before you submit it.
+Installs into the known skills areas are recorded in a per-area
+`.skillpass.json` receipt, so the CLI knows what it installed and at which
+version - your own hand-made skills in the same folders are left alone.
+
+- `skillpass list` shows installed skills with their versions
+- `skillpass outdated` compares them to the directory (exits 1 when updates
+  exist, handy in scripts)
+- `skillpass update <slug>` re-runs the whole trust gate - including a
+  permission diff against the version you currently have - then swaps the
+  install atomically; updating a pack swaps, adds, and removes members as
+  the pack changed
+- `skillpass remove <slug>` deletes an installed skill (a pack removes its
+  whole family); it refuses anything that does not look like an installed
+  skill, so a stray `--dir` can never wipe a real folder
+- `skillpass scan <path>` runs the same validator the directory uses on any
+  local skill folder before you submit it
 
 ## Configuration
 

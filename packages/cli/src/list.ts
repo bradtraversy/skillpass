@@ -1,35 +1,15 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
+import { readReceipts } from './receipts';
 import type { CommandResult } from './scan';
-import { installAreas, MAPPED_TARGETS } from './targets';
+import { knownAreas } from './targets';
 
 export interface ListOptions {
 	cwd?: string;
 	home?: string;
 }
 
-interface Area {
-	label: string;
-	dir: string;
-}
-
-function knownAreas(cwd: string, home?: string): Area[] {
-	const areas: Area[] = [];
-	const byTarget = installAreas(home);
-	for (const tool of MAPPED_TARGETS) {
-		const area = byTarget[tool];
-		if (!area) {
-			continue;
-		}
-		areas.push({ label: `${tool} project (${area.project})`, dir: resolve(cwd, area.project) });
-		if (area.global) {
-			areas.push({ label: `${tool} user (${area.global})`, dir: area.global });
-		}
-	}
-	return areas;
-}
-
-function installedIn(dir: string): string[] {
+export function installedIn(dir: string): string[] {
 	if (!existsSync(dir)) {
 		return [];
 	}
@@ -52,8 +32,10 @@ export function runList(opts: ListOptions = {}): CommandResult {
 			lines.push('');
 		}
 		lines.push(area.label);
+		const receipts = readReceipts(area.dir);
 		for (const name of names) {
-			lines.push(`  ${name}`);
+			const version = receipts[name]?.version;
+			lines.push(version ? `  ${name}  ${version}` : `  ${name}`);
 		}
 	}
 	if (lines.length === 0) {

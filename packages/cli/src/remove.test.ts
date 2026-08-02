@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readReceipts, recordReceipt } from './receipts';
 import { runRemove } from './remove';
 
 const temp = (prefix: string) => mkdtempSync(join(tmpdir(), prefix));
@@ -16,14 +17,21 @@ function ctx() {
 }
 
 describe('runRemove', () => {
-	it('removes by --target', () => {
+	it('removes by --target and clears the receipt', () => {
 		const { cwd, home } = ctx();
-		const dir = join(cwd, '.claude', 'skills', 'demo');
+		const area = join(cwd, '.claude', 'skills');
+		const dir = join(area, 'demo');
 		installSkill(dir);
+		recordReceipt(area, 'demo', {
+			version: '1.0.0',
+			sourceHash: 'sha256:abc',
+			installedAt: '2026-08-02T12:00:00.000Z',
+		});
 		const result = runRemove('demo', { target: 'claude-code', cwd, home });
 		expect(result.exitCode).toBe(0);
 		expect(result.lines[0]).toContain('Removed demo');
 		expect(existsSync(dir)).toBe(false);
+		expect(readReceipts(area)).toEqual({});
 	});
 
 	it('removes a single search hit without flags', () => {
@@ -85,6 +93,47 @@ describe('runRemove', () => {
 		expect(runRemove('demo', { target: 'claude-code', dir: './x', cwd, home }).lines[0]).toContain(
 			'not both',
 		);
+	});
+
+	it('removes a whole pack family with receipts', () => {
+		const { cwd, home } = ctx();
+		const area = join(cwd, '.claude', 'skills');
+		for (const name of ['adopt', 'audit']) {
+			installSkill(join(area, name));
+			recordReceipt(area, name, {
+				version: '1.0.0',
+				sourceHash: 'sha256:abc',
+				installedAt: '2026-08-02T12:00:00.000Z',
+				pack: { slug: 'blueprint-pack', version: '1.0.0' },
+			});
+		}
+		const result = runRemove('blueprint-pack', { cwd, home });
+		expect(result.exitCode).toBe(0);
+		expect(result.lines[0]).toContain('Removed pack blueprint-pack (2 skills)');
+		expect(existsSync(join(area, 'adopt'))).toBe(false);
+		expect(existsSync(join(area, 'audit'))).toBe(false);
+		expect(readReceipts(area)).toEqual({});
+	});
+
+	it('asks for --target when a pack lives in two areas', () => {
+		const { cwd, home } = ctx();
+		for (const areaPath of [join(cwd, '.claude', 'skills'), join(cwd, '.agents', 'skills')]) {
+			installSkill(join(areaPath, 'adopt'));
+			recordReceipt(areaPath, 'adopt', {
+				version: '1.0.0',
+				sourceHash: 'sha256:abc',
+				installedAt: '2026-08-02T12:00:00.000Z',
+				pack: { slug: 'blueprint-pack', version: '1.0.0' },
+			});
+		}
+		const ambiguous = runRemove('blueprint-pack', { cwd, home });
+		expect(ambiguous.exitCode).toBe(2);
+		expect(ambiguous.lines[0]).toContain('more than one place');
+
+		const scoped = runRemove('blueprint-pack', { target: 'codex', cwd, home });
+		expect(scoped.exitCode).toBe(0);
+		expect(existsSync(join(cwd, '.agents', 'skills', 'adopt'))).toBe(false);
+		expect(existsSync(join(cwd, '.claude', 'skills', 'adopt'))).toBe(true);
 	});
 
 	it('removes from the user area with --target --global', () => {

@@ -90,6 +90,7 @@ proxy into `apps/web`.
 - Skills CLI: `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
   `pnpm cli add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]` /
   `pnpm cli remove <slug> [--target <tool> [--global] | --dir <path>]` /
+  `pnpm cli update <slug>[@version]` / `pnpm cli outdated` /
   `pnpm cli list` / `pnpm cli --version`
   (or `node packages/cli/bin/skillpass.mjs ...`); `--target claude-code` installs to
   `.claude/skills/`, `--target codex` to `.agents/skills/`; `--json` for machine

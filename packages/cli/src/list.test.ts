@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runList } from './list';
+import { recordReceipt } from './receipts';
 
 const temp = (prefix: string) => mkdtempSync(join(tmpdir(), prefix));
 
@@ -20,6 +21,21 @@ describe('runList', () => {
 		expect(text).toContain('claude-code project (.claude/skills)\n  alpha');
 		expect(text).toContain(`claude-code user (${join(home, '.claude', 'skills')})\n  charlie`);
 		expect(text).toContain('codex project (.agents/skills)\n  bravo');
+	});
+
+	it('shows versions from receipts next to installed names', () => {
+		const cwd = temp('skillpass-list-cwd-');
+		const home = temp('skillpass-list-home-');
+		const area = join(cwd, '.claude', 'skills');
+		mkdirSync(join(area, 'alpha'), { recursive: true });
+		mkdirSync(join(area, 'beta'), { recursive: true });
+		recordReceipt(area, 'alpha', {
+			version: '1.2.0',
+			sourceHash: 'sha256:abc',
+			installedAt: '2026-08-02T12:00:00.000Z',
+		});
+		const result = runList({ cwd, home });
+		expect(result.lines).toEqual(['claude-code project (.claude/skills)', '  alpha  1.2.0', '  beta']);
 	});
 
 	it('ignores loose files and sorts names within an area', () => {

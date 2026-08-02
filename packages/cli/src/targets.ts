@@ -1,5 +1,5 @@
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { TARGETS, type Target } from 'skill-schema';
 
 export interface InstallArea {
@@ -61,4 +61,33 @@ export function resolveTargetDir(
 // The tip shown when no --target/--dir was given but one would apply.
 export function mappableDeclaredTargets(declared: Target[]): Target[] {
 	return declared.filter((t) => MAPPED_TARGETS.includes(t));
+}
+
+export interface KnownArea {
+	tool: Target;
+	global: boolean;
+	label: string;
+	// Absolute path.
+	dir: string;
+}
+
+export function knownAreas(cwd: string, home?: string): KnownArea[] {
+	const areas: KnownArea[] = [];
+	const byTarget = installAreas(home);
+	for (const tool of MAPPED_TARGETS) {
+		const area = byTarget[tool];
+		if (!area) {
+			continue;
+		}
+		areas.push({
+			tool,
+			global: false,
+			label: `${tool} project (${area.project})`,
+			dir: resolve(cwd, area.project),
+		});
+		if (area.global) {
+			areas.push({ tool, global: true, label: `${tool} user (${area.global})`, dir: area.global });
+		}
+	}
+	return areas;
 }

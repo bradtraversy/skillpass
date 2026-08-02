@@ -14,10 +14,12 @@ import type { Target } from 'skill-schema';
 import { loadPackageFromFiles, type PackageFile } from 'validator';
 import { fetchPreflight, resolveApiUrl } from './api';
 import { resolvePackMembers } from './pack';
+import { recordReceipt } from './receipts';
 import { renderPreflightReport } from './render';
 import type { CommandResult } from './scan';
 import type { Styler } from './style';
 import {
+	knownAreas,
 	MAPPED_TARGETS,
 	mappableDeclaredTargets,
 	resolveTargetArea,
@@ -53,11 +55,11 @@ const MAX_ZIP_BYTES = 20 * 1024 * 1024;
 
 class OversizedDownloadError extends Error {}
 
-type Download = { ok: true; files: PackageFile[] } | { ok: false; message: string };
+export type Download = { ok: true; files: PackageFile[] } | { ok: false; message: string };
 
 // Download the version snapshot and prove it is byte-identical to what the
 // validator saw; no caller writes anything on a not-ok result.
-async function downloadVerified(
+export async function downloadVerified(
 	fetchImpl: typeof fetch,
 	apiUrl: string,
 	slug: string,
@@ -121,7 +123,7 @@ async function downloadVerified(
 
 // Write to a sibling temp dir and rename into place, so a failed write never
 // leaves a partial tree behind.
-function writeTree(files: PackageFile[], target: string): void {
+export function writeTree(files: PackageFile[], target: string): void {
 	const tempDir = `${target}.tmp-${process.pid}`;
 	try {
 		for (const file of files) {
@@ -140,7 +142,7 @@ function writeTree(files: PackageFile[], target: string): void {
 	}
 }
 
-function memberFiles(files: PackageFile[], sourceDir: string): PackageFile[] {
+export function memberFiles(files: PackageFile[], sourceDir: string): PackageFile[] {
 	if (sourceDir === '.') {
 		return files;
 	}
@@ -391,6 +393,14 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 			);
 			return done(2);
 		}
+		for (const name of written) {
+			recordReceipt(areaAbs, name, {
+				version: preflight.version,
+				sourceHash: preflight.sourceHash,
+				installedAt: new Date().toISOString(),
+				pack: { slug, version: preflight.version },
+			});
+		}
 		push(
 			'',
 			`Installed ${written.length} skills to ${areaAbs}`,
@@ -449,6 +459,14 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 	} catch {
 		push('', 'error: could not write the install; nothing was installed');
 		return done(2);
+	}
+	const area = knownAreas(opts.cwd ?? process.cwd()).find((a) => a.dir === dirname(target));
+	if (area) {
+		recordReceipt(area.dir, slug, {
+			version: preflight.version,
+			sourceHash: preflight.sourceHash,
+			installedAt: new Date().toISOString(),
+		});
 	}
 
 	push(

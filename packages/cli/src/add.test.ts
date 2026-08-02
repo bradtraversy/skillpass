@@ -14,6 +14,7 @@ import type { PublicPreflight, PublicSkillDetail } from 'skill-schema';
 import { loadPackageFromFiles } from 'validator';
 import { describe, expect, it, vi } from 'vitest';
 import { installChoices, runAdd } from './add';
+import { readReceipts } from './receipts';
 
 const FILES = [
 	{ path: 'SKILL.md', content: '# smoke-clean\n' },
@@ -289,6 +290,23 @@ describe('runAdd', () => {
 		expect(readFileSync(join(cwd, '.claude', 'skills', 'smoke-clean', 'SKILL.md'), 'utf8')).toBe(
 			'# smoke-clean\n',
 		);
+		const receipts = readReceipts(join(cwd, '.claude', 'skills'));
+		expect(receipts['smoke-clean']).toMatchObject({ version: '1.0.0', sourceHash: REAL_HASH });
+		expect(receipts['smoke-clean'].pack).toBeUndefined();
+	});
+
+	it('writes no receipt for a --dir install', async () => {
+		const dir = tempTarget();
+		await runAdd('smoke-clean', { dir, fetchImpl: stubFetch() });
+		expect(readReceipts(join(dir, '..'))).toEqual({});
+	});
+
+	it('records pack membership on every fan-out receipt', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		await runAdd('blueprint-pack', { target: 'codex', cwd, fetchImpl: packStub() });
+		const receipts = readReceipts(join(cwd, '.agents', 'skills'));
+		expect(Object.keys(receipts).sort()).toEqual(['adopt', 'audit']);
+		expect(receipts.adopt.pack).toEqual({ slug: 'blueprint-pack', version: '1.0.0' });
 	});
 
 	it('warns when the chosen target is not declared by the skill', async () => {
