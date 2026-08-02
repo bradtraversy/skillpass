@@ -1,9 +1,11 @@
 import { fetchPreflight, resolveApiUrl } from './api';
 import { renderPreflightReport } from './render';
 import type { CommandResult } from './scan';
+import type { Styler } from './style';
 
 export interface ReportOptions {
 	json?: boolean;
+	style?: Styler;
 	apiUrl?: string;
 	fetchImpl?: typeof fetch;
 }
@@ -21,5 +23,5 @@ export async function runReport(ref: string, opts: ReportOptions = {}): Promise<
 	if (opts.json) {
 		return { lines: [JSON.stringify(fetched.preflight, null, 2)], exitCode };
 	}
-	return { lines: renderPreflightReport(fetched.detail, fetched.preflight), exitCode };
+	return { lines: renderPreflightReport(fetched.detail, fetched.preflight, opts.style), exitCode };
 }

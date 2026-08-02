@@ -6,9 +6,20 @@ import {
 	type ReportFinding,
 	type ValidationStatus,
 } from 'skill-schema';
+import { PLAIN, type Styler } from './style';
 
 export function statusLabel(status: ValidationStatus): string {
 	return { passed: 'PASSED', warning: 'WARNING', failed: 'FAILED' }[status];
+}
+
+export function statusColor(st: Styler, status: ValidationStatus): (text: string) => string {
+	return { passed: st.green, warning: st.yellow, failed: st.red }[status];
+}
+
+export function riskColor(st: Styler, risk: string): (text: string) => string {
+	if (risk === 'low') return st.green;
+	if (risk === 'medium') return st.yellow;
+	return st.red;
 }
 
 export function permissionLine(key: PermissionKey): string {
@@ -50,18 +61,22 @@ export function renderFindings(title: string, findings: ReportFinding[]): string
 export function renderPreflightReport(
 	detail: PublicSkillDetail,
 	preflight: PublicPreflight,
+	st: Styler = PLAIN,
 ): string[] {
 	const attribution = detail.attributedTo ? ` (curated from ${detail.attributedTo})` : '';
 	const members = detail.packMembers ?? [];
+	const verified = preflight.sourceVerified
+		? st.green('(verified)')
+		: st.red('(HASH MISMATCH)');
 	const lines = [
-		`Skill     ${detail.name} by ${detail.maintainer}${attribution}`,
+		`Skill     ${st.bold(detail.name)} by ${detail.maintainer}${attribution}`,
 		...(members.length > 0
 			? [`Pack      ${members.length} skills: ${members.map((m) => m.name).join(', ')}`]
 			: []),
 		`Version   ${preflight.version}`,
-		`Status    ${statusLabel(preflight.validationStatus)}`,
-		`Risk      ${preflight.riskLevel}`,
-		`Source    ${preflight.sourceHash} ${preflight.sourceVerified ? '(verified)' : '(HASH MISMATCH)'}`,
+		`Status    ${statusColor(st, preflight.validationStatus)(statusLabel(preflight.validationStatus))}`,
+		`Risk      ${riskColor(st, preflight.riskLevel)(preflight.riskLevel)}`,
+		`Source    ${preflight.sourceHash} ${verified}`,
 		`Generated ${preflight.generatedAt.slice(0, 10)}`,
 		'',
 		...renderPermissions(preflight.permissions.declared, preflight.permissions.detected),
@@ -69,7 +84,10 @@ export function renderPreflightReport(
 		...renderDiff(preflight.diff),
 	];
 	if (preflight.blocked) {
-		lines.push('', `BLOCKED: ${preflight.blockedReason ?? 'this version cannot be downloaded'}`);
+		lines.push(
+			'',
+			st.red(`BLOCKED: ${preflight.blockedReason ?? 'this version cannot be downloaded'}`),
+		);
 	}
 	return lines;
 }

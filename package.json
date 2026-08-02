@@ -17,7 +17,7 @@
     "typecheck": "pnpm -C apps/web typecheck && pnpm -C packages/cli typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cli": "node packages/cli/bin/skillpass.mjs"
+    "cli": "pnpm -C packages/cli --silent build && node packages/cli/bin/skillpass.mjs"
   },
   "keywords": [],
   "author": "",

@@ -38,7 +38,17 @@ are bundles; `/feature` splits them into sub-items (5a, 5b, ...) at spec time.
 - [ ] 15. **CLI install lifecycle** - ship `skillpass` (npm or a documented install path) and round out the command set into a local install manager: `add`, `remove` (mirror add's target resolution and delete `<target>/<slug>`), and a simple `list` of installed skill names.
   - [x] 15a. **Local install manager** - `remove` (mirrors add's target resolution, refuses paths that don't look like an installed skill), `list` over the known install areas, a `--version` flag, atomic installs (temp dir + rename so a failed write leaves nothing behind), client-side download caps mirroring the server snapshot caps, and a `tsc --noEmit` type-check gate for `packages/cli` wired into `pnpm typecheck`.
   - [x] 15b. **Pack-aware add** - installing a pack installs all `packMembers` with their per-target variants into the chosen tool's skills folder (the CLI follow-up deferred from 13b).
-  - [ ] 15c. **Package and ship to npm** - compiled JS build with a plain node bin (drop the tsx runtime dependency), production API default with `SKILLPASS_API` override, README and publish metadata, npm publish (explicit approval), then remove the coming-soon chip in `InstallBar.tsx`.
+  - [x] 15c. **Package and ship to npm** - compiled JS build with a plain node bin (drop the tsx runtime dependency), production API default with `SKILLPASS_API` override, README and publish metadata, npm publish (explicit approval), then remove the coming-soon chip in `InstallBar.tsx`.
+  - [ ] 15e. **Update lifecycle** - close the install-manager loop. A version
+    receipt written at install (slug, version, sourceHash, chosen target) plus
+    retroactive identification of receipt-less installs by re-hashing them
+    against published version hashes; `skillpass outdated` comparing installed
+    versions to the directory; `skillpass update <slug>` re-running the full
+    pre-flight gate (including the permission diff against the installed
+    version - the passport diff finally doing its CLI job) then replacing
+    atomically; pack-level update and remove acting on all members via
+    `packMembers`; `list` showing versions and staleness. Receipt placement
+    (inside the skill folder vs a per-area index) is a spec-time decision.
   - [x] 15d. **CLI search** - `skillpass search [query] [--target <tool>] [--category <slug>] [--packs] [--json]` over the public `GET /skills` list: query matches slug/name/tagline and pack member names (same fields as site search), compact aligned rows (slug, risk, author via `attributedTo` fallback `maintainer`, PACK marker with member count, tagline), a "N of M skills" footer, no silent truncation (no query lists everything). Ship before or with 15c so the published v0 launches with discovery.
 - [ ] 16. **Maintainer dashboard** - authed `/dashboard` to manage your listings: your skills and their status (published/draft/private/flagged), your submissions and validation state, publish/unlist/delete actions, and abuse reports filed against you; the private counterpart to the public `/u/[username]`. (Delete withdraws the listing; spec its effect on the immutable passports/snapshots.)
 - [x] 17. **Category/tag browse** (optional) - surface the existing Category and Tag models as browse and filter affordances. (Shipped as a full category system: 12-slug taxonomy in `skill-schema`, Haiku classifier + backfill, filter sidebar. Tags stay unbuilt - see history entry.)

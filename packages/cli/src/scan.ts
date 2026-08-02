@@ -1,5 +1,6 @@
 import { PackageReadError, validatePackage } from 'validator';
-import { renderFindings, renderPermissions, statusLabel } from './render';
+import { renderFindings, renderPermissions, riskColor, statusColor, statusLabel } from './render';
+import { PLAIN, type Styler } from './style';
 
 export interface CommandResult {
 	lines: string[];
@@ -9,7 +10,10 @@ export interface CommandResult {
 }
 
 // Exit codes are contract: 0 passed/warning, 1 failed, 2 unreadable package.
-export async function runScan(path: string, opts: { json?: boolean } = {}): Promise<CommandResult> {
+export async function runScan(
+	path: string,
+	opts: { json?: boolean; style?: Styler } = {},
+): Promise<CommandResult> {
 	let report;
 	try {
 		report = await validatePackage(path);
@@ -27,10 +31,11 @@ export async function runScan(path: string, opts: { json?: boolean } = {}): Prom
 		return { lines: [JSON.stringify(report, null, 2)], exitCode: report.status === 'failed' ? 1 : 0 };
 	}
 
+	const st = opts.style ?? PLAIN;
 	const lines = [
 		`Package  ${path}`,
-		`Status   ${statusLabel(report.status)}`,
-		`Risk     ${report.riskLevel}`,
+		`Status   ${statusColor(st, report.status)(statusLabel(report.status))}`,
+		`Risk     ${riskColor(st, report.riskLevel)(report.riskLevel)}`,
 		`Source   ${report.sourceHash}`,
 		`Engine   ${report.engineVersion}`,
 		'',

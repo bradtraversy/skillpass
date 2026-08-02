@@ -176,7 +176,7 @@ export async function run(argv: string[]): Promise<CommandResult> {
 		if (!path) {
 			return { lines: ['error: scan needs a path to a skill package', '', USAGE], exitCode: 2 };
 		}
-		return runScan(path, { json: args.json });
+		return runScan(path, { json: args.json, style: styler(Boolean(process.stdout.isTTY)) });
 	}
 	if (args.command === 'remove') {
 		const [slug] = args.positional;
@@ -196,7 +196,7 @@ export async function run(argv: string[]): Promise<CommandResult> {
 		if (!ref) {
 			return { lines: ['error: report needs a skill slug', '', USAGE], exitCode: 2 };
 		}
-		return runReport(ref, { json: args.json });
+		return runReport(ref, { json: args.json, style: styler(Boolean(process.stdout.isTTY)) });
 	}
 	if (args.command === 'add') {
 		const [ref] = args.positional;
@@ -209,6 +209,7 @@ export async function run(argv: string[]): Promise<CommandResult> {
 			dir: args.dir,
 			target: args.target,
 			global: args.global,
+			style: styler(Boolean(process.stdout.isTTY)),
 			confirmImpl: tty ? confirmViaTty : undefined,
 			promptImpl: tty ? promptViaTty : undefined,
 			emit: (text) => console.log(text),

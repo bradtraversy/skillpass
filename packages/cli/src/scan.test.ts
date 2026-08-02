@@ -32,6 +32,14 @@ describe('runScan', () => {
 		expect(text).toMatch(/network\.\w+ - /);
 	});
 
+	it('colors status and risk with a styler', async () => {
+		const { ANSI } = await import('./style');
+		const result = await runScan(fixture('clean-skill'), { style: ANSI });
+		const text = result.lines.join('\n');
+		expect(text).toContain('\x1b[32mPASSED\x1b[39m');
+		expect(text).toContain('\x1b[32mlow\x1b[39m');
+	});
+
 	it('emits schema-valid JSON with --json', async () => {
 		const result = await runScan(fixture('clean-skill'), { json: true });
 		expect(result.exitCode).toBe(0);

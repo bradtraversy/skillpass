@@ -6,10 +6,11 @@ import {
 } from 'skill-schema';
 import type { CommandResult } from './scan';
 
-export const DEFAULT_API_URL = 'http://localhost:8787';
+export const DEFAULT_API_URL = 'https://api.skillpass.dev';
 
 export function resolveApiUrl(override?: string): string {
-	return (override ?? process.env.SKILLPASS_API ?? DEFAULT_API_URL).replace(/\/$/, '');
+	const url = override ?? process.env.SKILLPASS_API;
+	return (url || DEFAULT_API_URL).replace(/\/$/, '');
 }
 
 export function parseSkillRef(ref: string): { slug: string; version?: string } {

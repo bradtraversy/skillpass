@@ -86,11 +86,8 @@ export default function InstallBar({ slug, version, distribution, install, homep
 							Download &amp; pre-flight
 						</button>
 					</div>
-					<p className="mt-[10px] flex flex-wrap items-center gap-[8px] text-[12px] text-faint">
-						<span className="rounded-full border border-accent-line bg-accent-soft px-[8px] py-[2px] font-mono text-[10.5px] tracking-[0.08em] text-accent uppercase">
-							Coming soon
-						</span>
-						The skillpass CLI isn't published yet - use Download &amp; pre-flight in the meantime.
+					<p className="mt-[10px] text-[12px] text-faint">
+						Needs the CLI: <code className="font-mono text-muted">npm install -g skillpass</code>
 					</p>
 				</div>
 				{preflightOpen && (

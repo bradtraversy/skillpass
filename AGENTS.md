@@ -93,7 +93,9 @@ proxy into `apps/web`.
   `pnpm cli list` / `pnpm cli --version`
   (or `node packages/cli/bin/skillpass.mjs ...`); `--target claude-code` installs to
   `.claude/skills/`, `--target codex` to `.agents/skills/`; `--json` for machine
-  output, `SKILLPASS_API` overrides the API base URL for `report` and `add`
+  output. `search`, `report`, and `add` default to the production API
+  (`https://api.skillpass.dev`); set `SKILLPASS_API=http://localhost:8787` to work
+  against the local dev API
 
 `pnpm test` runs Vitest across the monorepo (`apps/*`, `packages/*`) via the root
 `vitest.config.ts`. **The `test` command is declared, so tests are a gate:** a

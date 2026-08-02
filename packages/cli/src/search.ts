@@ -5,6 +5,7 @@ import {
 	type PublicSkillSummary,
 } from 'skill-schema';
 import { getParsed, resolveApiUrl } from './api';
+import { riskColor } from './render';
 import type { CommandResult } from './scan';
 import { PLAIN, type Styler } from './style';
 
@@ -49,10 +50,6 @@ function riskMarker(skill: PublicSkillSummary): string {
 	return skill.riskLevel === 'low' ? '' : skill.riskLevel;
 }
 
-function riskStyle(st: Styler, risk: string): (text: string) => string {
-	return risk === 'medium' ? st.yellow : st.red;
-}
-
 interface ColumnWidths {
 	slug: number;
 	risk: number;
@@ -78,7 +75,7 @@ function row(skill: PublicSkillSummary, w: ColumnWidths, st: Styler): string {
 		width === 0 ? [] : [style(text.padEnd(width))];
 	return [
 		st.bold(skill.slug.padEnd(w.slug)),
-		...cell(riskMarker(skill), w.risk, riskStyle(st, skill.riskLevel)),
+		...cell(riskMarker(skill), w.risk, riskColor(st, skill.riskLevel)),
 		...cell(packMarker(skill), w.pack, st.cyan),
 		st.yellow(author.padEnd(w.author)),
 		tagline,
@@ -97,7 +94,7 @@ function narrowRows(skill: PublicSkillSummary, width: number, st: Styler): strin
 	const risk = riskMarker(skill);
 	const header = [
 		st.bold(skill.slug),
-		...(risk === '' ? [] : [riskStyle(st, skill.riskLevel)(risk)]),
+		...(risk === '' ? [] : [riskColor(st, skill.riskLevel)(risk)]),
 		...(pack === '' ? [] : [st.cyan(pack)]),
 		st.yellow(author),
 	].join('  ');

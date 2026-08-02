@@ -1,25 +1,47 @@
 {
 	"name": "skillpass",
 	"version": "0.1.0",
-	"private": true,
+	"description": "Validation-first installer for AI agent skills: search the SkillPass directory, inspect a skill's passport, and install hash-verified skills and packs for Claude Code, Codex, and more.",
+	"keywords": [
+		"ai",
+		"agent",
+		"skills",
+		"claude-code",
+		"codex",
+		"skill-passport",
+		"cli"
+	],
+	"homepage": "https://skillpass.dev",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bradtraversy/skillpass.git",
+		"directory": "packages/cli"
+	},
+	"license": "MIT",
+	"author": "Brad Traversy",
 	"type": "module",
 	"bin": {
 		"skillpass": "./bin/skillpass.mjs"
 	},
-	"exports": {
-		".": "./src/index.ts"
+	"files": [
+		"bin",
+		"dist",
+		"README.md"
+	],
+	"engines": {
+		"node": ">=20"
 	},
 	"scripts": {
+		"build": "esbuild src/cli.ts --bundle --platform=node --format=esm --outfile=dist/cli.mjs --log-level=warning",
+		"prepublishOnly": "pnpm build",
 		"typecheck": "tsc --noEmit"
-	},
-	"dependencies": {
-		"fflate": "^0.8.3",
-		"skill-schema": "workspace:*",
-		"tsx": "^4.19.0",
-		"validator": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",
-		"typescript": "^6.0.3"
+		"esbuild": "^0.28.1",
+		"fflate": "^0.8.3",
+		"skill-schema": "workspace:*",
+		"typescript": "^6.0.3",
+		"validator": "workspace:*"
 	}
 }

@@ -103,6 +103,18 @@ describe('runReport', () => {
 		expect(text).toContain('+ network.fetch (new)');
 	});
 
+	it('colors status, risk, and the verified marker with a styler', async () => {
+		const { ANSI } = await import('./style');
+		const result = await runReport('smoke-clean', {
+			style: ANSI,
+			fetchImpl: stubFetch(happyRoutes),
+		});
+		const text = result.lines.join('\n');
+		expect(text).toContain('\x1b[32mPASSED\x1b[39m');
+		expect(text).toContain('\x1b[32mlow\x1b[39m');
+		expect(text).toContain('\x1b[32m(verified)\x1b[39m');
+	});
+
 	it('lists pack members on a pack report and stays silent for singles', async () => {
 		const single = await runReport('smoke-clean', { fetchImpl: stubFetch(happyRoutes) });
 		expect(single.lines.join('\n')).not.toContain('Pack');

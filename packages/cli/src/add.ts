@@ -16,6 +16,7 @@ import { fetchPreflight, resolveApiUrl } from './api';
 import { resolvePackMembers } from './pack';
 import { renderPreflightReport } from './render';
 import type { CommandResult } from './scan';
+import type { Styler } from './style';
 import {
 	MAPPED_TARGETS,
 	mappableDeclaredTargets,
@@ -33,6 +34,7 @@ export interface AddOptions {
 	fetchImpl?: typeof fetch;
 	confirmImpl?: (question: string) => Promise<boolean>;
 	promptImpl?: (question: string) => Promise<string>;
+	style?: Styler;
 	// Streams lines as they happen so interactive prompts appear AFTER the
 	// pre-flight report, not before it. Lines are still returned for tests.
 	emit?: (text: string) => void;
@@ -245,7 +247,7 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 		return done(fetched.result.exitCode);
 	}
 	const { slug, detail, preflight } = fetched;
-	push(...renderPreflightReport(detail, preflight));
+	push(...renderPreflightReport(detail, preflight, opts.style));
 
 	if (preflight.blocked) {
 		return done(1);
