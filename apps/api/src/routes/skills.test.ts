@@ -22,9 +22,11 @@ import type { Db } from '../db/client';
 import type { SkillPassportRow, SkillRow, SkillVersionRow, UserRow } from '../db/schema';
 import {
 	findPublishedSkillBySlug,
+	findSkillBySlug,
 	findVersionWithPassport,
 	listPublishedSkills,
 	listVersionsWithPassports,
+	setSkillStatus,
 	type PublishedSkillRecord,
 } from '../db/skills';
 import { loadEnv } from '../env';
@@ -36,8 +38,10 @@ vi.mock('../db/skills', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../db/skills')>()),
 	listPublishedSkills: vi.fn(),
 	findPublishedSkillBySlug: vi.fn(),
+	findSkillBySlug: vi.fn(),
 	findVersionWithPassport: vi.fn(),
 	listVersionsWithPassports: vi.fn(),
+	setSkillStatus: vi.fn(),
 }));
 vi.mock('../storage/r2', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../storage/r2')>()),
@@ -819,5 +823,90 @@ describe('POST /skills/:slug/report', () => {
 		expect(text).not.toContain('reporterId');
 		expect(text).not.toContain('skillId');
 		expect(text).not.toContain('"id"');
+	});
+});
+
+describe('POST /skills/:slug/unlist and /skills/:slug/relist', () => {
+	it('401s an anonymous request', async () => {
+		const res = await app.request('/skills/smoke-clean/unlist', { method: 'POST' });
+		expect(res.status).toBe(401);
+	});
+
+	it('404s an unknown slug', async () => {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
+		const res = await app.request('/skills/nope/unlist', {
+			method: 'POST',
+			headers: { Cookie: await sessionCookie(maintainer.id) },
+		});
+		expect(res.status).toBe(404);
+		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
+	});
+
+	it("404s someone else's skill - no existence leak", async () => {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill, maintainerId: 99 });
+		const res = await app.request('/skills/smoke-clean/unlist', {
+			method: 'POST',
+			headers: { Cookie: await sessionCookie(maintainer.id) },
+		});
+		expect(res.status).toBe(404);
+		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
+	});
+
+	it('409s unlisting a skill that is not published', async () => {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill, status: 'flagged' });
+		const res = await app.request('/skills/smoke-clean/unlist', {
+			method: 'POST',
+			headers: { Cookie: await sessionCookie(maintainer.id) },
+		});
+		expect(res.status).toBe(409);
+		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
+	});
+
+	it('unlists a published skill to private', async () => {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill });
+		const res = await app.request('/skills/smoke-clean/unlist', {
+			method: 'POST',
+			headers: { Cookie: await sessionCookie(maintainer.id) },
+		});
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({
+			success: true,
+			data: { slug: 'smoke-clean', status: 'private' },
+		});
+		expect(vi.mocked(setSkillStatus)).toHaveBeenCalledWith(expect.anything(), skill.id, 'private');
+	});
+
+	it('409s relisting a skill that is not private', async () => {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill, status: 'published' });
+		const res = await app.request('/skills/smoke-clean/relist', {
+			method: 'POST',
+			headers: { Cookie: await sessionCookie(maintainer.id) },
+		});
+		expect(res.status).toBe(409);
+		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
+	});
+
+	it('relists a private skill to published', async () => {
+		vi.mocked(findById).mockResolvedValue(maintainer);
+		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill, status: 'private' });
+		const res = await app.request('/skills/smoke-clean/relist', {
+			method: 'POST',
+			headers: { Cookie: await sessionCookie(maintainer.id) },
+		});
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({
+			success: true,
+			data: { slug: 'smoke-clean', status: 'published' },
+		});
+		expect(vi.mocked(setSkillStatus)).toHaveBeenCalledWith(
+			expect.anything(),
+			skill.id,
+			'published',
+		);
 	});
 });

@@ -87,3 +87,43 @@ describe('request failure mapping', () => {
 		});
 	});
 });
+
+describe('maintainer dashboard calls', () => {
+	it('GETs /me/skills with credentials', async () => {
+		const fn = mockFetch({ json: { success: true, data: [] } });
+		const { getMySkills } = await import('./api');
+		expect(await getMySkills()).toEqual({ success: true, data: [] });
+		const [url, init] = fn.mock.calls[0];
+		expect(url).toBe(`${API_URL}/me/skills`);
+		expect(init.credentials).toBe('include');
+	});
+
+	it('GETs /me/reports and /submissions', async () => {
+		const fn = mockFetch({ json: { success: true, data: [] } });
+		const { getMyReports, getMySubmissions } = await import('./api');
+		await getMyReports();
+		await getMySubmissions();
+		expect(fn.mock.calls[0][0]).toBe(`${API_URL}/me/reports`);
+		expect(fn.mock.calls[1][0]).toBe(`${API_URL}/submissions`);
+	});
+
+	it('POSTs unlist and relist with an encoded slug', async () => {
+		const fn = mockFetch({ json: { success: true, data: { slug: 'a b', status: 'private' } } });
+		const { relistSkill, unlistSkill } = await import('./api');
+		await unlistSkill('a b');
+		await relistSkill('a b');
+		expect(fn.mock.calls[0][0]).toBe(`${API_URL}/skills/a%20b/unlist`);
+		expect(fn.mock.calls[0][1].method).toBe('POST');
+		expect(fn.mock.calls[1][0]).toBe(`${API_URL}/skills/a%20b/relist`);
+	});
+
+	it('attaches the status on a 409 refusal', async () => {
+		mockFetch({ status: 409, json: { success: false, error: 'only a published skill can be unlisted' } });
+		const { unlistSkill } = await import('./api');
+		expect(await unlistSkill('x')).toEqual({
+			success: false,
+			error: 'only a published skill can be unlisted',
+			status: 409,
+		});
+	});
+});

@@ -7,6 +7,7 @@ import type { Env } from './env';
 import type { ValidationQueue } from './queue/queue';
 import { adminRoutes } from './routes/admin';
 import { authRoutes } from './routes/auth';
+import { meRoutes } from './routes/me';
 import { skillRoutes } from './routes/skills';
 import { submissionRoutes } from './routes/submissions';
 import { userRoutes } from './routes/users';
@@ -32,6 +33,7 @@ export function createApp(env: Env, db: Db, queue: ValidationQueue | null) {
 	app.get('/me', requireAuth(env, db), (c) =>
 		c.json({ success: true, data: publicUser(c.get('user')) }),
 	);
+	app.route('/me', meRoutes(env, db));
 
 	return app;
 }

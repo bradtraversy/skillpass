@@ -5,6 +5,7 @@ import type {
 	AiReview,
 	CategorySlug,
 	IntegrationSlug,
+	MaintainerSkill,
 	PublicSkillDetail,
 	PublicSkillSummary,
 } from 'skill-schema';
@@ -110,6 +111,39 @@ export async function listPublishedSkillsByMaintainer(
 		.innerJoin(users, eq(skills.maintainerId, users.id))
 		.where(and(eq(skills.status, 'published'), eq(skills.maintainerId, maintainerId)))
 		.orderBy(desc(skillVersions.publishedAt), desc(skills.id));
+}
+
+// Every skill a maintainer owns, any status; left joins so a row whose latest
+// version or passport is missing still shows on the dashboard.
+export interface MaintainerSkillRecord {
+	skill: SkillRow;
+	version: SkillVersionRow | null;
+	passport: SkillPassportRow | null;
+}
+
+export async function listSkillsByMaintainer(
+	db: Db,
+	maintainerId: number,
+): Promise<MaintainerSkillRecord[]> {
+	return db
+		.select({ skill: skills, version: skillVersions, passport: skillPassports })
+		.from(skills)
+		.leftJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
+		.leftJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
+		.where(eq(skills.maintainerId, maintainerId))
+		.orderBy(desc(skills.updatedAt), desc(skills.id));
+}
+
+export function maintainerSkill(r: MaintainerSkillRecord): MaintainerSkill {
+	return {
+		slug: r.skill.slug,
+		name: r.skill.displayName ?? r.skill.name,
+		status: r.skill.status,
+		version: r.version?.version ?? null,
+		validationStatus: r.passport?.validationStatus ?? null,
+		riskLevel: r.passport?.riskLevel ?? null,
+		updatedAt: r.skill.updatedAt.toISOString(),
+	};
 }
 
 export async function findPublishedSkillBySlug(

@@ -1,5 +1,5 @@
 import { and, desc, eq } from 'drizzle-orm';
-import type { AdminAbuseReport } from 'skill-schema';
+import type { AdminAbuseReport, MaintainerReport } from 'skill-schema';
 import type { Db } from './client';
 import { abuseReports, skills, users, type AbuseReportRow } from './schema';
 
@@ -49,6 +49,35 @@ export async function listOpenAbuseReports(db: Db): Promise<AdminAbuseReportReco
 		.innerJoin(users, eq(abuseReports.reporterId, users.id))
 		.where(eq(abuseReports.status, 'open'))
 		.orderBy(desc(abuseReports.createdAt), desc(abuseReports.id));
+}
+
+// Reports filed against a maintainer's skills. The reporter is deliberately
+// not selected - maintainers never see who filed.
+export interface MaintainerReportRecord {
+	report: AbuseReportRow;
+	skill: { slug: string; name: string };
+}
+
+export async function listReportsAgainstMaintainer(
+	db: Db,
+	maintainerId: number,
+): Promise<MaintainerReportRecord[]> {
+	return db
+		.select({ report: abuseReports, skill: { slug: skills.slug, name: skills.name } })
+		.from(abuseReports)
+		.innerJoin(skills, eq(abuseReports.skillId, skills.id))
+		.where(eq(skills.maintainerId, maintainerId))
+		.orderBy(desc(abuseReports.createdAt), desc(abuseReports.id));
+}
+
+export function maintainerReport(r: MaintainerReportRecord): MaintainerReport {
+	return {
+		id: r.report.id,
+		skill: { slug: r.skill.slug, name: r.skill.name },
+		reason: r.report.reason,
+		status: r.report.status,
+		createdAt: r.report.createdAt.toISOString(),
+	};
 }
 
 export function adminAbuseReport(r: AdminAbuseReportRecord): AdminAbuseReport {

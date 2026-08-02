@@ -4,14 +4,18 @@ import type {
 	AdminVersionHistory,
 	ApiEnvelope,
 	CreatedSubmission,
+	MaintainerReport,
+	MaintainerSkill,
 	PublicAbuseReport,
 	PublicPreflight,
 	PublicProfile,
 	PublicSkillDetail,
 	PublicSkillSource,
 	PublicSkillSummary,
+	PublicSubmission,
 	PublicValidation,
 	PublishResult,
+	SkillStatus,
 } from 'skill-schema';
 
 // The only knob the static site needs to find the API.
@@ -86,6 +90,26 @@ export function getSkillSource(
 
 export function getProfile(username: string, init?: RequestInit): Promise<ApiResult<PublicProfile>> {
 	return request(`/users/${encodeURIComponent(username)}`, init);
+}
+
+export function getMySkills(): Promise<ApiResult<MaintainerSkill[]>> {
+	return request('/me/skills');
+}
+
+export function getMyReports(): Promise<ApiResult<MaintainerReport[]>> {
+	return request('/me/reports');
+}
+
+export function getMySubmissions(): Promise<ApiResult<PublicSubmission[]>> {
+	return request('/submissions');
+}
+
+export function unlistSkill(slug: string): Promise<ApiResult<{ slug: string; status: SkillStatus }>> {
+	return request(`/skills/${encodeURIComponent(slug)}/unlist`, { method: 'POST' });
+}
+
+export function relistSkill(slug: string): Promise<ApiResult<{ slug: string; status: SkillStatus }>> {
+	return request(`/skills/${encodeURIComponent(slug)}/relist`, { method: 'POST' });
 }
 
 export function getPreflight(slug: string, version: string): Promise<ApiResult<PublicPreflight>> {

@@ -1,5 +1,5 @@
 import { strToU8, zipSync } from 'fflate';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import {
 	diffPermissions,
 	parseAbuseReportInput,
@@ -15,11 +15,13 @@ import { recordDownload } from '../db/downloads';
 import { findAiReviewByHash } from '../db/reviews';
 import {
 	findPublishedSkillBySlug,
+	findSkillBySlug,
 	findVersionWithPassport,
 	listPublishedSkills,
 	listVersionsWithPassports,
 	publicSkillDetail,
 	publicSkillSummary,
+	setSkillStatus,
 	type VersionWithPassport,
 } from '../db/skills';
 import type { Env } from '../env';
@@ -106,6 +108,38 @@ export function skillRoutes(env: Env, db: Db) {
 		};
 		return c.json({ success: true, data }, 201);
 	});
+
+	// Owner-scoped status flips: unlist withdraws a published listing (versions,
+	// passports, and snapshots stay immutable; the slug stays reserved), relist
+	// restores it. Someone else's slug is a 404, never a 403 - no existence leak.
+	const transitionHandler = (
+		from: 'published' | 'private',
+		to: 'published' | 'private',
+		refusal: string,
+	) => {
+		return async (c: Context<{ Variables: AuthVariables }>) => {
+			const skill = await findSkillBySlug(db, c.req.param('slug') ?? '');
+			if (!skill || skill.maintainerId !== c.get('user').id) {
+				return c.json({ success: false, error: 'not found' }, 404);
+			}
+			if (skill.status !== from) {
+				return c.json({ success: false, error: refusal }, 409);
+			}
+			await setSkillStatus(db, skill.id, to);
+			return c.json({ success: true, data: { slug: skill.slug, status: to } });
+		};
+	};
+
+	routes.post(
+		'/:slug/unlist',
+		requireAuth(env, db),
+		transitionHandler('published', 'private', 'only a published skill can be unlisted'),
+	);
+	routes.post(
+		'/:slug/relist',
+		requireAuth(env, db),
+		transitionHandler('private', 'published', 'only an unlisted skill can be relisted'),
+	);
 
 	routes.get('/', async (c) => {
 		const records = await listPublishedSkills(db);

@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/nav/Nav.astro';
+import Dashboard from '../components/dashboard/Dashboard';
+---
+
+<BaseLayout title="Dashboard - SkillPass" noindex>
+	<Nav />
+	<main class="mx-auto max-w-[760px] px-6">
+		<header class="pt-[34px] pb-[24px]">
+			<h1 class="text-[22px] font-bold tracking-[-0.01em]">Dashboard</h1>
+			<p class="mt-[5px] text-[13px] text-muted">
+				Your listings, submissions, and any reports filed against your skills.
+			</p>
+		</header>
+		<Dashboard client:load />
+	</main>
+</BaseLayout>

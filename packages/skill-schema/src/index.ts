@@ -16,3 +16,4 @@ export * from './preflight';
 export * from './profile';
 export * from './abuse';
 export * from './admin';
+export * from './maintainer';

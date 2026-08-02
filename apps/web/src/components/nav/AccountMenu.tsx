@@ -59,6 +59,12 @@ export default function AccountMenu() {
 			</button>
 			{open && (
 				<div className="absolute right-0 top-[calc(100%+12px)] z-10 min-w-[150px] rounded-sm border border-border-2 bg-surface p-1 shadow-lg">
+					<a
+						href="/dashboard"
+						className="block w-full rounded-[4px] px-3 py-2 text-left text-[13px] text-muted hover:bg-hover hover:text-text"
+					>
+						Dashboard
+					</a>
 					<button
 						type="button"
 						onClick={onSignOut}
