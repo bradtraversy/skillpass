@@ -1,6 +1,6 @@
 {
 	"name": "skillpass",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Validation-first installer for AI agent skills: search the SkillPass directory, inspect a skill's passport, and install hash-verified skills and packs for Claude Code, Codex, and more.",
 	"keywords": [
 		"ai",
