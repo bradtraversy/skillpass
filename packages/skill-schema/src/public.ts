@@ -37,6 +37,8 @@ export const publicSkillSummarySchema = z.strictObject({
 	publishedAt: z.iso.datetime(),
 });
 
+export const publicSkillListSchema = z.array(publicSkillSummarySchema);
+
 export const publicSkillVersionSchema = z.strictObject({
 	version: z.string().min(1),
 	validationStatus: validationStatusSchema,

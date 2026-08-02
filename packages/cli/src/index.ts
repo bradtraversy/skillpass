@@ -4,6 +4,8 @@ import { runAdd } from './add';
 import { runList } from './list';
 import { runRemove } from './remove';
 import { runReport } from './report';
+import { runSearch } from './search';
+import { styler } from './style';
 import type { CommandResult } from './scan';
 import { runScan } from './scan';
 
@@ -17,6 +19,8 @@ export const USAGE = [
 	'skillpass - validate AI agent skills locally and inspect hosted passports',
 	'',
 	'Usage:',
+	'  skillpass search [query] [--target <tool>] [--category <slug>] [--packs] [--json]',
+	'                                             find skills in the directory',
 	'  skillpass scan <path> [--json]              run the validator on a local skill package',
 	'  skillpass report <slug>[@version] [--json]  fetch the hosted passport pre-flight',
 	'  skillpass add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]',
@@ -32,10 +36,12 @@ export const USAGE = [
 	'  --global  with --target claude-code, install to ~/.claude/skills instead',
 	'  --dir     install target directory (default ./<slug>)',
 	'  --yes     skip the confirmation prompt for medium+ risk skills',
+	'  --category  search filter: a directory category slug',
+	'  --packs   search filter: multi-skill packs only',
 	'  --version print the CLI version',
 	'  --help    show this message',
 	'',
-	'The report and add commands read the API base URL from SKILLPASS_API.',
+	'The search, report, and add commands read the API base URL from SKILLPASS_API.',
 	'Exit codes: 0 ok/warning, 1 failed or blocked, 2 usage/load/network errors.',
 ].join('\n');
 
@@ -47,8 +53,10 @@ export interface ParsedArgs {
 	version: boolean;
 	yes: boolean;
 	global: boolean;
+	packs: boolean;
 	dir?: string;
 	target?: string;
+	category?: string;
 	// Canonical names of every flag encountered, for per-command validation.
 	seen: string[];
 	// First parse error (unknown flag, missing value); commands must not run.
@@ -61,6 +69,7 @@ const COMMAND_FLAGS: Record<string, string[]> = {
 	add: ['--yes', '--target', '--dir', '--global'],
 	remove: ['--target', '--dir', '--global'],
 	list: [],
+	search: ['--target', '--category', '--packs', '--json'],
 };
 
 export function parseCliArgs(argv: string[]): ParsedArgs {
@@ -71,6 +80,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 		version: false,
 		yes: false,
 		global: false,
+		packs: false,
 		seen: [],
 	};
 	for (let i = 0; i < argv.length; i++) {
@@ -84,7 +94,10 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 		} else if (arg === '--global') {
 			parsed.global = true;
 			parsed.seen.push(arg);
-		} else if (arg === '--dir' || arg === '--target') {
+		} else if (arg === '--packs') {
+			parsed.packs = true;
+			parsed.seen.push(arg);
+		} else if (arg === '--dir' || arg === '--target' || arg === '--category') {
 			parsed.seen.push(arg);
 			const value = argv[i + 1];
 			if (value === undefined || value.startsWith('-')) {
@@ -93,8 +106,10 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 				i++;
 				if (arg === '--dir') {
 					parsed.dir = value;
-				} else {
+				} else if (arg === '--target') {
 					parsed.target = value;
+				} else {
+					parsed.category = value;
 				}
 			}
 		} else if (arg === '--help' || arg === '-h') {
@@ -144,6 +159,17 @@ export async function run(argv: string[]): Promise<CommandResult> {
 	const disallowed = allowed && args.seen.find((flag) => !allowed.includes(flag));
 	if (disallowed) {
 		return { lines: [`error: ${args.command} does not take ${disallowed}`, '', USAGE], exitCode: 2 };
+	}
+	if (args.command === 'search') {
+		return runSearch({
+			query: args.positional.join(' '),
+			target: args.target,
+			category: args.category,
+			packs: args.packs,
+			json: args.json,
+			width: process.stdout.isTTY ? process.stdout.columns : undefined,
+			style: styler(Boolean(process.stdout.isTTY)),
+		});
 	}
 	if (args.command === 'scan') {
 		const [path] = args.positional;

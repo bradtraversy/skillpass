@@ -12,6 +12,7 @@ describe('parseCliArgs', () => {
 			version: false,
 			yes: false,
 			global: false,
+			packs: false,
 			seen: ['--json'],
 		});
 	});
@@ -25,6 +26,7 @@ describe('parseCliArgs', () => {
 			version: false,
 			yes: false,
 			global: false,
+			packs: false,
 			seen: [],
 		});
 	});
@@ -38,6 +40,7 @@ describe('parseCliArgs', () => {
 			version: false,
 			yes: true,
 			global: false,
+			packs: false,
 			dir: './here',
 			seen: ['--dir', '--yes'],
 		});
@@ -52,6 +55,7 @@ describe('parseCliArgs', () => {
 			version: false,
 			yes: false,
 			global: true,
+			packs: false,
 			target: 'claude-code',
 			seen: ['--target', '--global'],
 		});
@@ -67,6 +71,18 @@ describe('parseCliArgs', () => {
 		expect(parseCliArgs(['add', 'smoke-clean', '--dir', '--yes']).invalid).toBe(
 			'--dir needs a value',
 		);
+	});
+
+	it('parses --category with a value and --packs', () => {
+		const parsed = parseCliArgs(['search', 'commit', '--category', 'agent-workflow', '--packs']);
+		expect(parsed.category).toBe('agent-workflow');
+		expect(parsed.packs).toBe(true);
+		expect(parsed.positional).toEqual(['commit']);
+		expect(parsed.seen).toEqual(['--category', '--packs']);
+	});
+
+	it('marks --category with a missing value invalid', () => {
+		expect(parseCliArgs(['search', '--category']).invalid).toBe('--category needs a value');
 	});
 
 	it('keeps the first error when several flags are bad', () => {
@@ -122,6 +138,14 @@ describe('run', () => {
 		const scanYes = await run(['scan', './pkg', '--yes']);
 		expect(scanYes.exitCode).toBe(2);
 		expect(scanYes.lines[0]).toBe('error: scan does not take --yes');
+
+		const addPacks = await run(['add', 'smoke-clean', '--packs']);
+		expect(addPacks.exitCode).toBe(2);
+		expect(addPacks.lines[0]).toBe('error: add does not take --packs');
+
+		const searchYes = await run(['search', 'x', '--yes']);
+		expect(searchYes.exitCode).toBe(2);
+		expect(searchYes.lines[0]).toBe('error: search does not take --yes');
 
 		const addJson = await run(['add', 'smoke-clean', '--json']);
 		expect(addJson.exitCode).toBe(2);

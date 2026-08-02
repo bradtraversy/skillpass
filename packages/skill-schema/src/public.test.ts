@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	publicSkillDetailSchema,
+	publicSkillListSchema,
 	publicSkillSourceSchema,
 	publicSkillSummarySchema,
 	type PublicSkillDetail,
@@ -52,6 +53,13 @@ const detail: PublicSkillDetail = {
 	],
 	aiReview: null,
 };
+
+describe('publicSkillListSchema', () => {
+	it('parses an array of summaries and rejects a bad row', () => {
+		expect(publicSkillListSchema.parse([summary])).toEqual([summary]);
+		expect(publicSkillListSchema.safeParse([{ ...summary, slug: '' }]).success).toBe(false);
+	});
+});
 
 describe('publicSkillSummarySchema', () => {
 	it('parses a valid summary', () => {
