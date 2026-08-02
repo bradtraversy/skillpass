@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../nav/Nav.astro';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '');
+const pages = [
+	{ href: '/docs', label: 'What is SkillPass' },
+	{ href: '/docs/validation', label: 'Validation & permissions' },
+	{ href: '/docs/submitting', label: 'Submitting a skill' },
+	{ href: '/docs/cli', label: 'The skillpass CLI' },
+];
+---
+
+<BaseLayout title={`${title} - SkillPass docs`}>
+	<Nav />
+	<main class="mx-auto max-w-page px-6 pb-24">
+		<div class="mx-auto mt-14 flex max-w-[980px] gap-12">
+			<aside class="hidden w-[210px] shrink-0 md:block">
+				<nav class="sticky top-8 flex flex-col gap-1 text-[13.5px]">
+					{
+						pages.map((page) => (
+							<a
+								href={page.href}
+								class={`rounded-sm px-3 py-[7px] ${
+									path === page.href
+										? 'bg-surface font-medium text-text'
+										: 'text-muted hover:text-text'
+								}`}
+							>
+								{page.label}
+							</a>
+						))
+					}
+				</nav>
+			</aside>
+			<article class="min-w-0 flex-1">
+				<h1 class="text-[26px] font-semibold tracking-[-0.02em]">{title}</h1>
+				<slot />
+			</article>
+		</div>
+	</main>
+</BaseLayout>
+
+<style>
+	article :global(h2) {
+		margin-top: 38px;
+		font-size: 17px;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+	}
+	article :global(p) {
+		margin-top: 12px;
+		font-size: 14.5px;
+		line-height: 1.65;
+		color: var(--color-muted);
+	}
+	article :global(ul),
+	article :global(ol) {
+		margin-top: 12px;
+		display: grid;
+		gap: 7px;
+		padding-left: 20px;
+		font-size: 14.5px;
+		line-height: 1.6;
+		color: var(--color-muted);
+		list-style: disc;
+	}
+	article :global(ol) {
+		list-style: decimal;
+	}
+	article :global(strong) {
+		color: var(--color-text);
+		font-weight: 600;
+	}
+	article :global(a) {
+		color: var(--color-accent);
+	}
+	article :global(a:hover) {
+		color: var(--color-accent-hover);
+	}
+	article :global(code) {
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		background: var(--color-surface);
+		padding: 1px 5px;
+		font-family: var(--font-mono);
+		font-size: 12.5px;
+		color: var(--color-text);
+	}
+	article :global(pre) {
+		margin-top: 12px;
+		overflow-x: auto;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--color-bg-well);
+		padding: 13px 16px;
+		font-size: 12.5px;
+		line-height: 1.65;
+	}
+	article :global(pre code) {
+		border: none;
+		background: none;
+		padding: 0;
+	}
+	article :global(table) {
+		margin-top: 14px;
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 13px;
+	}
+	article :global(th) {
+		border-bottom: 1px solid var(--color-border-2);
+		padding: 7px 10px 7px 0;
+		text-align: left;
+		font-weight: 500;
+		color: var(--color-faint);
+	}
+	article :global(td) {
+		border-bottom: 1px solid var(--color-border);
+		padding: 8px 10px 8px 0;
+		vertical-align: top;
+		color: var(--color-muted);
+	}
+</style>

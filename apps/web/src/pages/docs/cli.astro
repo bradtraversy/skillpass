@@ -1,0 +1,89 @@
+---
+import DocsShell from '../../components/docs/DocsShell.astro';
+---
+
+<DocsShell title="The skillpass CLI">
+	<p>
+		Search the directory, inspect passports, and install skills - every install verified
+		byte-for-byte against the validated snapshot before anything touches disk.
+	</p>
+
+	<h2>Install</h2>
+	<pre><code>npm install -g skillpass</code></pre>
+	<p>Node 20 or newer. Zero runtime dependencies.</p>
+
+	<h2>Find: search</h2>
+	<pre><code>skillpass search pdf
+skillpass search --packs
+skillpass search --target codex --category security-review</code></pre>
+	<p>
+		Searches the same fields as the website (names, summaries, authors, tools, pack members).
+		<code>--json</code> emits machine output; piped output is always plain and grep-friendly.
+	</p>
+
+	<h2>Inspect: report</h2>
+	<pre><code>skillpass report pdf
+skillpass report pdf&#64;1.0.0 --json</code></pre>
+	<p>
+		Prints the version's Skill Passport before you install anything: status, risk, declared vs
+		detected permissions, the permission diff against the previous version, and the pinned source
+		hash. Failed versions are blocked from download.
+	</p>
+
+	<h2>Validate: scan</h2>
+	<pre><code>skillpass scan ./my-skill</code></pre>
+	<p>
+		Runs the same validator the directory uses on a local folder - check your own skill before
+		<a href="/docs/submitting">submitting it</a>.
+	</p>
+
+	<h2>Install: add</h2>
+	<pre><code>skillpass add pdf --target claude-code            # .claude/skills/pdf (project)
+skillpass add pdf --target claude-code --global   # ~/.claude/skills/pdf
+skillpass add pdf --dir ./somewhere               # anywhere you point it
+skillpass add ai-blueprint --target codex          # a pack: every member installs</code></pre>
+	<p>
+		The pre-flight report shows first; medium+ risk asks for confirmation; the download re-verifies
+		against the pinned hash; writes are atomic. With no flags in a terminal you get an interactive
+		location picker. Installing a <strong>pack</strong> fans every member skill out into the
+		tool's skills area using that tool's variant files.
+	</p>
+
+	<h2>Track: list and outdated</h2>
+	<pre><code>skillpass list        # installed skills with versions, offline
+skillpass outdated    # compares to the directory; exits 1 when updates exist</code></pre>
+	<p>
+		Installs into the known skills areas are recorded in a per-area <code>.skillpass.json</code>
+		receipt. Your own hand-made skills in the same folders are left alone - the CLI only tracks
+		what it installed.
+	</p>
+
+	<h2>Update</h2>
+	<pre><code>skillpass update pdf
+skillpass update pdf&#64;1.0.0     # pinning works for downgrades too
+skillpass update ai-blueprint  # packs: members swap, new ones add, dropped ones remove</code></pre>
+	<p>
+		An update re-runs the whole trust gate and shows the <strong>permission diff against the
+		version you actually have installed</strong> - not just the previous publish. The swap is
+		atomic: a failure mid-replace restores what you had.
+	</p>
+
+	<h2>Remove</h2>
+	<pre><code>skillpass remove pdf
+skillpass remove ai-blueprint   # removes the whole pack family</code></pre>
+	<p>
+		Refuses anything that does not look like an installed skill, so a stray <code>--dir</code> can
+		never wipe a real folder.
+	</p>
+
+	<h2>Configuration and exit codes</h2>
+	<ul>
+		<li><code>SKILLPASS_API</code> - override the API base URL (defaults to the public API).</li>
+		<li><code>NO_COLOR</code> - disable colored output; piped output is always plain.</li>
+		<li>
+			Exit codes: <strong>0</strong> success, <strong>1</strong> failed validation or a blocked
+			version (for <code>outdated</code>: updates available), <strong>2</strong> usage, network,
+			or refused operations.
+		</li>
+	</ul>
+</DocsShell>

@@ -1,0 +1,72 @@
+---
+import DocsShell from '../../components/docs/DocsShell.astro';
+---
+
+<DocsShell title="Submitting a skill">
+	<p>
+		Listing a skill takes a GitHub URL and a minute of validation. No manifest is required - the
+		pipeline infers everything from the layouts agent tools already use.
+	</p>
+
+	<h2>The ownership rule</h2>
+	<p>
+		You can only submit <strong>repositories you own</strong>, or org repositories where your
+		membership is public. That is the anti-impersonation line: nobody can list someone else's work
+		under their own name. (Admin-curated listings of notable third-party skills are the
+		exception, and they are always attributed to the source repo owner, not the curator.)
+	</p>
+
+	<h2>What you can point at</h2>
+	<p><strong>A single-skill repo</strong> - a repository with <code>SKILL.md</code> at its root:</p>
+	<pre><code>my-skill/
+  SKILL.md        &lt;- name + description frontmatter
+  reference.md    (any supporting files ship with it)
+  scripts/</code></pre>
+	<p>
+		<strong>A skill inside a bigger repo</strong> - paste a <code>/tree/</code> URL pointing at
+		the folder that contains <code>SKILL.md</code>. Only that folder is snapshotted:
+	</p>
+	<pre><code>https://github.com/you/monorepo/tree/main/skills/my-skill</code></pre>
+	<p>
+		<strong>A workflow pack</strong> - a repo whose skills live in the layouts agent tools use.
+		Submit the repo root and it publishes as <strong>one listing</strong> with every member skill:
+	</p>
+	<pre><code>my-pack/
+  .claude/skills/&lt;name&gt;/SKILL.md    &lt;- entry per member
+  .agents/skills/&lt;name&gt;/SKILL.md    &lt;- paired automatically as the codex variant
+  skills/&lt;name&gt;/SKILL.md            (single-layout packs work too)</code></pre>
+	<p>
+		Same-named folders across the two layouts pair automatically as per-tool variants. An explicit
+		root <code>skill.json</code> with a <code>skills[]</code> array stays available as a power-user
+		override - it is never required. The submit form tells you what it detected ("19-skill pack -
+		will list as ...") before you confirm.
+	</p>
+
+	<h2>What the pipeline does</h2>
+	<ol>
+		<li><strong>Pin</strong> - the URL resolves to an exact commit; a moving branch is never trusted.</li>
+		<li><strong>Snapshot</strong> - the files are captured to storage with a source hash.</li>
+		<li>
+			<strong>Validate</strong> - the snapshot is parsed and scanned; see
+			<a href="/docs/validation">Validation &amp; permissions</a>. You watch the steps live on the
+			submit page.
+		</li>
+		<li>
+			<strong>Publish</strong> - a passed submission publishes with one click. Warnings publish
+			too (they are advisory); only a hard failure - a leaked secret value - blocks listing.
+		</li>
+	</ol>
+
+	<h2>Versions and immutability</h2>
+	<p>
+		Publishing again creates a new version with its own passport; existing passports never change.
+		Permission changes between versions are diffed on the download pre-flight and in the CLI, so
+		your users see exactly what a new version starts asking for.
+	</p>
+
+	<h2>Zip fallback</h2>
+	<p>
+		No public repo? Upload a zip. It goes through the identical snapshot-and-validate pipeline,
+		with the same caps (500 files, 1 MB per file, 10 MB total).
+	</p>
+</DocsShell>

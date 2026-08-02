@@ -1,0 +1,58 @@
+---
+import DocsShell from '../../components/docs/DocsShell.astro';
+---
+
+<DocsShell title="What is SkillPass">
+	<p>
+		SkillPass is a public directory of AI agent skills - reusable instruction packages for tools
+		like Claude Code and Codex - with one rule at its core: <strong
+			>never blindly trust a skill</strong
+		>. A skill is software you hand to an agent that acts on your machine. Before you install one,
+		you should be able to see exactly what it asks the agent to do.
+	</p>
+
+	<h2>The Skill Passport</h2>
+	<p>
+		Every listed skill ships a <strong>Skill Passport</strong>: a public, immutable validation
+		record generated for each published version. It carries the validation status, a risk level,
+		the permissions the skill declares versus the ones the validator actually detected in its
+		files, an AI-written plain-English review of what the skill does, and the pinned source hash
+		of the exact files that were reviewed.
+	</p>
+
+	<h2>The trust chain</h2>
+	<ol>
+		<li>
+			<strong>Pinned at submission</strong> - a submitted repository is resolved to an exact
+			commit and snapshotted. The directory never trusts a moving branch.
+		</li>
+		<li>
+			<strong>Validated</strong> - the snapshot is parsed and scanned: manifest and skill files,
+			permission detection, risky-pattern rules, and an AI review of the instructions themselves.
+		</li>
+		<li>
+			<strong>Published immutably</strong> - a passing version publishes with its passport. The
+			passport never changes; a new version gets a new one, and permission changes between
+			versions are diffed so you can see what a skill started asking for.
+		</li>
+		<li>
+			<strong>Verified at install</strong> - downloads and the <a href="/docs/cli">CLI</a> re-check
+			the bytes against the pinned source hash, so what you install is exactly what was reviewed.
+		</li>
+	</ol>
+
+	<h2>What SkillPass is not</h2>
+	<p>
+		Validation is <strong>advisory, not gatekeeping</strong>. Findings inform the passport rather
+		than block listings - only a leaked secret value hard-fails a submission. The passport tells
+		you what a skill does; the judgment stays yours. There is no pay-to-rank and no engagement
+		bait: listings rank on curation and recency, nothing else.
+	</p>
+
+	<h2>Where to go next</h2>
+	<ul>
+		<li><a href="/docs/validation">Validation &amp; permissions</a> - what the checks mean.</li>
+		<li><a href="/docs/submitting">Submitting a skill</a> - list your own repo or a pack.</li>
+		<li><a href="/docs/cli">The skillpass CLI</a> - search, inspect, and install from the terminal.</li>
+	</ul>
+</DocsShell>
