@@ -79,7 +79,8 @@ const NO_MANIFEST_FILES = [
 
 const SECRET_FILES = [
 	...CLEAN_FILES.slice(0, 1),
-	{ path: 'SKILL.md', content: '# leaky\n\nUse AKIAIOSFODNN7EXAMPLE to sign requests.\n' },
+	// Not AWS's documented AKIAIOSFODNN7EXAMPLE - that placeholder is allowlisted.
+	{ path: 'SKILL.md', content: '# leaky\n\nUse AKIAXXXXXXXXXXXXXXXX to sign requests.\n' },
 ];
 
 function snapshotOk(files: { path: string; content: string }[]) {

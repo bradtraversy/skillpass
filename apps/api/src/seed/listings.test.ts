@@ -40,9 +40,9 @@ describe('seedListingSchema', () => {
 });
 
 describe('SEED_LISTINGS', () => {
-	it('is a valid manifest of all eight waves', () => {
+	it('is a valid manifest of all nine waves', () => {
 		expect(seedManifestSchema.safeParse(SEED_LISTINGS).success).toBe(true);
-		expect(SEED_LISTINGS).toHaveLength(209);
+		expect(SEED_LISTINGS).toHaveLength(242);
 	});
 
 	it('carries the expected count per source, each under its attributed owner', () => {
@@ -82,6 +82,14 @@ describe('SEED_LISTINGS', () => {
 			SawyerHood: 1,
 			'browser-act': 1,
 			aws: 6,
+			google: 6,
+			flutter: 5,
+			getsentry: 5,
+			huggingface: 5,
+			openai: 5,
+			MicrosoftDocs: 5,
+			stripe: 1,
+			neondatabase: 1,
 		});
 	});
 

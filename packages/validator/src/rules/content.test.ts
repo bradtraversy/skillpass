@@ -41,6 +41,17 @@ describe('secret patterns', () => {
 		expect(codesFor(line)).not.toContain('secret-pattern');
 	});
 
+	it.each([
+		['the AWS docs example key', 'env:\n  AWS_SECRET_KEY: AKIAIOSFODNN7EXAMPLE'],
+		['the second AWS docs example key', 'aws_access_key_id = AKIAI44QH8DHBEXAMPLE'],
+	])('does not flag %s (documented placeholder)', (_label, line) => {
+		expect(codesFor(line)).not.toContain('secret-pattern');
+	});
+
+	it('still flags a real-shaped key sharing a line with a placeholder', () => {
+		expect(codesFor('AKIAIOSFODNN7EXAMPLE AKIAXXXXXXXXXXXXXXXX')).toContain('secret-pattern');
+	});
+
 	it('redacts the secret from the snippet', () => {
 		const [finding] = contentRule(pkgWith('token ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'));
 		expect(finding.location?.snippet).toContain('[redacted]');

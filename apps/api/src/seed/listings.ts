@@ -263,6 +263,60 @@ const KNOWLEDGE_WORK_PACKS = [
 	'small-business',
 ];
 
+// Wave 9 (curated 2026-08-03): official vendor cherry-picks - the widely useful
+// core of each org's catalog per the wave-6 rule, never wholesale imports - plus
+// two cohesive vendor plugin packs (Stripe, Neon). Sourced from a skillrepo.dev
+// competitive sweep; the sprawling catalogs (google's 99, MicrosoftDocs' 191)
+// deliberately stay unlisted beyond these picks.
+const GOOGLE_CLOUD_SKILLS = [
+	'gemini-api',
+	'gemini-agents-api',
+	'gcloud',
+	'cloud-run-basics',
+	'bigquery-basics',
+	'firebase-basics',
+];
+
+const FLUTTER_SKILLS = [
+	'flutter-apply-architecture-best-practices',
+	'flutter-add-widget-test',
+	'flutter-build-responsive-layout',
+	'flutter-setup-declarative-routing',
+	'flutter-implement-json-serialization',
+];
+
+const SENTRY_SKILLS = [
+	'security-review',
+	'find-bugs',
+	'skill-scanner',
+	'prompt-optimizer',
+	'code-simplifier',
+];
+
+const HUGGINGFACE_SKILLS = [
+	'huggingface-datasets',
+	'huggingface-local-models',
+	'transformers-js',
+	'huggingface-spaces',
+	'huggingface-llm-trainer',
+];
+
+const OPENAI_SKILLS = [
+	'chatgpt-apps',
+	'playwright',
+	'figma-implement-design',
+	'security-threat-model',
+	'cli-creator',
+];
+
+const AZURE_SKILLS = [
+	'azure-app-service',
+	'azure-container-apps',
+	'azure-blob-storage',
+	'azure-functions',
+	'azure-cosmos-db',
+];
+
 const skillsUnder = (repo: string, names: readonly string[], attributedTo: string) =>
 	names.map((name) => ({
 		githubUrl: `https://github.com/${repo}/tree/main/skills/${name}`,
@@ -358,4 +412,27 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 			.map((w) => w[0].toUpperCase() + w.slice(1))
 			.join(' ')} Pack`,
 	})),
+	...GOOGLE_CLOUD_SKILLS.map((name) => ({
+		githubUrl: `https://github.com/google/skills/tree/main/skills/cloud/${name}`,
+		attributedTo: 'google',
+	})),
+	...skillsUnder('flutter/skills', FLUTTER_SKILLS, 'flutter'),
+	...skillsUnder('getsentry/skills', SENTRY_SKILLS, 'getsentry'),
+	...skillsUnder('huggingface/skills', HUGGINGFACE_SKILLS, 'huggingface'),
+	...OPENAI_SKILLS.map((name) => ({
+		githubUrl: `https://github.com/openai/skills/tree/main/skills/.curated/${name}`,
+		attributedTo: 'openai',
+	})),
+	...skillsUnder('MicrosoftDocs/Agent-Skills', AZURE_SKILLS, 'MicrosoftDocs'),
+	{
+		githubUrl: 'https://github.com/stripe/agent-toolkit/tree/main/providers/claude/plugin',
+		attributedTo: 'stripe',
+		name: 'stripe-agent-toolkit',
+		displayName: 'Stripe Pack',
+	},
+	{
+		githubUrl: 'https://github.com/neondatabase/agent-skills/tree/main/plugins/neon-postgres',
+		attributedTo: 'neondatabase',
+		displayName: 'Neon Postgres Pack',
+	},
 ]);

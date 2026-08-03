@@ -170,10 +170,20 @@ const ALL_ROWS = [
 	...advisory(CREDENTIAL_PATTERNS),
 ];
 
+// Vendor-documented example credentials (AWS's canonical doc keys). Not secrets,
+// so quoting them - as security-education skills do - must not hard-fail a
+// listing. Exact literals only; stripped before matching so a real key sharing
+// a line with a placeholder still fails.
+const DOCUMENTED_PLACEHOLDERS = ['AKIAIOSFODNN7EXAMPLE', 'AKIAI44QH8DHBEXAMPLE'];
+
+const withoutPlaceholders = (line: string): string =>
+	DOCUMENTED_PLACEHOLDERS.reduce((l, p) => l.replaceAll(p, ' '), line);
+
 export const contentRule: Rule = (pkg) => {
 	const findings: RuleFinding[] = [];
 	for (const file of pkg.files) {
-		file.content.split('\n').forEach((line, i) => {
+		file.content.split('\n').forEach((rawLine, i) => {
+			const line = withoutPlaceholders(rawLine);
 			for (const row of ALL_ROWS) {
 				if (row.pattern.test(line)) {
 					const snippet = row.redact ? line.trim().replace(row.pattern, '[redacted]') : line.trim();
