@@ -194,7 +194,7 @@ export async function setSkillStatus(
 export async function setSkillCuration(
 	db: Db,
 	id: number,
-	patch: { featured?: boolean; verified?: boolean },
+	patch: { featured?: boolean; verified?: boolean; displayName?: string },
 	now: Date = new Date(),
 ): Promise<void> {
 	await db

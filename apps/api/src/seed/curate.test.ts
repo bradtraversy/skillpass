@@ -69,6 +69,15 @@ describe('curateSkill', () => {
 		expect(publishSubmission).toHaveBeenCalledOnce();
 	});
 
+	it('a name override drives both the slug and the published name', async () => {
+		const result = await curateSkill(env, db, { ...input, name: 'knowledge-work-sales' });
+		expect(result).toEqual({ slug: 'knowledge-work-sales', status: 'published' });
+		expect(publishSubmission).toHaveBeenCalledWith(
+			db,
+			expect.objectContaining({ name: 'knowledge-work-sales' }),
+		);
+	});
+
 	it('skips when the slug already exists, without submitting or publishing', async () => {
 		vi.mocked(findSkillBySlug).mockResolvedValue({ id: 9, slug: 'pdf-tools' } as never);
 		const result = await curateSkill(env, db, input);

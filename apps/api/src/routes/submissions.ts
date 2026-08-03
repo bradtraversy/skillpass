@@ -27,7 +27,7 @@ import type { SourceErrorCode } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
-import { parseGithubUrl } from '../github/url';
+import { packageNameFor, parseGithubUrl } from '../github/url';
 import { MAX_ZIP_BYTES, type DetectedPackage, type PublicValidation } from 'skill-schema';
 import { publishSubmission, type PublishOutcome } from '../publish/publish';
 import {
@@ -168,7 +168,7 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 			return c.json({ success: false, error: snapshot.error }, SOURCE_ERROR_STATUS[snapshot.code]);
 		}
 
-		const pkg = loadPackageFromFiles(snapshot.data, parsed.data.repo);
+		const pkg = loadPackageFromFiles(snapshot.data, packageNameFor(parsed.data));
 		const key = snapshotKey(pkg.sourceHash);
 		const stored = await putJson(env, key, snapshotDocument(pkg.files));
 		if (!stored.success) {
@@ -328,14 +328,14 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 		}
 
 		// The fallback name feeds pack inference (a pack is named from it), so
-		// prefer the repo name over an opaque submission id.
-		const repoName = submission.githubUrl
+		// prefer the source folder or repo name over an opaque submission id.
+		const sourceName = submission.githubUrl
 			? (() => {
 					const parsed = parseGithubUrl(submission.githubUrl);
-					return parsed.success ? parsed.data.repo : null;
+					return parsed.success ? packageNameFor(parsed.data) : null;
 				})()
 			: null;
-		const pkg = loadPackageFromFiles(snapshot.data.files, repoName ?? `submission-${id}`);
+		const pkg = loadPackageFromFiles(snapshot.data.files, sourceName ?? `submission-${id}`);
 		if (pkg.manifest.state !== 'ok') {
 			// Passed validation implies a valid manifest; this is stored-state corruption.
 			console.error(

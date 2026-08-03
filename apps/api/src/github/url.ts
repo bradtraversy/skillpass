@@ -10,6 +10,15 @@ export interface RepoTarget {
 const OWNER_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
 const REPO_RE = /^[\w.-]+$/;
 
+// A subpath submission is a package rooted at that folder, so the folder names
+// the package. Pack inference names multi-skill packs from this fallback; using
+// the repo name there would collide every pack curated from the same monorepo.
+export function packageNameFor(target: RepoTarget): string {
+	if (!target.subpath) return target.repo;
+	const segments = target.subpath.split('/');
+	return segments[segments.length - 1];
+}
+
 const BAD_URL_HINT =
 	'expected https://github.com/{owner}/{repo}, optionally with /tree/{branch}[/{subpath}]';
 

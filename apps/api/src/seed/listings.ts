@@ -4,6 +4,12 @@ export const seedListingSchema = z.object({
 	githubUrl: z.url(),
 	attributedTo: z.string().min(1),
 	featured: z.boolean().optional(),
+	// Overrides the inferred listing name (and slug) when the source folder's
+	// own name is too generic to own globally (e.g. "sales", "data").
+	name: z.string().min(1).optional(),
+	// Curated card title; wins over the generated display copy, which would
+	// otherwise title-case the slug (knowledge-work-sales -> "Knowledge Work Sales").
+	displayName: z.string().min(1).optional(),
 });
 
 export type SeedListing = z.infer<typeof seedListingSchema>;
@@ -233,6 +239,30 @@ const AWS_SKILLS = [
 	'amazon-bedrock',
 ];
 
+// Wave 8 (curated 2026-08-03): the official Anthropic knowledge-work plugins,
+// one cohesive per-role workflow pack per plugin subpath - skills designed to
+// chain into each other (routers, shared CONNECTORS.md, non-invocable support
+// skills). Excluded: pdf-viewer (a single skill), cowork-plugin-management
+// (plugin-authoring meta), productivity (Cowork session plumbing). Each entry
+// carries a knowledge-work-* name override so one vendor's packs don't claim
+// generic global slugs like "sales" or "data".
+const KNOWLEDGE_WORK_PACKS = [
+	'bio-research',
+	'customer-support',
+	'data',
+	'design',
+	'engineering',
+	'enterprise-search',
+	'finance',
+	'human-resources',
+	'legal',
+	'marketing',
+	'operations',
+	'product-management',
+	'sales',
+	'small-business',
+];
+
 const skillsUnder = (repo: string, names: readonly string[], attributedTo: string) =>
 	names.map((name) => ({
 		githubUrl: `https://github.com/${repo}/tree/main/skills/${name}`,
@@ -318,5 +348,14 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 	...AWS_SKILLS.map((name) => ({
 		githubUrl: `https://github.com/aws/agent-toolkit-for-aws/tree/main/skills/core-skills/${name}`,
 		attributedTo: 'aws',
+	})),
+	...KNOWLEDGE_WORK_PACKS.map((plugin) => ({
+		githubUrl: `https://github.com/anthropics/knowledge-work-plugins/tree/main/${plugin}`,
+		attributedTo: 'anthropics',
+		name: `knowledge-work-${plugin}`,
+		displayName: `${plugin
+			.split('-')
+			.map((w) => w[0].toUpperCase() + w.slice(1))
+			.join(' ')} Pack`,
 	})),
 ]);

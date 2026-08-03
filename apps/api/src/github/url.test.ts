@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseGithubUrl } from './url';
+import { packageNameFor, parseGithubUrl } from './url';
 
 describe('parseGithubUrl accepted forms', () => {
 	it('parses a plain repo URL', () => {
@@ -59,5 +59,23 @@ describe('parseGithubUrl rejects', () => {
 		if (result.success) {
 			expect(result.data).toEqual({ owner: 'octocat', repo: 'hello', ref: 'secrets' });
 		}
+	});
+});
+
+describe('packageNameFor', () => {
+	it('uses the repo name for a root URL', () => {
+		expect(packageNameFor({ owner: 'octocat', repo: 'hello' })).toBe('hello');
+	});
+
+	it('uses the folder name for a single-segment subpath', () => {
+		expect(packageNameFor({ owner: 'a', repo: 'plugins', ref: 'main', subpath: 'sales' })).toBe(
+			'sales',
+		);
+	});
+
+	it('uses the last segment of a nested subpath', () => {
+		expect(
+			packageNameFor({ owner: 'a', repo: 'r', ref: 'main', subpath: 'plugins/expo/skills/expo-router' }),
+		).toBe('expo-router');
 	});
 });

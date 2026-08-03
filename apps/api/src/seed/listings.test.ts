@@ -40,9 +40,9 @@ describe('seedListingSchema', () => {
 });
 
 describe('SEED_LISTINGS', () => {
-	it('is a valid manifest of all seven waves', () => {
+	it('is a valid manifest of all eight waves', () => {
 		expect(seedManifestSchema.safeParse(SEED_LISTINGS).success).toBe(true);
-		expect(SEED_LISTINGS).toHaveLength(195);
+		expect(SEED_LISTINGS).toHaveLength(209);
 	});
 
 	it('carries the expected count per source, each under its attributed owner', () => {
@@ -57,7 +57,7 @@ describe('SEED_LISTINGS', () => {
 			);
 		}
 		expect(Object.fromEntries(counts)).toEqual({
-			anthropics: 17,
+			anthropics: 31,
 			addyosmani: 24,
 			obra: 14,
 			kepano: 5,
@@ -83,6 +83,17 @@ describe('SEED_LISTINGS', () => {
 			'browser-act': 1,
 			aws: 6,
 		});
+	});
+
+	it('gives every knowledge-work pack a namespaced name and a Pack card title', () => {
+		const packs = SEED_LISTINGS.filter((l) => l.githubUrl.includes('/knowledge-work-plugins/'));
+		expect(packs).toHaveLength(14);
+		for (const p of packs) {
+			expect(p.name).toBe(`knowledge-work-${p.githubUrl.split('/').pop()}`);
+			expect(p.displayName).toMatch(/^[A-Z][A-Za-z ]+ Pack$/);
+		}
+		const sales = packs.find((p) => p.githubUrl.endsWith('/sales'));
+		expect(sales?.displayName).toBe('Sales Pack');
 	});
 
 	it('has no duplicate source URLs', () => {

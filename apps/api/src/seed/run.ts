@@ -47,16 +47,23 @@ async function main() {
 			githubUrl: listing.githubUrl,
 			ownerUserId: owner.id,
 			attributedTo: listing.attributedTo,
+			...(listing.name ? { name: listing.name } : {}),
 		});
 		counts[result.status]++;
 		console.log(
 			`  ${result.status.padEnd(9)} ${label}${result.reason ? ` - ${result.reason}` : ''}`,
 		);
 
-		// Featuring (step 4): set the flag on published or already-present standouts.
-		if (listing.featured && result.slug && result.status !== 'failed') {
+		// Curation state (featured, display name) applies to published and
+		// already-present listings alike, so re-runs converge on the manifest.
+		if ((listing.featured || listing.displayName) && result.slug && result.status !== 'failed') {
 			const skill = await findSkillBySlug(db, result.slug);
-			if (skill) await setSkillCuration(db, skill.id, { featured: true });
+			if (skill) {
+				await setSkillCuration(db, skill.id, {
+					...(listing.featured ? { featured: true } : {}),
+					...(listing.displayName ? { displayName: listing.displayName } : {}),
+				});
+			}
 		}
 	}
 

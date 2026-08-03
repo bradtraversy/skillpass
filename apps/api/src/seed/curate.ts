@@ -7,7 +7,7 @@ import { createValidationJob, findValidationReportForSubmission } from '../db/va
 import type { Env } from '../env';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
-import { parseGithubUrl } from '../github/url';
+import { packageNameFor, parseGithubUrl } from '../github/url';
 import { publishSubmission } from '../publish/publish';
 import { processValidationJob } from '../queue/processor';
 import { putJson, snapshotDocument, snapshotKey } from '../storage/r2';
@@ -16,6 +16,9 @@ export interface CurateInput {
 	githubUrl: string;
 	ownerUserId: number;
 	attributedTo: string;
+	// Curation-time listing name; overrides the inferred manifest name (and so
+	// the slug) when a source folder's own name is too generic to own globally.
+	name?: string;
 }
 
 export interface CurateResult {
@@ -39,12 +42,13 @@ export async function curateSkill(env: Env, db: Db, input: CurateInput): Promise
 		const snapshot = await fetchSnapshot(env, parsed.data, pinned.data);
 		if (!snapshot.success) return { slug: null, status: 'failed', reason: snapshot.error };
 
-		const pkg = loadPackageFromFiles(snapshot.data, parsed.data.repo);
+		const pkg = loadPackageFromFiles(snapshot.data, packageNameFor(parsed.data));
 		if (pkg.manifest.state !== 'ok') {
 			return { slug: null, status: 'failed', reason: `manifest ${pkg.manifest.state}` };
 		}
 		const manifest = pkg.manifest.data;
-		const slug = slugForSkill(manifest.name);
+		const name = input.name ?? manifest.name;
+		const slug = slugForSkill(name);
 
 		// Idempotent: a skill with this slug already exists, so this source was
 		// seeded on a prior run. Skip before any write, so re-runs are no-ops.
@@ -74,7 +78,7 @@ export async function curateSkill(env: Env, db: Db, input: CurateInput): Promise
 		const outcome = await publishSubmission(db, {
 			submission,
 			report,
-			name: manifest.name,
+			name,
 			summary: manifest.description,
 			targets: manifest.targets,
 			distribution: manifest.distribution,
