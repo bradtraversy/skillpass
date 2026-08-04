@@ -87,6 +87,7 @@ const skill: SkillRow = {
 	integrations: null,
 	status: 'published',
 	featured: false,
+	featuredRank: null,
 	verified: false,
 	latestVersionId: 1,
 	createdAt: NOW,

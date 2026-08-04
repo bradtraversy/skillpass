@@ -1,7 +1,8 @@
 import { slugForSkill } from 'skill-schema';
 import { loadPackageFromFiles } from 'validator';
 import type { Db } from '../db/client';
-import { findSkillBySlug } from '../db/skills';
+import { findSkillBySlug, setSkillCuration } from '../db/skills';
+import { FEATURED_SLUGS } from './listings';
 import { createSubmission } from '../db/submissions';
 import { createValidationJob, findValidationReportForSubmission } from '../db/validation';
 import type { Env } from '../env';
@@ -25,6 +26,23 @@ export interface CurateResult {
 	slug: string | null;
 	status: 'published' | 'skipped' | 'failed';
 	reason?: string;
+}
+
+// Features every FEATURED_SLUGS entry at its list position (rank = index + 1).
+// Additive: slugs removed from the roster stay featured until an admin unfeatures
+// them. Returns the slugs with no published skill so the runner can report a
+// typo'd or failed roster entry instead of silently skipping it.
+export async function applyFeaturedRanks(db: Db): Promise<string[]> {
+	const missing: string[] = [];
+	for (const [index, slug] of FEATURED_SLUGS.entries()) {
+		const skill = await findSkillBySlug(db, slug);
+		if (!skill) {
+			missing.push(slug);
+			continue;
+		}
+		await setSkillCuration(db, skill.id, { featured: true, featuredRank: index + 1 });
+	}
+	return missing;
 }
 
 // Drives one source through the real submit -> validate -> publish pipeline, the

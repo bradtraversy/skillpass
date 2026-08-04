@@ -147,43 +147,46 @@ describe('filterSkills', () => {
 });
 
 describe('filterSkills tabs', () => {
+	// Input mirrors the API's curated directory order: ranked featured first
+	// (a then c), non-featured after, regardless of publish date.
 	const a = summary({ slug: 'a', name: 'Alpha', featured: true, verified: false, publishedAt: '2026-01-01T00:00:00.000Z' });
-	const b = summary({ slug: 'b', name: 'Bravo', featured: false, verified: true, publishedAt: '2026-03-01T00:00:00.000Z' });
 	const c = summary({ slug: 'c', name: 'Charlie', featured: true, verified: true, publishedAt: '2026-02-01T00:00:00.000Z' });
-	const skills = [a, b, c];
+	const b = summary({ slug: 'b', name: 'Bravo', featured: false, verified: true, publishedAt: '2026-03-01T00:00:00.000Z' });
+	const skills = [a, c, b];
 
-	it('new: returns all, featured first, newest first within each group', () => {
-		expect(filterSkills(skills, { ...base, tab: 'new' }).map((s) => s.slug)).toEqual(['c', 'a', 'b']);
+	it('featured: only featured skills, preserving curated input order', () => {
+		expect(filterSkills(skills, { ...base, tab: 'featured' }).map((s) => s.slug)).toEqual(['a', 'c']);
 	});
 
-	it('new: plain newest order when nothing is featured', () => {
+	it('featured falls back to everything in input order when nothing is featured', () => {
 		const none = [
-			summary({ slug: 'x', featured: false, publishedAt: '2026-01-01T00:00:00.000Z' }),
 			summary({ slug: 'y', featured: false, publishedAt: '2026-02-01T00:00:00.000Z' }),
+			summary({ slug: 'x', featured: false, publishedAt: '2026-01-01T00:00:00.000Z' }),
 		];
-		expect(filterSkills(none, { ...base, tab: 'new' }).map((s) => s.slug)).toEqual(['y', 'x']);
+		expect(filterSkills(none, { ...base, tab: 'featured' }).map((s) => s.slug)).toEqual(['y', 'x']);
 	});
 
-	it('featured: only featured skills, newest first', () => {
-		expect(filterSkills(skills, { ...base, tab: 'featured' }).map((s) => s.slug)).toEqual(['c', 'a']);
+	it('new: pure newest-first, ignoring featured', () => {
+		expect(filterSkills(skills, { ...base, tab: 'new' }).map((s) => s.slug)).toEqual(['b', 'c', 'a']);
 	});
 
 	it('verified: only verified skills, newest first', () => {
 		expect(filterSkills(skills, { ...base, tab: 'verified' }).map((s) => s.slug)).toEqual(['b', 'c']);
 	});
 
-	it('featured falls back to all (newest first) when nothing is featured', () => {
-		const none = [
-			summary({ slug: 'x', featured: false, publishedAt: '2026-01-01T00:00:00.000Z' }),
-			summary({ slug: 'y', featured: false, publishedAt: '2026-02-01T00:00:00.000Z' }),
-		];
-		expect(filterSkills(none, { ...base, tab: 'featured' }).map((s) => s.slug)).toEqual(['y', 'x']);
+	it('an active query overrides the tab and spans the whole catalog', () => {
+		const out = filterSkills(skills, { ...base, tab: 'featured', query: 'bravo' });
+		expect(out.map((s) => s.slug)).toEqual(['b']);
 	});
 
-	it('composes the tab with the text query', () => {
-		expect(filterSkills(skills, { ...base, tab: 'verified', query: 'bravo' }).map((s) => s.slug)).toEqual([
-			'b',
-		]);
+	it('query results keep directory order across featured and non-featured', () => {
+		const out = filterSkills(skills, { ...base, tab: 'new', query: 'a' });
+		expect(out.map((s) => s.slug)).toEqual(['a', 'c', 'b']);
+	});
+
+	it('sidebar filters stay tab-scoped', () => {
+		const out = filterSkills(skills, { ...base, tab: 'featured', verdict: 'passed' });
+		expect(out.map((s) => s.slug)).toEqual(['a', 'c']);
 	});
 });
 

@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { SEED_LISTINGS, seedListingSchema, seedManifestSchema } from './listings';
+import { FEATURED_SLUGS, SEED_LISTINGS, seedListingSchema, seedManifestSchema } from './listings';
 
 describe('seedListingSchema', () => {
 	it('accepts a valid listing', () => {
 		const parsed = seedListingSchema.safeParse({
 			githubUrl: 'https://github.com/anthropics/skills/tree/main/skills/pdf',
 			attributedTo: 'anthropics',
-			featured: true,
 		});
 		expect(parsed.success).toBe(true);
 	});
 
-	it('accepts a listing without the optional featured flag', () => {
+	it('accepts the optional name and displayName overrides', () => {
 		const parsed = seedListingSchema.safeParse({
 			githubUrl: 'https://github.com/owner/repo',
 			attributedTo: 'owner',
+			name: 'owner-pack',
+			displayName: 'Owner Pack',
 		});
 		expect(parsed.success).toBe(true);
 	});
@@ -110,20 +111,15 @@ describe('SEED_LISTINGS', () => {
 		expect(new Set(urls).size).toBe(urls.length);
 	});
 
-	it('marks the chosen standouts as featured', () => {
-		const featured = SEED_LISTINGS.filter((l) => l.featured).map((l) =>
-			l.githubUrl.split('/').pop(),
-		);
-		expect(featured.sort()).toEqual([
-			'ai-blueprint',
-			'editorial-workflow',
-			'humanizer',
-			'last30days',
-			'mcp-builder',
-			'pdf',
-			'ponytail',
-			'skill-creator',
-			'ui-ux-pro-max',
-		]);
+	it('carries no per-entry featured flags; the roster is FEATURED_SLUGS', () => {
+		expect(SEED_LISTINGS.some((l) => 'featured' in l)).toBe(false);
+	});
+});
+
+describe('FEATURED_SLUGS', () => {
+	it('leads with the owner packs and holds twenty unique picks', () => {
+		expect(FEATURED_SLUGS.slice(0, 2)).toEqual(['ai-blueprint', 'editorial-workflow-skill']);
+		expect(FEATURED_SLUGS).toHaveLength(20);
+		expect(new Set(FEATURED_SLUGS).size).toBe(FEATURED_SLUGS.length);
 	});
 });

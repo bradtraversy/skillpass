@@ -27,7 +27,9 @@ function byNewest(a: PublicSkillSummary, b: PublicSkillSummary): number {
 }
 
 // Pure, client-side directory filter. Text search matches name, summary,
-// maintainer, and target tools; the tab then filters and sorts the matches.
+// maintainer, and target tools. The API returns rows in curated directory
+// order (ranked featured, unranked featured, then newest), so featured views
+// preserve input order instead of re-sorting; the payload carries no rank.
 export function filterSkills(
 	skills: PublicSkillSummary[],
 	filters: SkillFilters,
@@ -63,16 +65,17 @@ export function filterSkills(
 		return haystack.includes(query);
 	});
 
-	const newest = [...matched].sort(byNewest);
+	// An active search spans the whole catalog in directory order; tab scoping
+	// would make a Featured-tab miss look like a directory-wide miss.
+	if (query) return matched;
 
 	if (filters.tab === 'verified') {
-		return newest.filter((s) => s.verified);
+		return [...matched].sort(byNewest).filter((s) => s.verified);
 	}
-	if (filters.tab === 'featured') {
-		const featured = newest.filter((s) => s.featured);
-		// Before anything is curated, keep the default tab from going empty.
-		return featured.length > 0 ? featured : newest;
+	if (filters.tab === 'new') {
+		return [...matched].sort(byNewest);
 	}
-	// Default view: curated picks lead, newest-first within each group.
-	return [...newest.filter((s) => s.featured), ...newest.filter((s) => !s.featured)];
+	const featured = matched.filter((s) => s.featured);
+	// Before anything is curated, keep the default tab from going empty.
+	return featured.length > 0 ? featured : matched;
 }

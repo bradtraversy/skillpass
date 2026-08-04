@@ -1,0 +1,1 @@
+ALTER TABLE "skills" ADD COLUMN "featured_rank" integer;

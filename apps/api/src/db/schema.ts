@@ -130,6 +130,9 @@ export const skills = pgTable('skills', {
 	integrations: text('integrations').array().$type<IntegrationSlug[]>(),
 	status: skillStatus('status').notNull(),
 	featured: boolean('featured').notNull().default(false),
+	// Curated position on the Featured tab; null = featured without a pinned spot
+	// (e.g. the admin toggle), which sorts after ranked entries.
+	featuredRank: integer('featured_rank'),
 	verified: boolean('verified').notNull().default(false),
 	latestVersionId: integer('latest_version_id').references((): AnyPgColumn => skillVersions.id),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

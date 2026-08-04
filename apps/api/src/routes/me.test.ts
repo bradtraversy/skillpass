@@ -56,6 +56,7 @@ const skillRecord: MaintainerSkillRecord = {
 		integrations: [],
 		status: 'published',
 		featured: false,
+		featuredRank: null,
 		verified: false,
 		latestVersionId: 100,
 		createdAt: NOW,

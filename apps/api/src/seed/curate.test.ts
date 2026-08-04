@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { findSkillBySlug } from '../db/skills';
+import { findSkillBySlug, setSkillCuration } from '../db/skills';
 import { createSubmission } from '../db/submissions';
 import { createValidationJob, findValidationReportForSubmission } from '../db/validation';
 import { resolveCommit } from '../github/pin';
@@ -9,7 +9,8 @@ import { publishSubmission } from '../publish/publish';
 import { processValidationJob } from '../queue/processor';
 import { putJson, snapshotDocument, snapshotKey } from '../storage/r2';
 import { loadPackageFromFiles } from 'validator';
-import { curateSkill } from './curate';
+import { applyFeaturedRanks, curateSkill } from './curate';
+import { FEATURED_SLUGS } from './listings';
 
 vi.mock('../github/url');
 vi.mock('../github/pin');
@@ -113,5 +114,27 @@ describe('curateSkill', () => {
 		vi.mocked(parseGithubUrl).mockReturnValue({ success: false, code: 'bad-url', error: 'nope' });
 		const result = await curateSkill(env, db, input);
 		expect(result).toEqual({ slug: null, status: 'failed', reason: 'nope' });
+	});
+});
+
+describe('applyFeaturedRanks', () => {
+	it('features every roster slug at its list position', async () => {
+		vi.mocked(findSkillBySlug).mockImplementation(async (_db, slug) => ({ id: FEATURED_SLUGS.indexOf(slug) + 100 }) as never);
+		const missing = await applyFeaturedRanks(db);
+		expect(missing).toEqual([]);
+		expect(setSkillCuration).toHaveBeenCalledTimes(FEATURED_SLUGS.length);
+		expect(setSkillCuration).toHaveBeenNthCalledWith(1, db, 100, { featured: true, featuredRank: 1 });
+		expect(setSkillCuration).toHaveBeenNthCalledWith(3, db, 102, { featured: true, featuredRank: 3 });
+	});
+
+	it('reports slugs with no published skill instead of silently skipping', async () => {
+		vi.mocked(findSkillBySlug).mockImplementation(async (_db, slug) =>
+			slug === FEATURED_SLUGS[0] ? undefined : ({ id: 1 } as never),
+		);
+		const missing = await applyFeaturedRanks(db);
+		expect(missing).toEqual([FEATURED_SLUGS[0]]);
+		expect(setSkillCuration).toHaveBeenCalledTimes(FEATURED_SLUGS.length - 1);
+		// The gap keeps its rank: slot 2 still ranks 2 even when slot 1 is missing.
+		expect(setSkillCuration).toHaveBeenNthCalledWith(1, db, 1, { featured: true, featuredRank: 2 });
 	});
 });

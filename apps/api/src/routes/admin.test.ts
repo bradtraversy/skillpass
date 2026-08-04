@@ -142,6 +142,7 @@ const publishedSkill: SkillRow = {
 	integrations: null,
 	status: 'published',
 	featured: false,
+	featuredRank: null,
 	verified: false,
 	latestVersionId: 100,
 	createdAt: NOW,

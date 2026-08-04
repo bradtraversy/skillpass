@@ -3,7 +3,6 @@ import { z } from 'zod';
 export const seedListingSchema = z.object({
 	githubUrl: z.url(),
 	attributedTo: z.string().min(1),
-	featured: z.boolean().optional(),
 	// Overrides the inferred listing name (and slug) when the source folder's
 	// own name is too generic to own globally (e.g. "sales", "data").
 	name: z.string().min(1).optional(),
@@ -37,8 +36,6 @@ const ANTHROPIC_SKILLS = [
 	'webapp-testing',
 	'xlsx',
 ];
-
-const FEATURED = new Set(['pdf', 'mcp-builder', 'skill-creator']);
 
 // Waves 2-5 (discovered 2026-07-25): the community and security sources recorded
 // in the launch-seed notes. One entry per skill folder; trailofbits nests skills
@@ -324,11 +321,7 @@ const skillsUnder = (repo: string, names: readonly string[], attributedTo: strin
 	}));
 
 export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
-	...ANTHROPIC_SKILLS.map((name) => ({
-		githubUrl: `https://github.com/anthropics/skills/tree/main/skills/${name}`,
-		attributedTo: 'anthropics',
-		...(FEATURED.has(name) ? { featured: true } : {}),
-	})),
+	...skillsUnder('anthropics/skills', ANTHROPIC_SKILLS, 'anthropics'),
 	...skillsUnder('addyosmani/agent-skills', AGENT_SKILLS, 'addyosmani'),
 	...skillsUnder('obra/superpowers', SUPERPOWERS_SKILLS, 'obra'),
 	...skillsUnder('kepano/obsidian-skills', OBSIDIAN_SKILLS, 'kepano'),
@@ -336,15 +329,12 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 		githubUrl: `https://github.com/trailofbits/skills/tree/main/${path}`,
 		attributedTo: 'trailofbits',
 	})),
-	{ githubUrl: 'https://github.com/blader/humanizer', attributedTo: 'blader', featured: true },
+	{ githubUrl: 'https://github.com/blader/humanizer', attributedTo: 'blader' },
 	{
 		githubUrl: 'https://github.com/mvanhorn/last30days-skill/tree/main/skills/last30days',
 		attributedTo: 'mvanhorn',
-		featured: true,
 	},
-	...skillsUnder('DietrichGebert/ponytail', PONYTAIL_SKILLS, 'DietrichGebert').map((l) =>
-		l.githubUrl.endsWith('/ponytail') ? { ...l, featured: true } : l,
-	),
+	...skillsUnder('DietrichGebert/ponytail', PONYTAIL_SKILLS, 'DietrichGebert'),
 	{
 		githubUrl:
 			'https://github.com/OthmanAdi/planning-with-files/tree/master/skills/planning-with-files',
@@ -378,7 +368,6 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 		githubUrl:
 			'https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/ui-ux-pro-max',
 		attributedTo: 'nextlevelbuilder',
-		featured: true,
 	},
 	{
 		githubUrl:
@@ -435,20 +424,45 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 		attributedTo: 'neondatabase',
 		displayName: 'Neon Postgres Pack',
 	},
-	// Owner picks: Brad's maintainer-submitted packs, featured so the workflow-pack
-	// story leads the homepage. Both are already published via the submit flow, so
-	// these entries normally just apply curation state on the skip path. The
-	// editorial pack's name override matches its live slug (named at submission
-	// from a zip filename, not the repo).
+	// Owner picks: Brad's maintainer-submitted packs. Both are already published
+	// via the submit flow, so these entries normally just no-op on the skip path.
+	// The editorial pack's name override matches its live slug (named at
+	// submission from a zip filename, not the repo).
 	{
 		githubUrl: 'https://github.com/bradtraversy/ai-blueprint',
 		attributedTo: 'bradtraversy',
-		featured: true,
 	},
 	{
 		githubUrl: 'https://github.com/bradtraversy/editorial-workflow',
 		attributedTo: 'bradtraversy',
 		name: 'editorial-workflow-skill',
-		featured: true,
 	},
 ]);
+
+// The Featured tab roster, in curated rank order (index + 1 = featuredRank).
+// Keyed by published slug, not source URL, so submit-flow listings (Brad's
+// packs) rank the same way as seeded ones. Applied by the seed runner after
+// the listing pass; a slug with no published skill is reported, not silently
+// skipped. Every author is capped at two picks.
+export const FEATURED_SLUGS = [
+	'ai-blueprint',
+	'editorial-workflow-skill',
+	'skill-creator',
+	'pdf',
+	'mcp-builder',
+	'frontend-design',
+	'humanizer',
+	'ui-ux-pro-max',
+	'last30days',
+	'ponytail',
+	'systematic-debugging',
+	'vercel-react-best-practices',
+	'web-design-guidelines',
+	'security-review',
+	'tdd',
+	'code-review-and-quality',
+	'dev-browser',
+	'obsidian-markdown',
+	'seo-audit',
+	'stripe-agent-toolkit',
+];

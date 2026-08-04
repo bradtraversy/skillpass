@@ -2,7 +2,7 @@ import { createDb, type Db } from '../db/client';
 import { findSkillBySlug, setSkillCuration } from '../db/skills';
 import { users } from '../db/schema';
 import { loadEnv } from '../env';
-import { curateSkill } from './curate';
+import { applyFeaturedRanks, curateSkill } from './curate';
 import { SEED_LISTINGS } from './listings';
 
 // The account that owns every curated listing (skills.maintainerId). Must be the
@@ -54,17 +54,19 @@ async function main() {
 			`  ${result.status.padEnd(9)} ${label}${result.reason ? ` - ${result.reason}` : ''}`,
 		);
 
-		// Curation state (featured, display name) applies to published and
-		// already-present listings alike, so re-runs converge on the manifest.
-		if ((listing.featured || listing.displayName) && result.slug && result.status !== 'failed') {
+		// Curation state (display name) applies to published and already-present
+		// listings alike, so re-runs converge on the manifest.
+		if (listing.displayName && result.slug && result.status !== 'failed') {
 			const skill = await findSkillBySlug(db, result.slug);
 			if (skill) {
-				await setSkillCuration(db, skill.id, {
-					...(listing.featured ? { featured: true } : {}),
-					...(listing.displayName ? { displayName: listing.displayName } : {}),
-				});
+				await setSkillCuration(db, skill.id, { displayName: listing.displayName });
 			}
 		}
+	}
+
+	const missing = await applyFeaturedRanks(db);
+	if (missing.length > 0) {
+		console.warn(`featured slugs with no published skill: ${missing.join(', ')}`);
 	}
 
 	console.log(

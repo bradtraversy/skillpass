@@ -93,6 +93,7 @@ const skillRow: SkillRow = {
 	integrations: null,
 	status: 'published',
 	featured: false,
+	featuredRank: null,
 	verified: false,
 	latestVersionId: null,
 	createdAt: new Date('2026-07-07T15:00:00Z'),

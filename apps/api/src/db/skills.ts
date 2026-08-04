@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import type {
 	AdminSkillRef,
 	AdminVersionHistory,
@@ -88,6 +88,10 @@ export interface PublishedSkillRecord {
 	maintainer: UserRow;
 }
 
+// Directory order: ranked featured first (rank ascending, Postgres puts nulls
+// last on ASC), then unranked featured, then everything else newest-first. The
+// payload carries no rank field - published CLIs strict-parse these rows, so
+// curated order travels as row order instead of a new key.
 export async function listPublishedSkills(db: Db): Promise<PublishedSkillRecord[]> {
 	return db
 		.select({ skill: skills, version: skillVersions, passport: skillPassports, maintainer: users })
@@ -96,7 +100,12 @@ export async function listPublishedSkills(db: Db): Promise<PublishedSkillRecord[
 		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
 		.innerJoin(users, eq(skills.maintainerId, users.id))
 		.where(eq(skills.status, 'published'))
-		.orderBy(desc(skillVersions.publishedAt), desc(skills.id));
+		.orderBy(
+			desc(skills.featured),
+			asc(skills.featuredRank),
+			desc(skillVersions.publishedAt),
+			desc(skills.id),
+		);
 }
 
 export async function listPublishedSkillsByMaintainer(
@@ -194,7 +203,7 @@ export async function setSkillStatus(
 export async function setSkillCuration(
 	db: Db,
 	id: number,
-	patch: { featured?: boolean; verified?: boolean; displayName?: string },
+	patch: { featured?: boolean; featuredRank?: number | null; verified?: boolean; displayName?: string },
 	now: Date = new Date(),
 ): Promise<void> {
 	await db

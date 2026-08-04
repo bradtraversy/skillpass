@@ -4,6 +4,7 @@ import { getSkills } from '../../lib/api';
 import {
 	filterSkills,
 	type CategoryFilter,
+	type DirectoryTab,
 	type IntegrationFilter,
 	type TypeFilter,
 } from '../../lib/filterSkills';
@@ -25,6 +26,7 @@ export default function Directory() {
 	const [category, setCategory] = useState<CategoryFilter>('all');
 	const [integration, setIntegration] = useState<IntegrationFilter>('all');
 	const [type, setType] = useState<TypeFilter>('all');
+	const [tab, setTab] = useState<DirectoryTab>('featured');
 	// Desktop sidebar visibility, persisted. Starts true and reads the stored
 	// choice in an effect so the server render and hydration always agree.
 	const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -39,7 +41,7 @@ export default function Directory() {
 	// Any filter change starts back at page 1.
 	useEffect(() => {
 		setPage(1);
-	}, [query, tool, category, integration, type]);
+	}, [query, tool, category, integration, type, tab]);
 
 	function goToPage(next: number) {
 		setPage(next);
@@ -72,8 +74,6 @@ export default function Directory() {
 	}, []);
 
 	const skills = load.phase === 'ready' ? load.skills : [];
-	// Tabs are deferred at launch scale; show all, newest-first. The Featured/Verified
-	// filters stay in filterSkills for when the catalog is large enough to need them.
 	const matches = filterSkills(skills, {
 		query,
 		verdict: 'all',
@@ -81,7 +81,7 @@ export default function Directory() {
 		category,
 		integration,
 		type,
-		tab: 'new',
+		tab,
 	});
 	const paged = paginate(matches, page);
 
@@ -161,9 +161,26 @@ export default function Directory() {
 
 				<div className="min-w-0 flex-1">
 					<div ref={listTopRef} className="scroll-mt-5 flex items-center gap-[26px] border-b border-border">
-						<span className="-mb-px border-b-2 border-accent pb-[13px] font-medium text-text">
-							Latest
-						</span>
+						{(
+							[
+								{ value: 'featured', label: 'Featured' },
+								{ value: 'new', label: 'Latest' },
+							] as const
+						).map(({ value, label }) => (
+							<button
+								key={value}
+								type="button"
+								onClick={() => setTab(value)}
+								aria-pressed={tab === value}
+								className={`-mb-px border-b-2 pb-[13px] ${
+									tab === value
+										? 'border-accent font-medium text-text'
+										: 'border-transparent text-muted hover:text-text'
+								}`}
+							>
+								{label}
+							</button>
+						))}
 						<button
 							type="button"
 							onClick={toggleFilters}
