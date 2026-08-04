@@ -25,6 +25,7 @@ import {
 	ensureDisplayCopy,
 	ensureIntegrations,
 } from '../review/ensure';
+import { ensureEmbedding } from '../search/ensure';
 import { buildPassport } from './passport';
 
 export interface PublishInput {
@@ -144,6 +145,8 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 			name: input.name,
 			summary: input.summary,
 		});
+		// Last in the chain: embeds the final listing copy the ensures above wrote.
+		await ensureEmbedding(input.env, db, slug);
 	}
 
 	try {

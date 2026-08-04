@@ -7,6 +7,7 @@ import {
 	text,
 	timestamp,
 	unique,
+	vector,
 	type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import {
@@ -253,3 +254,20 @@ export const aiReviews = pgTable('ai_reviews', {
 });
 
 export type AiReviewRow = typeof aiReviews.$inferSelect;
+
+// One embedding per skill, of its current listing copy. contentHash is
+// sha256(model + input text), so unchanged copy is never re-embedded; the
+// dimension is fixed in DDL, so a model swap is a migration + re-embed.
+export const skillEmbeddings = pgTable('skill_embeddings', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	skillId: integer('skill_id')
+		.notNull()
+		.unique()
+		.references(() => skills.id),
+	embedding: vector('embedding', { dimensions: 1024 }).notNull(),
+	contentHash: text('content_hash').notNull(),
+	model: text('model').notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SkillEmbeddingRow = typeof skillEmbeddings.$inferSelect;

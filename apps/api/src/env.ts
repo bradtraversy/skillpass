@@ -10,6 +10,9 @@ const envSchema = z
 		// Optional: enables the AI skill reviewer (feature 18). Absent -> the
 		// reviewer returns null and publishing proceeds without an AI review.
 		ANTHROPIC_API_KEY: z.string().optional(),
+		// Optional: enables skill embeddings for AI search (feature 20). Absent ->
+		// embedding generation no-ops and publishing proceeds without one.
+		VOYAGE_API_KEY: z.string().optional(),
 		R2_ACCOUNT_ID: z.string().min(1),
 		R2_ACCESS_KEY_ID: z.string().min(1),
 		R2_SECRET_ACCESS_KEY: z.string().min(1),

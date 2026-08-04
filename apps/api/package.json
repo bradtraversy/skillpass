@@ -17,7 +17,8 @@
 		"db:backfill-ai-reviews": "node --env-file-if-exists=.env --import tsx src/seed/backfill-ai-reviews.ts",
 		"db:backfill-categories": "node --env-file-if-exists=.env --import tsx src/seed/backfill-categories.ts",
 		"db:backfill-display-copy": "node --env-file-if-exists=.env --import tsx src/seed/backfill-display-copy.ts",
-		"db:backfill-integrations": "node --env-file-if-exists=.env --import tsx src/seed/backfill-integrations.ts"
+		"db:backfill-integrations": "node --env-file-if-exists=.env --import tsx src/seed/backfill-integrations.ts",
+		"db:backfill-embeddings": "node --env-file-if-exists=.env --import tsx src/seed/backfill-embeddings.ts"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.115.0",

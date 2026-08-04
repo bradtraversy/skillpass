@@ -12,6 +12,8 @@ import {
 } from '../db/skills';
 import { setSubmissionStatus } from '../db/submissions';
 import { awardReputation } from '../reputation/reputation';
+import { ensureIntegrations } from '../review/ensure';
+import { ensureEmbedding } from '../search/ensure';
 import { publishSubmission } from './publish';
 
 vi.mock('../db/skills', () => ({
@@ -30,6 +32,13 @@ vi.mock('../reputation/reputation', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../reputation/reputation')>()),
 	awardReputation: vi.fn(),
 }));
+vi.mock('../review/ensure', () => ({
+	ensureAiReview: vi.fn(),
+	ensureCategory: vi.fn(),
+	ensureDisplayCopy: vi.fn(),
+	ensureIntegrations: vi.fn(),
+}));
+vi.mock('../search/ensure', () => ({ ensureEmbedding: vi.fn() }));
 
 const db = {} as Db;
 const NOW = new Date('2026-07-07T15:00:00Z');
@@ -150,6 +159,7 @@ describe('publishSubmission', () => {
 			status: 'published',
 			verified: false,
 		});
+		expect(ensureEmbedding).not.toHaveBeenCalled();
 		expect(createSkillVersion).toHaveBeenCalledWith(db, {
 			skillId: 3,
 			version: '1.0.0',
@@ -191,6 +201,31 @@ describe('publishSubmission', () => {
 			vi.mocked(setSubmissionStatus).mock.invocationCallOrder[0],
 		];
 		expect(order).toEqual([...order].sort((a, b) => a - b));
+	});
+
+	it('runs the ensure chain with the embedding last when env is provided', async () => {
+		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
+		vi.mocked(createSkill).mockResolvedValue(skillRow);
+		vi.mocked(findLatestVersionForSkill).mockResolvedValue(undefined);
+		vi.mocked(createSkillVersion).mockResolvedValue(versionRow());
+
+		const env = { VOYAGE_API_KEY: 'vk' } as never;
+		await publishSubmission(db, {
+			submission: githubSubmission,
+			report: reportRow,
+			name: 'Clean Skill',
+			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
+			attributedTo: null,
+			env,
+			now: NOW,
+		});
+
+		expect(ensureEmbedding).toHaveBeenCalledWith(env, db, 'clean-skill');
+		// The embedding must see the copy the other ensures wrote, so it runs last.
+		expect(vi.mocked(ensureEmbedding).mock.invocationCallOrder[0]).toBeGreaterThan(
+			vi.mocked(ensureIntegrations).mock.invocationCallOrder[0],
+		);
 	});
 
 	it('round-trips pack members onto the version row', async () => {
