@@ -152,8 +152,16 @@ describe('filterSkills tabs', () => {
 	const c = summary({ slug: 'c', name: 'Charlie', featured: true, verified: true, publishedAt: '2026-02-01T00:00:00.000Z' });
 	const skills = [a, b, c];
 
-	it('new: returns all, newest first', () => {
-		expect(filterSkills(skills, { ...base, tab: 'new' }).map((s) => s.slug)).toEqual(['b', 'c', 'a']);
+	it('new: returns all, featured first, newest first within each group', () => {
+		expect(filterSkills(skills, { ...base, tab: 'new' }).map((s) => s.slug)).toEqual(['c', 'a', 'b']);
+	});
+
+	it('new: plain newest order when nothing is featured', () => {
+		const none = [
+			summary({ slug: 'x', featured: false, publishedAt: '2026-01-01T00:00:00.000Z' }),
+			summary({ slug: 'y', featured: false, publishedAt: '2026-02-01T00:00:00.000Z' }),
+		];
+		expect(filterSkills(none, { ...base, tab: 'new' }).map((s) => s.slug)).toEqual(['y', 'x']);
 	});
 
 	it('featured: only featured skills, newest first', () => {

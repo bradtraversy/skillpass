@@ -73,5 +73,6 @@ export function filterSkills(
 		// Before anything is curated, keep the default tab from going empty.
 		return featured.length > 0 ? featured : newest;
 	}
-	return newest;
+	// Default view: curated picks lead, newest-first within each group.
+	return [...newest.filter((s) => s.featured), ...newest.filter((s) => !s.featured)];
 }

@@ -42,7 +42,7 @@ describe('seedListingSchema', () => {
 describe('SEED_LISTINGS', () => {
 	it('is a valid manifest of all nine waves', () => {
 		expect(seedManifestSchema.safeParse(SEED_LISTINGS).success).toBe(true);
-		expect(SEED_LISTINGS).toHaveLength(242);
+		expect(SEED_LISTINGS).toHaveLength(244);
 	});
 
 	it('carries the expected count per source, each under its attributed owner', () => {
@@ -90,6 +90,7 @@ describe('SEED_LISTINGS', () => {
 			MicrosoftDocs: 5,
 			stripe: 1,
 			neondatabase: 1,
+			bradtraversy: 2,
 		});
 	});
 
@@ -114,6 +115,8 @@ describe('SEED_LISTINGS', () => {
 			l.githubUrl.split('/').pop(),
 		);
 		expect(featured.sort()).toEqual([
+			'ai-blueprint',
+			'editorial-workflow',
 			'humanizer',
 			'last30days',
 			'mcp-builder',

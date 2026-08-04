@@ -435,4 +435,20 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 		attributedTo: 'neondatabase',
 		displayName: 'Neon Postgres Pack',
 	},
+	// Owner picks: Brad's maintainer-submitted packs, featured so the workflow-pack
+	// story leads the homepage. Both are already published via the submit flow, so
+	// these entries normally just apply curation state on the skip path. The
+	// editorial pack's name override matches its live slug (named at submission
+	// from a zip filename, not the repo).
+	{
+		githubUrl: 'https://github.com/bradtraversy/ai-blueprint',
+		attributedTo: 'bradtraversy',
+		featured: true,
+	},
+	{
+		githubUrl: 'https://github.com/bradtraversy/editorial-workflow',
+		attributedTo: 'bradtraversy',
+		name: 'editorial-workflow-skill',
+		featured: true,
+	},
 ]);
