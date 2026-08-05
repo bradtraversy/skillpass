@@ -1,6 +1,6 @@
 import type { PublicSkillSummary } from 'skill-schema';
 import { describe, expect, it } from 'vitest';
-import { filterSkills, type SkillFilters } from './filterSkills';
+import { filterSkills, matchesFilters, type SkillFilters } from './filterSkills';
 
 const base: SkillFilters = {
 	query: '',
@@ -187,6 +187,34 @@ describe('filterSkills tabs', () => {
 	it('sidebar filters stay tab-scoped', () => {
 		const out = filterSkills(skills, { ...base, tab: 'featured', verdict: 'passed' });
 		expect(out.map((s) => s.slug)).toEqual(['a', 'c']);
+	});
+});
+
+describe('matchesFilters', () => {
+	const fields: Omit<SkillFilters, 'query' | 'tab'> = {
+		verdict: 'all',
+		tool: 'all',
+		category: 'all',
+		integration: 'all',
+		type: 'all',
+	};
+
+	it('applies the sidebar facets without query or tab', () => {
+		const skill = summary({ slug: 's', validationStatus: 'warning', targets: ['codex'] });
+		expect(matchesFilters(skill, fields)).toBe(true);
+		expect(matchesFilters(skill, { ...fields, verdict: 'passed' })).toBe(false);
+		expect(matchesFilters(skill, { ...fields, tool: 'codex' })).toBe(true);
+		expect(matchesFilters(skill, { ...fields, tool: 'aider' })).toBe(false);
+	});
+
+	it('filters a pre-ranked list while preserving its order', () => {
+		const ranked = [
+			summary({ slug: 'best', category: 'dev-tooling' }),
+			summary({ slug: 'other', category: 'fuzzing' }),
+			summary({ slug: 'second-best', category: 'dev-tooling' }),
+		];
+		const filtered = ranked.filter((s) => matchesFilters(s, { ...fields, category: 'dev-tooling' }));
+		expect(filtered.map((s) => s.slug)).toEqual(['best', 'second-best']);
 	});
 });
 

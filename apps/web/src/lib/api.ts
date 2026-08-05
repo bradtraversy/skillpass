@@ -72,6 +72,11 @@ export function getSkills(init?: RequestInit): Promise<ApiResult<PublicSkillSumm
 	return request('/skills', init);
 }
 
+// AI semantic search; rows arrive in relevance order and must not be re-sorted.
+export function searchSkills(q: string): Promise<ApiResult<PublicSkillSummary[]>> {
+	return request(`/skills/search?q=${encodeURIComponent(q)}`);
+}
+
 export function getSkill(
 	slug: string,
 	version?: string,

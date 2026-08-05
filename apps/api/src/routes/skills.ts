@@ -12,7 +12,10 @@ import { readSessionUserId, requireAuth, type AuthVariables } from '../auth/midd
 import type { Db } from '../db/client';
 import { createAbuseReport, findOpenReportBySkillAndReporter } from '../db/abuse';
 import { recordDownload } from '../db/downloads';
+import { searchSkillsByEmbedding } from '../db/embeddings';
 import { findAiReviewByHash } from '../db/reviews';
+import { embedTexts } from '../search/embeddings';
+import { createRateLimiter, rateLimitMiddleware } from './rate-limit';
 import {
 	findPublishedSkillBySlug,
 	findSkillBySlug,
@@ -143,6 +146,26 @@ export function skillRoutes(env: Env, db: Db) {
 
 	routes.get('/', async (c) => {
 		const records = await listPublishedSkills(db);
+		return c.json({ success: true, data: records.map(publicSkillSummary) });
+	});
+
+	// Registered before the /:slug routes so "search" is never taken for a slug.
+	// Every hit costs a provider embed call, hence the per-IP limiter.
+	const searchLimiter = createRateLimiter(20, 60_000);
+	routes.get('/search', rateLimitMiddleware(searchLimiter), async (c) => {
+		const q = c.req.query('q')?.trim() ?? '';
+		if (!q || q.length > 500) {
+			return c.json({ success: false, error: 'q must be 1-500 characters' }, 400);
+		}
+		if (!env.VOYAGE_API_KEY) {
+			return c.json({ success: false, error: 'AI search is not configured' }, 503);
+		}
+		const embedded = await embedTexts(env, [q], 'query');
+		if (!embedded.success) {
+			console.error(`search: query embed failed: ${embedded.error}`);
+			return c.json({ success: false, error: 'AI search is temporarily unavailable' }, 502);
+		}
+		const records = await searchSkillsByEmbedding(db, embedded.data[0]);
 		return c.json({ success: true, data: records.map(publicSkillSummary) });
 	});
 

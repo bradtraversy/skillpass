@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PublicSkillSummary, Target } from 'skill-schema';
-import { getSkills } from '../../lib/api';
+import { getSkills, searchSkills } from '../../lib/api';
 import {
 	filterSkills,
+	matchesFilters,
 	type CategoryFilter,
 	type DirectoryTab,
 	type IntegrationFilter,
@@ -17,6 +18,14 @@ type LoadState =
 	| { phase: 'error'; message: string }
 	| { phase: 'ready'; skills: PublicSkillSummary[] };
 
+type SearchMode = 'keyword' | 'ai';
+
+type AiState =
+	| { phase: 'idle' }
+	| { phase: 'loading' }
+	| { phase: 'error'; message: string }
+	| { phase: 'ready'; results: PublicSkillSummary[] };
+
 const SIDEBAR_KEY = 'skillpass:filters-open';
 
 export default function Directory() {
@@ -27,6 +36,8 @@ export default function Directory() {
 	const [integration, setIntegration] = useState<IntegrationFilter>('all');
 	const [type, setType] = useState<TypeFilter>('all');
 	const [tab, setTab] = useState<DirectoryTab>('featured');
+	const [mode, setMode] = useState<SearchMode>('keyword');
+	const [ai, setAi] = useState<AiState>({ phase: 'idle' });
 	// Desktop sidebar visibility, persisted. Starts true and reads the stored
 	// choice in an effect so the server render and hydration always agree.
 	const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -41,7 +52,30 @@ export default function Directory() {
 	// Any filter change starts back at page 1.
 	useEffect(() => {
 		setPage(1);
-	}, [query, tool, category, integration, type, tab]);
+	}, [query, tool, category, integration, type, tab, mode, ai]);
+
+	function switchMode(next: SearchMode) {
+		setMode(next);
+		setAi({ phase: 'idle' });
+	}
+
+	async function runAiSearch() {
+		const q = query.trim();
+		if (!q) return;
+		setAi({ phase: 'loading' });
+		const res = await searchSkills(q);
+		if (res.success) {
+			setAi({ phase: 'ready', results: res.data });
+		} else {
+			setAi({
+				phase: 'error',
+				message:
+					res.status === 429
+						? 'Slow down a moment, then try again.'
+						: 'AI search is unavailable right now.',
+			});
+		}
+	}
 
 	function goToPage(next: number) {
 		setPage(next);
@@ -74,15 +108,14 @@ export default function Directory() {
 	}, []);
 
 	const skills = load.phase === 'ready' ? load.skills : [];
-	const matches = filterSkills(skills, {
-		query,
-		verdict: 'all',
-		tool,
-		category,
-		integration,
-		type,
-		tab,
-	});
+	// Keyword mode filters the loaded list; AI mode shows the endpoint's
+	// relevance-ranked results with the sidebar facets applied, order intact.
+	const matches =
+		mode === 'keyword'
+			? filterSkills(skills, { query, verdict: 'all', tool, category, integration, type, tab })
+			: (ai.phase === 'ready' ? ai.results : []).filter((s) =>
+					matchesFilters(s, { verdict: 'all', tool, category, integration, type }),
+				);
 	const paged = paginate(matches, page);
 
 	return (
@@ -105,11 +138,43 @@ export default function Directory() {
 				</svg>
 				<input
 					value={query}
-					onChange={(e) => setQuery(e.target.value)}
-					placeholder="Search skills, tools, permissions, or maintainers..."
+					onChange={(e) => {
+						setQuery(e.target.value);
+						if (mode === 'ai' && e.target.value.trim() === '') setAi({ phase: 'idle' });
+					}}
+					onKeyDown={(e) => {
+						if (mode === 'ai' && e.key === 'Enter') void runAiSearch();
+					}}
+					placeholder={
+						mode === 'ai'
+							? 'Describe what you need, then press Enter...'
+							: 'Search skills, tools, permissions, or maintainers...'
+					}
 					className="flex-1 bg-transparent text-[15.5px] text-text outline-none placeholder:text-faint"
 					aria-label="Search skills"
 				/>
+				<div className="flex shrink-0 items-center gap-[3px] rounded-full border border-border-2 p-[3px]">
+					{(
+						[
+							{ value: 'keyword', label: 'Keyword' },
+							{ value: 'ai', label: 'AI' },
+						] as const
+					).map(({ value, label }) => (
+						<button
+							key={value}
+							type="button"
+							onClick={() => switchMode(value)}
+							aria-pressed={mode === value}
+							className={`rounded-full px-[9px] py-[3px] text-[11.5px] ${
+								mode === value
+									? 'bg-accent-soft font-medium text-accent'
+									: 'text-muted hover:text-text'
+							}`}
+						>
+							{label}
+						</button>
+					))}
+				</div>
 				<kbd className="rounded-[5px] border border-border-2 px-[6px] py-[2px] font-mono text-[11px] text-muted">
 					/
 				</kbd>
@@ -274,9 +339,26 @@ export default function Directory() {
 					{load.phase === 'ready' && skills.length === 0 && (
 						<p className="py-16 text-center text-[13px] text-muted">No skills published yet.</p>
 					)}
-					{load.phase === 'ready' && skills.length > 0 && matches.length === 0 && (
+					{mode === 'keyword' && load.phase === 'ready' && skills.length > 0 && matches.length === 0 && (
 						<p className="py-16 text-center text-[13px] text-muted">
 							No skills match these filters.
+						</p>
+					)}
+					{mode === 'ai' && ai.phase === 'idle' && (
+						<p className="py-16 text-center text-[13px] text-muted">
+							Describe what you need and press Enter - AI search matches by meaning, not
+							keywords.
+						</p>
+					)}
+					{mode === 'ai' && ai.phase === 'loading' && (
+						<p className="py-16 text-center text-[13px] text-muted">Searching...</p>
+					)}
+					{mode === 'ai' && ai.phase === 'error' && (
+						<p className="py-16 text-center text-[13px] text-fail">{ai.message}</p>
+					)}
+					{mode === 'ai' && ai.phase === 'ready' && matches.length === 0 && (
+						<p className="py-16 text-center text-[13px] text-muted">
+							No skills match that description.
 						</p>
 					)}
 				</div>

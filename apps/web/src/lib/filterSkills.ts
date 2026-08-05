@@ -26,6 +26,27 @@ function byNewest(a: PublicSkillSummary, b: PublicSkillSummary): number {
 	return a.publishedAt < b.publishedAt ? 1 : a.publishedAt > b.publishedAt ? -1 : 0;
 }
 
+export type FieldFilters = Omit<SkillFilters, 'query' | 'tab'>;
+
+// The sidebar-facet predicates alone - no query, no tab, no sorting. AI search
+// results filter through this so their relevance order survives untouched.
+export function matchesFilters(skill: PublicSkillSummary, filters: FieldFilters): boolean {
+	if (filters.verdict !== 'all' && skill.validationStatus !== filters.verdict) return false;
+	if (filters.tool !== 'all' && !skill.targets.includes(filters.tool)) return false;
+	if (filters.category !== 'all') {
+		// The field is optional in the payload schema, so normalize absent to null.
+		const category = skill.category ?? null;
+		if (filters.category === 'uncategorized' ? category !== null : category !== filters.category)
+			return false;
+	}
+	if (filters.integration !== 'all' && !(skill.integrations ?? []).includes(filters.integration))
+		return false;
+	const isPack = (skill.packSkills?.length ?? 0) > 0;
+	if (filters.type === 'pack' && !isPack) return false;
+	if (filters.type === 'skill' && isPack) return false;
+	return true;
+}
+
 // Pure, client-side directory filter. Text search matches name, summary,
 // maintainer, and target tools. The API returns rows in curated directory
 // order (ranked featured, unranked featured, then newest), so featured views
@@ -37,19 +58,7 @@ export function filterSkills(
 	const query = filters.query.trim().toLowerCase();
 
 	const matched = skills.filter((skill) => {
-		if (filters.verdict !== 'all' && skill.validationStatus !== filters.verdict) return false;
-		if (filters.tool !== 'all' && !skill.targets.includes(filters.tool)) return false;
-		if (filters.category !== 'all') {
-			// The field is optional in the payload schema, so normalize absent to null.
-			const category = skill.category ?? null;
-			if (filters.category === 'uncategorized' ? category !== null : category !== filters.category)
-				return false;
-		}
-		if (filters.integration !== 'all' && !(skill.integrations ?? []).includes(filters.integration))
-			return false;
-		const isPack = (skill.packSkills?.length ?? 0) > 0;
-		if (filters.type === 'pack' && !isPack) return false;
-		if (filters.type === 'skill' && isPack) return false;
+		if (!matchesFilters(skill, filters)) return false;
 		if (!query) return true;
 
 		const haystack = [

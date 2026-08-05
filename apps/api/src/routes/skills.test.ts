@@ -29,8 +29,10 @@ import {
 	setSkillStatus,
 	type PublishedSkillRecord,
 } from '../db/skills';
+import { searchSkillsByEmbedding } from '../db/embeddings';
 import { loadEnv } from '../env';
 import type { ValidationQueue } from '../queue/queue';
+import { embedTexts } from '../search/embeddings';
 import { getSnapshotDocument } from '../storage/r2';
 import { RAW_TEST_ENV } from '../testing/env';
 
@@ -48,6 +50,14 @@ vi.mock('../storage/r2', async (importOriginal) => ({
 	getSnapshotDocument: vi.fn(),
 }));
 vi.mock('../db/reviews', () => ({ findAiReviewByHash: vi.fn() }));
+vi.mock('../db/embeddings', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../db/embeddings')>()),
+	searchSkillsByEmbedding: vi.fn(),
+}));
+vi.mock('../search/embeddings', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../search/embeddings')>()),
+	embedTexts: vi.fn(),
+}));
 vi.mock('../db/downloads', () => ({ recordDownload: vi.fn() }));
 vi.mock('../db/abuse', () => ({
 	createAbuseReport: vi.fn(),
@@ -226,6 +236,66 @@ describe('GET /skills', () => {
 		const res = await app.request('/skills');
 		const body = (await res.json()) as { data: { noteCount: number }[] };
 		expect(body.data[0].noteCount).toBe(2);
+	});
+
+	describe('GET /skills/search', () => {
+		const aiApp = createApp(
+			loadEnv({ ...RAW_TEST_ENV, VOYAGE_API_KEY: 'vk-test' }),
+			{} as Db,
+			{} as ValidationQueue,
+		);
+
+		it('embeds the query and returns matches in relevance order', async () => {
+			vi.mocked(embedTexts).mockResolvedValue({ success: true, data: [[0.1, 0.2]] });
+			vi.mocked(searchSkillsByEmbedding).mockResolvedValue([record]);
+			const res = await aiApp.request('/skills/search?q=help%20me%20with%20pdfs');
+			expect(res.status).toBe(200);
+			const body = (await res.json()) as { success: boolean; data: unknown[] };
+			expect(body.success).toBe(true);
+			expect(publicSkillSummarySchema.parse(body.data[0]).slug).toBe('smoke-clean');
+			expect(embedTexts).toHaveBeenCalledWith(expect.anything(), ['help me with pdfs'], 'query');
+			expect(searchSkillsByEmbedding).toHaveBeenCalledWith(expect.anything(), [0.1, 0.2]);
+		});
+
+		it('rejects an empty query', async () => {
+			const res = await aiApp.request('/skills/search?q=%20%20');
+			expect(res.status).toBe(400);
+		});
+
+		it('rejects an overlong query', async () => {
+			const res = await aiApp.request(`/skills/search?q=${'a'.repeat(501)}`);
+			expect(res.status).toBe(400);
+		});
+
+		it('returns 503 when no provider key is configured', async () => {
+			const res = await app.request('/skills/search?q=anything');
+			expect(res.status).toBe(503);
+			expect(embedTexts).not.toHaveBeenCalled();
+		});
+
+		it('returns 502 when the provider fails', async () => {
+			vi.mocked(embedTexts).mockResolvedValue({ success: false, error: 'voyage responded 500' });
+			const res = await aiApp.request('/skills/search?q=anything');
+			expect(res.status).toBe(502);
+			expect(searchSkillsByEmbedding).not.toHaveBeenCalled();
+		});
+
+		it('rate limits a hammering client with 429', async () => {
+			vi.mocked(embedTexts).mockResolvedValue({ success: true, data: [[0.1]] });
+			vi.mocked(searchSkillsByEmbedding).mockResolvedValue([]);
+			const limited = createApp(
+				loadEnv({ ...RAW_TEST_ENV, VOYAGE_API_KEY: 'vk-test' }),
+				{} as Db,
+				{} as ValidationQueue,
+			);
+			const headers = { 'x-forwarded-for': '203.0.113.9' };
+			let last = 0;
+			for (let i = 0; i < 21; i++) {
+				const res = await limited.request('/skills/search?q=hi', { headers });
+				last = res.status;
+			}
+			expect(last).toBe(429);
+		});
 	});
 
 	it('passes featured and verified through from the skill row', async () => {
