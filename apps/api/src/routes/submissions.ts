@@ -21,7 +21,7 @@ import {
 	setValidationJobBullId,
 } from '../db/validation';
 import type { Env } from '../env';
-import { processValidationJob } from '../queue/processor';
+import { handleValidationFailure, processValidationJob } from '../queue/processor';
 import { enqueueValidation, type ValidationQueue } from '../queue/queue';
 import type { SourceErrorCode } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
@@ -112,10 +112,21 @@ async function startValidation(
 		const job = await createValidationJob(db, submissionId);
 		if (env.VALIDATION_MODE === 'inline' || !queue) {
 			// Fire-and-forget in-process: don't block the 201 on validation. The
-			// job row it updates is what the submit-page progress panel polls.
-			void processValidationJob(env, db, submissionId).catch((err) =>
-				console.error('inline validation failed', err),
-			);
+			// job row it updates is what the submit-page progress panel polls. A
+			// throw lands after the job is marked running, so record it as the
+			// worker does or the submission stays "validating" with no way out.
+			void processValidationJob(env, db, submissionId).catch(async (err) => {
+				console.error('inline validation failed', err);
+				try {
+					await handleValidationFailure(
+						db,
+						submissionId,
+						err instanceof Error ? err.message : String(err),
+					);
+				} catch (dbErr) {
+					console.error('could not record inline validation failure', dbErr);
+				}
+			});
 			return;
 		}
 		const enqueued = await enqueueValidation(queue, submissionId);

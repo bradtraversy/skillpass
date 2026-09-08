@@ -26,7 +26,7 @@ import {
 	setValidationJobBullId,
 } from '../db/validation';
 import { loadEnv } from '../env';
-import { processValidationJob } from '../queue/processor';
+import { handleValidationFailure, processValidationJob } from '../queue/processor';
 import { enqueueValidation, type ValidationQueue } from '../queue/queue';
 import { sourceError } from '../github/errors';
 import { verifySubmitPermission } from '../github/ownership';
@@ -60,6 +60,7 @@ vi.mock('../queue/queue', async (importOriginal) => ({
 vi.mock('../queue/processor', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../queue/processor')>()),
 	processValidationJob: vi.fn(),
+	handleValidationFailure: vi.fn(),
 }));
 vi.mock('../github/ownership', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../github/ownership')>()),
@@ -340,6 +341,26 @@ describe('POST /submissions', () => {
 		expect(vi.mocked(createValidationJob)).toHaveBeenCalledWith(expect.anything(), 1);
 		expect(vi.mocked(processValidationJob)).toHaveBeenCalledWith(expect.anything(), expect.anything(), 1);
 		expect(vi.mocked(enqueueValidation)).not.toHaveBeenCalled();
+	});
+
+	it('inline mode records a thrown validation as a terminal failure', async () => {
+		mockHappyPath();
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.mocked(processValidationJob).mockRejectedValue(new Error('r2 get failed (500)'));
+		vi.mocked(handleValidationFailure).mockResolvedValue(undefined);
+		const res = await inlineApp.request('/submissions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Cookie: await sessionCookie(7) },
+			body: JSON.stringify({ githubUrl: 'https://github.com/octocat/hello' }),
+		});
+		expect(res.status).toBe(201);
+		await vi.waitFor(() =>
+			expect(vi.mocked(handleValidationFailure)).toHaveBeenCalledWith(
+				expect.anything(),
+				1,
+				'r2 get failed (500)',
+			),
+		);
 	});
 
 	it('still 201s when Redis is down, recording the error on the job row', async () => {
