@@ -41,7 +41,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	vi.mocked(getSnapshotDocument).mockResolvedValue({
 		success: true,
-		data: { files: [{ path: 'SKILL.md', content: '# demo' }] },
+		data: { version: 1, files: [{ path: 'SKILL.md', content: '# demo' }] },
 	});
 });
 

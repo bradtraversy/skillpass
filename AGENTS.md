@@ -81,7 +81,9 @@ proxy into `apps/web`.
 - API dev server: `pnpm dev:api` (http://localhost:8787, Hono in `apps/api`) - needs `apps/api/.env` (see `apps/api/.env.example`)
 - Validation worker: `pnpm dev:worker` (BullMQ worker for submission validation) - needs `apps/api/.env` and a running Redis (`REDIS_URL`)
 - Dev background control: `pnpm dev:status`, `pnpm dev:stop`, `pnpm dev:logs`
-- Typecheck: `pnpm typecheck` (runs `astro check`, then `tsc --noEmit` over `packages/cli`)
+- Typecheck: `pnpm typecheck` (runs `typecheck` in every workspace: `astro check` in
+  `apps/web`, `tsc --noEmit` in `apps/api`, `packages/skill-schema`, `packages/validator`,
+  and `packages/cli`)
 - Build: `pnpm build` (runs `astro check && astro build`, so the build type-checks first)
 - Preview production build: `pnpm preview`
 - Astro CLI passthrough: `pnpm astro <cmd>` (e.g. `pnpm astro add react`)

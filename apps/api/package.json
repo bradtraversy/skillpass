@@ -18,7 +18,8 @@
 		"db:backfill-categories": "node --env-file-if-exists=.env --import tsx src/seed/backfill-categories.ts",
 		"db:backfill-display-copy": "node --env-file-if-exists=.env --import tsx src/seed/backfill-display-copy.ts",
 		"db:backfill-integrations": "node --env-file-if-exists=.env --import tsx src/seed/backfill-integrations.ts",
-		"db:backfill-embeddings": "node --env-file-if-exists=.env --import tsx src/seed/backfill-embeddings.ts"
+		"db:backfill-embeddings": "node --env-file-if-exists=.env --import tsx src/seed/backfill-embeddings.ts",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.115.0",
@@ -38,6 +39,7 @@
 	"devDependencies": {
 		"@types/node": "^22.0.0",
 		"@types/tar-stream": "^3.1.4",
-		"drizzle-kit": "^0.31.10"
+		"drizzle-kit": "^0.31.10",
+		"typescript": "^6.0.3"
 	}
 }

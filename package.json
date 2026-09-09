@@ -14,7 +14,7 @@
     "build": "pnpm -C apps/web build",
     "preview": "pnpm -C apps/web preview",
     "astro": "pnpm -C apps/web astro",
-    "typecheck": "pnpm -C apps/web typecheck && pnpm -C packages/cli typecheck",
+    "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "cli": "pnpm -C packages/cli --silent build && node packages/cli/bin/skillpass.mjs"

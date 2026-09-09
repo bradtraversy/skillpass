@@ -68,7 +68,7 @@ describe('in-memory validation', () => {
 			{ path: '.agents/skills/plan/SKILL.md', content: skill('plan') },
 			{ path: '.claude/skills/apply/SKILL.md', content: skill('apply') },
 		];
-		const report = await validateLoadedPackage(loadPackageFromFiles(files, 'pack'), NOW);
+		const report = await validateLoadedPackage(loadPackageFromFiles(files, 'pack'), { now: NOW });
 		expect(report.status).toBe('passed');
 		expect(report.failures).toEqual([]);
 	});
