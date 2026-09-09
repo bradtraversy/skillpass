@@ -86,7 +86,7 @@ const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---/;
 
 // name/description only; deliberately not a full YAML parser. Reads SKILL.md
 // frontmatter (including `>`/`|` block scalars, common for descriptions), then
-// falls back to the first prose line for a description.
+// falls back to the first prose paragraph for a description.
 function readSkillMeta(content: string): { name?: string; description?: string } {
 	const out: { name?: string; description?: string } = {};
 	const fm = FRONTMATTER_RE.exec(content);
@@ -114,18 +114,60 @@ function readSkillMeta(content: string): { name?: string; description?: string }
 						: gathered.join('\n').trim();
 				if (text) out[key] = text;
 			} else {
-				out[key] = kv[2].replace(/^["']|["']$/g, '');
+				// A plain scalar may continue on indented lines; YAML folds them with spaces.
+				const parts = [kv[2]];
+				for (let j = i + 1; j < lines.length && /^\s+\S/.test(lines[j]); j++) parts.push(lines[j].trim());
+				out[key] = parts.join(' ').replace(/^["']|["']$/g, '');
 			}
 		}
 	}
 	if (!out.description) {
-		const prose = body
-			.split('\n')
-			.map((line) => line.trim())
-			.find((line) => line && !line.startsWith('#'));
-		if (prose) out.description = prose.slice(0, 200);
+		const prose = firstParagraph(body);
+		if (prose) out.description = prose;
 	}
 	return out;
+}
+
+const HTML_TAG_RE = /<\/?[a-zA-Z][^>]*>/g;
+const MD_LINK_RE = /\[([^\]]*)\]\([^)]*\)/g;
+const STRUCTURAL_LINE_RE = /^(#|!\[|\[!\[|---$|\*\*\*$|___$)|^<h[1-6][\s>]/i;
+const DESCRIPTION_MAX = 200;
+
+const cleanInline = (line: string): string =>
+	line
+		.replace(HTML_TAG_RE, ' ')
+		.replace(MD_LINK_RE, '$1')
+		.replace(/^>\s?/, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+
+// Prefer ending on a sentence; otherwise cut on a word and drop a dangling
+// comma so the result never reads as a wrap-truncated fragment.
+function clip(text: string, max: number): string {
+	if (text.length <= max) return text;
+	const head = text.slice(0, max);
+	const sentenceEnd = Math.max(head.lastIndexOf('. '), head.lastIndexOf('! '), head.lastIndexOf('? '));
+	if (sentenceEnd >= 60) return head.slice(0, sentenceEnd + 1);
+	const wordEnd = head.lastIndexOf(' ');
+	return (wordEnd > 0 ? head.slice(0, wordEnd) : head).replace(/[,;:]+$/, '').trim();
+}
+
+// First paragraph of prose in a markdown body. Headings (markdown or <h1>),
+// images, badges, rules, and lines that are only markup (logo blocks) are
+// dropped; inline tags and link syntax are stripped so a README whose tagline
+// is `<p align="center"><strong>...</strong></p>` still yields the tagline.
+function firstParagraph(text: string): string | undefined {
+	const kept: string[] = [];
+	for (const raw of text.split('\n')) {
+		const source = raw.trim();
+		const line = STRUCTURAL_LINE_RE.test(source) ? '' : cleanInline(source);
+		if (!line) {
+			if (kept.length > 0) break;
+			continue;
+		}
+		kept.push(line);
+	}
+	return kept.length > 0 ? clip(kept.join(' '), DESCRIPTION_MAX) : undefined;
 }
 
 function slugify(value: string): string {
@@ -199,16 +241,7 @@ function collectMemberFiles(files: PackageFile[]): MemberFiles[] {
 
 function readmeProse(files: PackageFile[]): string | undefined {
 	const readme = files.find((f) => f.path === 'README.md');
-	if (!readme) return undefined;
-	// Skip headings, badge/image lines, and raw HTML (logo blocks atop READMEs).
-	const prose = readme.content
-		.split('\n')
-		.map((line) => line.trim())
-		.find(
-			(line) =>
-				line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('[![') && !line.startsWith('<'),
-		);
-	return prose?.slice(0, 200);
+	return readme ? firstParagraph(readme.content) : undefined;
 }
 
 // Synthesize a manifest for a repo whose skills live in nested layouts

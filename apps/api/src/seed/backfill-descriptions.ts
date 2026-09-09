@@ -6,11 +6,19 @@ import { skills, skillVersions } from '../db/schema';
 import { loadEnv, type Env } from '../env';
 import { getSnapshotDocument } from '../storage/r2';
 
-// A summary is broken when the old line-based frontmatter parser stored a YAML
-// block-scalar indicator (`>`, `>-`, `|-`) or nothing instead of the folded text.
+// A summary is broken when an older parser stored a YAML block-scalar indicator
+// (`>`, `>-`, `|-`) or nothing instead of the folded text, or when the old
+// line-based inference kept markup, a blockquote marker, or a line cut
+// mid-sentence at a wrap.
 export function isBrokenSummary(summary: string | null | undefined): boolean {
 	const s = (summary ?? '').trim();
-	return s.length < 3 || /^[|>][+-]?$/.test(s);
+	return (
+		s.length < 3 ||
+		/^[|>][+-]?$/.test(s) ||
+		/^>\s/.test(s) ||
+		/<\/?[a-zA-Z][^>]*>/.test(s) ||
+		/[,;:]$/.test(s)
+	);
 }
 
 async function main() {
@@ -40,7 +48,12 @@ async function main() {
 			console.log(`  unchanged ${row.slug} - no better description parsed`);
 			continue;
 		}
-		await db.update(skills).set({ summary: description, updatedAt: new Date() }).where(eq(skills.id, row.id));
+		// Display copy was generated from the broken summary; clearing the tagline
+		// makes db:backfill-display-copy regenerate it from the repaired one.
+		await db
+			.update(skills)
+			.set({ summary: description, tagline: null, updatedAt: new Date() })
+			.where(eq(skills.id, row.id));
 		counts.fixed++;
 		console.log(`  fixed     ${row.slug} - ${description.slice(0, 60)}...`);
 	}

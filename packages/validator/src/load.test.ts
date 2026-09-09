@@ -239,6 +239,72 @@ describe('loadPackageFromFiles', () => {
 	});
 });
 
+describe('prose description inference', () => {
+	const skillMd = (name: string) => `---\nname: ${name}\ndescription: Does ${name} things.\n---\n\n# ${name}\n`;
+	const packDescription = (readme: string) => {
+		const pkg = loadPackageFromFiles(
+			[
+				{ path: 'skills/one/SKILL.md', content: skillMd('one') },
+				{ path: 'skills/two/SKILL.md', content: skillMd('two') },
+				{ path: 'README.md', content: readme },
+			],
+			'pack',
+		);
+		return pkg.manifest.state === 'ok' ? pkg.manifest.data.description : undefined;
+	};
+	const singleDescription = (body: string) => {
+		const pkg = loadPackageFromFiles([{ path: 'SKILL.md', content: `---\nname: solo\n---\n${body}` }], 'solo');
+		return pkg.manifest.state === 'ok' ? pkg.manifest.data.description : undefined;
+	};
+
+	it('reads the tagline out of a README that opens with an HTML logo block', () => {
+		const readme = [
+			'<p align="center">',
+			'  <picture>',
+			'    <img src="assets/mark.svg" alt="AI Blueprint" width="64" height="64">',
+			'  </picture>',
+			'</p>',
+			'',
+			'<h1 align="center">AI Blueprint</h1>',
+			'',
+			'<p align="center"><strong>A file-backed, spec-driven AI coding workflow framework.</strong></p>',
+			'',
+			'AI Blueprint gives coding agents a shared workflow.',
+		].join('\n');
+		expect(packDescription(readme)).toBe('A file-backed, spec-driven AI coding workflow framework.');
+	});
+
+	it('joins a wrapped paragraph instead of stopping at the first line', () => {
+		expect(packDescription('# Pack\n\nYou provide two short planning docs.\nThe AI turns them into context.\n\nSecond paragraph.\n')).toBe(
+			'You provide two short planning docs. The AI turns them into context.',
+		);
+	});
+
+	it('strips a blockquote marker and markdown link syntax', () => {
+		expect(packDescription('> A data analyst plugin for [Cowork](https://claude.com) users.\n')).toBe(
+			'A data analyst plugin for Cowork users.',
+		);
+	});
+
+	it('skips a badge line at the top of a SKILL.md body', () => {
+		expect(singleDescription('[![CI](x)](y)\n\n# Solo\n\nReal prose here.\n')).toBe('Real prose here.');
+	});
+
+	it('clips a long paragraph at a sentence end', () => {
+		const first = 'This first sentence is long enough to count as a real opening line for the listing.';
+		const second =
+			'This second sentence pushes the paragraph well past the two hundred character cap that summaries get, so the clip has to land on the first full stop.';
+		expect(packDescription(`${first} ${second}\n`)).toBe(first);
+	});
+
+	it('clips on a word boundary and drops a dangling comma when there is no sentence end', () => {
+		const words = Array.from({ length: 40 }, (_, i) => (i === 24 ? 'twenty-four,' : 'word')).join(' ');
+		const out = packDescription(`${words}\n`);
+		expect(out?.length).toBeLessThanOrEqual(200);
+		expect(out).toMatch(/(word|twenty-four)$/);
+	});
+});
+
 describe('frontmatter description parsing', () => {
 	const describeFor = (content: string) => {
 		const pkg = loadPackageFromFiles([{ path: 'SKILL.md', content }], 'fallback-name');
@@ -248,6 +314,11 @@ describe('frontmatter description parsing', () => {
 	it.each([
 		['a plain value', 'name: x\ndescription: A plain one-line description.\n', 'A plain one-line description.'],
 		['a quoted value', 'name: x\ndescription: "A quoted description."\n', 'A quoted description.'],
+		[
+			'a plain scalar that wraps onto indented lines',
+			'name: x\ndescription: Scan agent skills for security issues. Use when asked to "scan a skill",\n  "audit a skill", or assess whether a skill is safe.\nallowed-tools: Read, Grep\n',
+			'Scan agent skills for security issues. Use when asked to "scan a skill", "audit a skill", or assess whether a skill is safe.',
+		],
 		[
 			'a folded (>-) block scalar',
 			'name: x\ndescription: >-\n  First line of the folded\n  description continues here.\n',
