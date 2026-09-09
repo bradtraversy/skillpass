@@ -179,21 +179,30 @@ const DOCUMENTED_PLACEHOLDERS = ['AKIAIOSFODNN7EXAMPLE', 'AKIAI44QH8DHBEXAMPLE']
 const withoutPlaceholders = (line: string): string =>
 	DOCUMENTED_PLACEHOLDERS.reduce((l, p) => l.replaceAll(p, ' '), line);
 
+// Redaction is per line, not per row: a non-redacting row that co-fires on a
+// line with a secret must not carry the raw value into its own snippet.
+const REDACTIONS = ALL_ROWS.filter((row) => row.redact).map(
+	(row) => new RegExp(row.pattern.source, `${row.pattern.flags}g`),
+);
+
+const redactLine = (line: string): string =>
+	REDACTIONS.reduce((l, re) => l.replace(re, '[redacted]'), line);
+
 export const contentRule: Rule = (pkg) => {
 	const findings: RuleFinding[] = [];
 	for (const file of pkg.files) {
 		file.content.split('\n').forEach((rawLine, i) => {
 			const line = withoutPlaceholders(rawLine);
-			for (const row of ALL_ROWS) {
-				if (row.pattern.test(line)) {
-					const snippet = row.redact ? line.trim().replace(row.pattern, '[redacted]') : line.trim();
-					findings.push({
-						severity: row.severity ?? 'failure',
-						code: row.code,
-						message: row.message,
-						location: { path: file.path, line: i + 1, snippet },
-					});
-				}
+			const hits = ALL_ROWS.filter((row) => row.pattern.test(line));
+			if (hits.length === 0) return;
+			const snippet = redactLine(line).trim();
+			for (const row of hits) {
+				findings.push({
+					severity: row.severity ?? 'failure',
+					code: row.code,
+					message: row.message,
+					location: { path: file.path, line: i + 1, snippet },
+				});
 			}
 		});
 	}
