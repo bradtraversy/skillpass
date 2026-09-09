@@ -17,9 +17,9 @@ import {
 	setVerified,
 	signInUrl,
 	unflagSkill,
-	type ApiResult,
 } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
+import { useAction } from '../../lib/use-action';
 
 type LoadState =
 	| { phase: 'loading' }
@@ -224,25 +224,6 @@ function ToggleButton({
 
 function Empty({ children }: { children: React.ReactNode }) {
 	return <p className="py-[10px] text-[13px] text-muted">{children}</p>;
-}
-
-// A single async action button that surfaces its own error and disables while
-// running; on success it hands control back to the parent to refetch.
-function useAction(onChange: () => Promise<void>) {
-	const [busy, setBusy] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	async function run(fn: () => Promise<ApiResult<unknown>>) {
-		setBusy(true);
-		setError(null);
-		const res = await fn();
-		if (res.success) {
-			await onChange();
-		} else {
-			setError(res.error);
-			setBusy(false);
-		}
-	}
-	return { busy, error, run };
 }
 
 function ReportCard({ report, onChange }: { report: AdminAbuseReport; onChange: () => Promise<void> }) {

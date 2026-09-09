@@ -15,10 +15,10 @@ import {
 	relistSkill,
 	signInUrl,
 	unlistSkill,
-	type ApiResult,
 } from '../../lib/api';
 import { repoHandle, timeAgo } from '../../lib/format';
 import { STATUS_TINT } from '../../lib/status-tint';
+import { useAction } from '../../lib/use-action';
 import Stamp from '../skill/Stamp';
 
 type LoadState =
@@ -205,25 +205,6 @@ function StatusChip({ status }: { status: SkillStatus | SubmissionStatus | Abuse
 			{status.toUpperCase()}
 		</span>
 	);
-}
-
-// Same contract as the admin cards: one async action at a time, inline error,
-// parent refetches on success.
-function useAction(onChange: () => Promise<void>) {
-	const [busy, setBusy] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	async function run(fn: () => Promise<ApiResult<unknown>>) {
-		setBusy(true);
-		setError(null);
-		const res = await fn();
-		if (res.success) {
-			await onChange();
-		} else {
-			setError(res.error);
-			setBusy(false);
-		}
-	}
-	return { busy, error, run };
 }
 
 function SkillCard({ skill, onChange }: { skill: MaintainerSkill; onChange: () => Promise<void> }) {
