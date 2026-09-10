@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import type { PublicUser } from 'skill-schema';
 import type { Db } from './client';
 import { users, type UserRow } from './schema';
 
@@ -7,16 +8,6 @@ export interface GithubProfile {
 	username: string;
 	displayName: string;
 	avatarUrl: string;
-}
-
-export interface PublicUser {
-	id: number;
-	username: string;
-	displayName: string;
-	avatarUrl: string;
-	role: UserRow['role'];
-	reputation: number;
-	createdAt: string;
 }
 
 export function publicUser(row: UserRow): PublicUser {

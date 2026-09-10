@@ -13,6 +13,7 @@ import type {
 	PublicSkillSource,
 	PublicSkillSummary,
 	PublicSubmission,
+	PublicUser,
 	PublicValidation,
 	PublishResult,
 	SkillStatus,
@@ -20,14 +21,6 @@ import type {
 
 // The only knob the static site needs to find the API.
 export const API_URL: string = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8787';
-
-// The subset of the API's public user the submit island renders.
-export interface CurrentUser {
-	id: number;
-	username: string;
-	displayName: string;
-	avatarUrl: string;
-}
 
 // The API's envelope, with the HTTP status attached to failures so islands
 // can branch on it (404 vs outage) without matching error copy. A network
@@ -64,7 +57,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiResult<T
 	};
 }
 
-export function getMe(): Promise<ApiResult<CurrentUser>> {
+export function getMe(): Promise<ApiResult<PublicUser>> {
 	return request('/me');
 }
 

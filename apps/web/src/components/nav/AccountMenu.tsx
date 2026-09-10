@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { getMe, logout, signInUrl, type CurrentUser } from '../../lib/api';
+import type { PublicUser } from 'skill-schema';
+import { getMe, logout, signInUrl } from '../../lib/api';
 
 type AuthState =
 	| { state: 'checking' }
 	| { state: 'signed-out' }
-	| { state: 'signed-in'; user: CurrentUser };
+	| { state: 'signed-in'; user: PublicUser };
 
 export default function AccountMenu() {
 	const [auth, setAuth] = useState<AuthState>({ state: 'checking' });

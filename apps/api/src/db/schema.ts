@@ -14,9 +14,11 @@ import {
 	ABUSE_REPORT_STATUSES,
 	PROGRESS_STEP_STATES,
 	RISK_LEVELS,
+	SKILL_STATUSES,
 	SOURCE_TYPES,
 	SUBMISSION_SOURCE_TYPES,
 	SUBMISSION_STATUSES,
+	USER_ROLES,
 	VALIDATION_JOB_STATES,
 	VALIDATION_STATUSES,
 	type AiReview,
@@ -29,7 +31,7 @@ import {
 	type ValidationReport,
 } from 'skill-schema';
 
-export const userRole = pgEnum('user_role', ['user', 'maintainer', 'admin']);
+export const userRole = pgEnum('user_role', USER_ROLES);
 
 export const users = pgTable('users', {
 	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
@@ -108,7 +110,7 @@ export const validationReports = pgTable('validation_reports', {
 
 export type ValidationReportRow = typeof validationReports.$inferSelect;
 
-export const skillStatus = pgEnum('skill_status', ['published', 'draft', 'private', 'flagged']);
+export const skillStatus = pgEnum('skill_status', SKILL_STATUSES);
 export const versionSourceType = pgEnum('version_source_type', SOURCE_TYPES);
 
 // latestVersionId is set after the version insert (circular with skill_versions);

@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { MAX_ZIP_BYTES, type CreatedSubmission, type DetectedPackage } from 'skill-schema';
-import { getMe, signInUrl, submitGithubUrl, submitZip, type CurrentUser } from '../../lib/api';
+import { MAX_ZIP_BYTES, type CreatedSubmission, type DetectedPackage, type PublicUser } from 'skill-schema';
+import { getMe, signInUrl, submitGithubUrl, submitZip } from '../../lib/api';
 import ValidationProgress from './ValidationProgress';
 
 type AuthState =
 	| { state: 'checking' }
 	| { state: 'signed-out' }
-	| { state: 'signed-in'; user: CurrentUser };
+	| { state: 'signed-in'; user: PublicUser };
 
 type Mode = 'url' | 'zip';
 
