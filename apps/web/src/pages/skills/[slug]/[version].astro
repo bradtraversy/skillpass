@@ -1,9 +1,11 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import BackLink from '../../../components/nav/BackLink.astro';
 import Nav from '../../../components/nav/Nav.astro';
 import SkillDetail from '../../../components/skill/SkillDetail';
 import { getSkill } from '../../../lib/api';
 import { metaDescription } from '../../../lib/seo';
+import { headFetch } from '../../../lib/ssr';
 
 // Rendered on demand so a version permalink works the moment it publishes;
 // the island fetches fresh data at runtime. Head metadata is fetched
@@ -14,9 +16,7 @@ export const prerender = false;
 const { slug, version } = Astro.params;
 if (!slug || !version) return new Response(null, { status: 404 });
 
-const result = await getSkill(slug, version, { signal: AbortSignal.timeout(4000) });
-const skill = result.success ? result.data : null;
-if (!result.success && result.status === 404) Astro.response.status = 404;
+const skill = await headFetch(Astro.response, (init) => getSkill(slug, version, init));
 const title = `${skill?.name ?? slug} v${version} - SkillPass`;
 const description = (skill && metaDescription(skill.summary)) || undefined;
 ---
@@ -24,25 +24,7 @@ const description = (skill && metaDescription(skill.summary)) || undefined;
 <BaseLayout title={title} description={description} canonicalPath={`/skills/${slug}`}>
 	<Nav />
 	<main class="mx-auto max-w-[760px] px-6">
-		<a
-			href={`/skills/${slug}`}
-			class="inline-flex items-center gap-[7px] pt-[26px] text-[13px] text-muted hover:text-text"
-		>
-			<svg
-				width="15"
-				height="15"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				aria-hidden="true"
-			>
-				<path d="m15 18-6-6 6-6"></path>
-			</svg>
-			Latest version
-		</a>
+		<BackLink href={`/skills/${slug}`}>Latest version</BackLink>
 		<SkillDetail client:load slug={slug} version={version} />
 	</main>
 </BaseLayout>
