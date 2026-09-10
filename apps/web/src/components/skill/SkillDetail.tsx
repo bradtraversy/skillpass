@@ -9,8 +9,8 @@ import Passport from './Passport';
 import ReportPanel from './ReportPanel';
 import SourceView from './SourceView';
 import Stamp from './Stamp';
+import { SECTION_HEADING } from '../../lib/classes';
 
-const SECTION_HEADING = 'mb-[13px] font-mono text-[11px] uppercase tracking-[0.12em] text-faint';
 
 type LoadState =
 	| { phase: 'loading' }

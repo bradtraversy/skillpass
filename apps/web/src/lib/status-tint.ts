@@ -1,8 +1,9 @@
 import type { AbuseReportStatus, SkillStatus, SubmissionStatus } from 'skill-schema';
+import { VERDICT_TINT } from './verdict';
 
-const PASS = 'text-pass border-pass-line bg-pass-soft';
-const WARN = 'text-warn border-warn-line bg-warn-soft';
-const FAIL = 'text-fail border-fail-line bg-fail-soft';
+const PASS = VERDICT_TINT.passed.all;
+const WARN = VERDICT_TINT.warning.all;
+const FAIL = VERDICT_TINT.failed.all;
 const NEUTRAL = 'text-unv border-unv-line bg-unv-soft';
 const ACTIVE = 'text-accent border-accent-line bg-accent-soft';
 

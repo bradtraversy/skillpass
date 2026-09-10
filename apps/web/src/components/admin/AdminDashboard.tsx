@@ -18,8 +18,10 @@ import {
 	signInUrl,
 	unflagSkill,
 } from '../../lib/api';
+import { BTN_BASE, CARD, SECTION_HEADING } from '../../lib/classes';
 import { timeAgo } from '../../lib/format';
 import { useAction } from '../../lib/use-action';
+import Empty from '../ui/Empty';
 
 type LoadState =
 	| { phase: 'loading' }
@@ -27,11 +29,6 @@ type LoadState =
 	| { phase: 'notauth' }
 	| { phase: 'error' }
 	| { phase: 'ready'; queue: AdminQueue };
-
-const SECTION_HEADING = 'mb-[13px] font-mono text-[11px] uppercase tracking-[0.12em] text-faint';
-const CARD = 'rounded-md border border-border bg-surface px-[16px] py-[13px]';
-const BTN_BASE =
-	'cursor-pointer rounded-sm px-[11px] py-[6px] text-[12px] font-semibold disabled:cursor-not-allowed disabled:opacity-50';
 
 export default function AdminDashboard() {
 	const [load, setLoad] = useState<LoadState>({ phase: 'loading' });
@@ -220,10 +217,6 @@ function ToggleButton({
 			{on ? `✓ ${label}` : label}
 		</button>
 	);
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-	return <p className="py-[10px] text-[13px] text-muted">{children}</p>;
 }
 
 function ReportCard({ report, onChange }: { report: AdminAbuseReport; onChange: () => Promise<void> }) {

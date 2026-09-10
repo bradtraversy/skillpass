@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react';
-import type { PublicPreflight, RiskLevel } from 'skill-schema';
+import type { PublicPreflight } from 'skill-schema';
 import { downloadUrl, getPreflight } from '../../lib/api';
+import { capitalize } from '../../lib/format';
+import { RISK_DOT } from '../../lib/risk';
 import { VERDICT_TINT } from '../../lib/verdict';
 import PermissionRow from './PermissionRow';
 import Stamp from './Stamp';
 
-const RISK_DOT: Record<RiskLevel, string> = {
-	low: 'bg-risk-low',
-	medium: 'bg-risk-med',
-	high: 'bg-risk-high',
-	critical: 'bg-risk-crit',
-};
 
 const SECTION = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint';
 
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 type LoadState =
 	| { phase: 'loading' }
@@ -117,7 +112,7 @@ export default function PreflightPanel({
 						<Stamp verdict={load.preflight.validationStatus} />
 						<span className="flex items-center gap-[6px] text-[13px] font-semibold">
 							<span className={`size-[8px] rounded-full ${RISK_DOT[load.preflight.riskLevel]}`} />
-							{cap(load.preflight.riskLevel)} risk
+							{capitalize(load.preflight.riskLevel)} risk
 						</span>
 						<span
 							className={`ml-auto flex items-center gap-[5px] font-mono text-[11.5px] ${load.preflight.sourceVerified ? 'text-pass' : 'text-fail'}`}

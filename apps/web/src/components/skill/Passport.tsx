@@ -1,4 +1,6 @@
-import type { PermissionKey, PublicSkillDetail, RiskLevel, ValidationStatus } from 'skill-schema';
+import type { PermissionKey, PublicSkillDetail, ValidationStatus } from 'skill-schema';
+import { capitalize } from '../../lib/format';
+import { RISK_DOT } from '../../lib/risk';
 import { VERDICT_TINT } from '../../lib/verdict';
 import Finding from './Finding';
 import PermissionRow from './PermissionRow';
@@ -31,14 +33,7 @@ const VERDICT_ICON: Record<ValidationStatus, React.ReactNode> = {
 	),
 };
 
-const RISK_DOT: Record<RiskLevel, string> = {
-	low: 'bg-risk-low',
-	medium: 'bg-risk-med',
-	high: 'bg-risk-high',
-	critical: 'bg-risk-crit',
-};
 
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 	const { passport } = detail;
@@ -112,7 +107,7 @@ export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 					</div>
 					<div className="mt-[5px] flex items-center gap-[7px] text-[14px] font-semibold">
 						<span className={`size-[8px] rounded-full ${RISK_DOT[passport.riskLevel]}`} />
-						{cap(passport.riskLevel)}
+						{capitalize(passport.riskLevel)}
 					</div>
 				</div>
 

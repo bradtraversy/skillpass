@@ -37,3 +37,5 @@ export function firstSentence(text: string): string {
 	const match = text.match(/^.*?[.!?](?=\s|$)/);
 	return (match?.[0] ?? text).trim();
 }
+
+export const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);

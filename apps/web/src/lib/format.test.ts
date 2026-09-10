@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { firstSentence, monogram, repoHandle, timeAgo } from './format';
+import { capitalize, firstSentence, monogram, repoHandle, timeAgo } from './format';
 
 describe('monogram', () => {
 	it('uses first and last word initials', () => {
@@ -84,5 +84,12 @@ describe('firstSentence', () => {
 		expect(firstSentence('Targets Node 22.12 runtimes and up. Second sentence.')).toBe(
 			'Targets Node 22.12 runtimes and up.',
 		);
+	});
+});
+
+describe('capitalize', () => {
+	it('upper-cases the first character only', () => {
+		expect(capitalize('low')).toBe('Low');
+		expect(capitalize('')).toBe('');
 	});
 });

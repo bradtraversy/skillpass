@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import type { PublicProfile } from 'skill-schema';
 import { getProfile } from '../../lib/api';
 import Row from '../skill/Row';
+import { SECTION_HEADING } from '../../lib/classes';
 
-const SECTION_HEADING = 'mb-[13px] font-mono text-[11px] uppercase tracking-[0.12em] text-faint';
 
 type LoadState =
 	| { phase: 'loading' }

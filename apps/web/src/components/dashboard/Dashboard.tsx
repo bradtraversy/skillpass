@@ -16,10 +16,12 @@ import {
 	signInUrl,
 	unlistSkill,
 } from '../../lib/api';
+import { BTN_BASE, CARD, SECTION_HEADING } from '../../lib/classes';
 import { repoHandle, timeAgo } from '../../lib/format';
 import { STATUS_TINT } from '../../lib/status-tint';
 import { useAction } from '../../lib/use-action';
 import Stamp from '../skill/Stamp';
+import Empty from '../ui/Empty';
 
 type LoadState =
 	| { phase: 'loading' }
@@ -31,11 +33,6 @@ type LoadState =
 			submissions: PublicSubmission[];
 			reports: MaintainerReport[];
 	  };
-
-const SECTION_HEADING = 'mb-[13px] font-mono text-[11px] uppercase tracking-[0.12em] text-faint';
-const CARD = 'rounded-md border border-border bg-surface px-[16px] py-[13px]';
-const BTN_BASE =
-	'cursor-pointer rounded-sm px-[11px] py-[6px] text-[12px] font-semibold disabled:cursor-not-allowed disabled:opacity-50';
 
 export default function Dashboard() {
 	const [load, setLoad] = useState<LoadState>({ phase: 'loading' });
@@ -191,10 +188,6 @@ function ReportCard({ report }: { report: MaintainerReport }) {
 			</div>
 		</div>
 	);
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-	return <p className="py-[10px] text-[13px] text-muted">{children}</p>;
 }
 
 function StatusChip({ status }: { status: SkillStatus | SubmissionStatus | AbuseReportStatus }) {
