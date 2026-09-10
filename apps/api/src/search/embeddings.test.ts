@@ -115,3 +115,18 @@ describe('embedTexts', () => {
 		expect(result).toEqual({ success: false, error: 'voyage returned a mismatched embedding count' });
 	});
 });
+
+describe('embedTexts hardening', () => {
+	it('bounds the request with an abort signal', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(voyageOk([[1, 2]]));
+		vi.stubGlobal('fetch', fetchMock);
+		await embedTexts(env, ['a'], 'query');
+		expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+	});
+
+	it('reports a malformed body as a failed call instead of throwing', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('not json', { status: 200 })));
+		const result = await embedTexts(env, ['a'], 'query');
+		expect(result.success).toBe(false);
+	});
+});

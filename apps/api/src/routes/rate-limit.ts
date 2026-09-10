@@ -35,16 +35,23 @@ function prune(
 	}
 }
 
-// First hop of x-forwarded-for (Render terminates TLS in front of the API);
-// clients without one share a bucket rather than bypassing the limit.
-export function clientKey(header: string | undefined): string {
-	const first = header?.split(',')[0]?.trim();
-	return first || 'unknown';
+// Render sits behind Cloudflare, which supplies the real client address as
+// cf-connecting-ip and appends it as the last x-forwarded-for hop; the first
+// hop is whatever the caller sent, so it must never be the key. Clients with
+// no usable header share a bucket rather than bypassing the limit.
+export function clientKey(header: (name: string) => string | undefined): string {
+	const edge = header('cf-connecting-ip')?.trim() || header('true-client-ip')?.trim();
+	if (edge) return edge;
+	const hops = (header('x-forwarded-for') ?? '')
+		.split(',')
+		.map((hop) => hop.trim())
+		.filter(Boolean);
+	return hops.at(-1) ?? 'unknown';
 }
 
 export function rateLimitMiddleware(limiter: RateLimiter) {
 	return async (c: Context, next: Next) => {
-		const key = clientKey(c.req.header('x-forwarded-for'));
+		const key = clientKey((name) => c.req.header(name));
 		if (!limiter.allow(key)) {
 			return c.json({ success: false, error: 'Too many requests, slow down.' }, 429);
 		}

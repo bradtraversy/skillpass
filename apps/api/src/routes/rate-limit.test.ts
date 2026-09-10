@@ -34,12 +34,21 @@ describe('createRateLimiter', () => {
 });
 
 describe('clientKey', () => {
-	it('takes the first hop of x-forwarded-for', () => {
-		expect(clientKey('203.0.113.5, 10.0.0.1')).toBe('203.0.113.5');
+	const headers = (map: Record<string, string>) => (name: string) => map[name];
+
+	it('prefers the address Cloudflare attaches over anything the caller sent', () => {
+		expect(
+			clientKey(headers({ 'cf-connecting-ip': '198.51.100.7', 'x-forwarded-for': '203.0.113.5, 198.51.100.7' })),
+		).toBe('198.51.100.7');
+		expect(clientKey(headers({ 'true-client-ip': '198.51.100.8' }))).toBe('198.51.100.8');
 	});
 
-	it('falls back to a shared bucket without the header', () => {
-		expect(clientKey(undefined)).toBe('unknown');
-		expect(clientKey('  ')).toBe('unknown');
+	it('falls back to the last x-forwarded-for hop, never the spoofable first one', () => {
+		expect(clientKey(headers({ 'x-forwarded-for': '203.0.113.5, 198.51.100.7' }))).toBe('198.51.100.7');
+	});
+
+	it('falls back to a shared bucket without a usable header', () => {
+		expect(clientKey(headers({}))).toBe('unknown');
+		expect(clientKey(headers({ 'x-forwarded-for': ' , ' }))).toBe('unknown');
 	});
 });

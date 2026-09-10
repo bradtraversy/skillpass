@@ -6,6 +6,8 @@ export const EMBEDDING_MODEL = 'voyage-3.5-lite';
 export const EMBEDDING_DIMENSIONS = 1024;
 
 const VOYAGE_URL = 'https://api.voyageai.com/v1/embeddings';
+// Search waits on this call, so it is bounded like the GitHub and R2 requests.
+const VOYAGE_TIMEOUT_MS = 30_000;
 // Voyage allows up to 1,000 texts per request; batching conservatively keeps
 // each request small against the per-request token ceiling.
 const BATCH_SIZE = 128;
@@ -73,22 +75,22 @@ export async function embedTexts(
 	const vectors: number[][] = [];
 	for (let start = 0; start < texts.length; start += BATCH_SIZE) {
 		const chunk = texts.slice(start, start + BATCH_SIZE);
-		let res: Response;
+		let body: VoyageResponse;
 		try {
-			res = await fetch(VOYAGE_URL, {
+			const res = await fetch(VOYAGE_URL, {
 				method: 'POST',
 				headers: {
 					authorization: `Bearer ${env.VOYAGE_API_KEY}`,
 					'content-type': 'application/json',
 				},
 				body: JSON.stringify({ model: EMBEDDING_MODEL, input: chunk, input_type: inputType }),
+				signal: AbortSignal.timeout(VOYAGE_TIMEOUT_MS),
 			});
+			if (!res.ok) return { success: false, error: `voyage responded ${res.status}` };
+			body = (await res.json()) as VoyageResponse;
 		} catch (err) {
 			return { success: false, error: err instanceof Error ? err.message : String(err) };
 		}
-		if (!res.ok) return { success: false, error: `voyage responded ${res.status}` };
-
-		const body = (await res.json()) as VoyageResponse;
 		// The API documents index-ordered data; sort defensively anyway.
 		const ordered = [...body.data].sort((a, b) => a.index - b.index).map((d) => d.embedding);
 		if (ordered.length !== chunk.length) {
