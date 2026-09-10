@@ -106,44 +106,49 @@ function buildPreflight(
 
 // Public, anonymous, read-only: directory listing, skill detail, version
 // permalinks, and the pinned source view. Specific routes register first.
+type ReportCtx = Context<{ Variables: AuthVariables }, '/:slug/report'>;
+
+// One open report per reporter per skill; a repeat is a 409, not a duplicate row.
+async function fileAbuseReport(c: ReportCtx, db: Db): Promise<Response> {
+	const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
+	if (!record) {
+		return notFound(c);
+	}
+	let body: unknown;
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ success: false, error: 'send a JSON body with a reason' }, 400);
+	}
+	const parsed = parseAbuseReportInput(body);
+	if (!parsed.success) {
+		return c.json({ success: false, error: parsed.error }, 400);
+	}
+	const reporter = c.get('user');
+	const existing = await findOpenReportBySkillAndReporter(db, record.skill.id, reporter.id);
+	if (existing) {
+		return c.json(
+			{ success: false, error: 'you already have an open report for this skill' },
+			409,
+		);
+	}
+	const report = await createAbuseReport(db, {
+		skillId: record.skill.id,
+		reporterId: reporter.id,
+		reason: parsed.data.reason,
+	});
+	const data: PublicAbuseReport = {
+		status: report.status,
+		createdAt: report.createdAt.toISOString(),
+	};
+	return c.json({ success: true, data }, 201);
+}
+
 export function skillRoutes(env: Env, db: Db) {
 	// requireAuth guards only the report route; everything else stays anonymous.
 	const routes = new Hono<{ Variables: AuthVariables }>();
 
-	routes.post('/:slug/report', requireAuth(env, db), async (c) => {
-		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
-		if (!record) {
-			return notFound(c);
-		}
-		let body: unknown;
-		try {
-			body = await c.req.json();
-		} catch {
-			return c.json({ success: false, error: 'send a JSON body with a reason' }, 400);
-		}
-		const parsed = parseAbuseReportInput(body);
-		if (!parsed.success) {
-			return c.json({ success: false, error: parsed.error }, 400);
-		}
-		const reporter = c.get('user');
-		const existing = await findOpenReportBySkillAndReporter(db, record.skill.id, reporter.id);
-		if (existing) {
-			return c.json(
-				{ success: false, error: 'you already have an open report for this skill' },
-				409,
-			);
-		}
-		const report = await createAbuseReport(db, {
-			skillId: record.skill.id,
-			reporterId: reporter.id,
-			reason: parsed.data.reason,
-		});
-		const data: PublicAbuseReport = {
-			status: report.status,
-			createdAt: report.createdAt.toISOString(),
-		};
-		return c.json({ success: true, data }, 201);
-	});
+	routes.post('/:slug/report', requireAuth(env, db), (c) => fileAbuseReport(c, db));
 
 	// Owner-scoped status flips: unlist withdraws a published listing (versions,
 	// passports, and snapshots stay immutable; the slug stays reserved), relist

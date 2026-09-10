@@ -10,7 +10,7 @@ import {
 	writeFileSync,
 } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
-import type { Target } from 'skill-schema';
+import type { PublicPreflight, PublicSkillDetail, SkillEntry, Target } from 'skill-schema';
 import { loadPackageFromFiles, type PackageFile } from 'validator';
 import { fetchPreflight, resolveApiUrl } from './api';
 import {
@@ -21,6 +21,7 @@ import {
 	planMembers,
 	receiptFor,
 	TARGET_OR_DIR,
+	type Push,
 } from './install';
 import { resolvePackMembers } from './pack';
 import { recordReceipt } from './receipts';
@@ -218,6 +219,177 @@ function packChoices(declared: Target[], slug: string, count: number): PackChoic
 	return choices;
 }
 
+// Everything a single install strategy needs once the pre-flight has passed.
+interface AddContext {
+	push: Push;
+	done: (exitCode: number) => CommandResult;
+	fetchImpl: typeof fetch;
+	apiUrl: string;
+	cwd: string;
+	slug: string;
+	preflight: PublicPreflight;
+}
+
+type Prompt = (question: string) => Promise<string>;
+
+async function promptIndex(ask: Prompt, count: number, push: Push): Promise<number> {
+	while (true) {
+		const answer = (await ask(`Where should it go? [1-${count}, default 1] `)).trim();
+		if (answer === '') return 0;
+		const index = /^\d+$/.test(answer) ? Number.parseInt(answer, 10) - 1 : -1;
+		if (index >= 0 && index < count) return index;
+		push(`  answer 1-${count}, or press enter for the default`);
+	}
+}
+
+type PackLocation = { tool: string; global: boolean } | { dir: string };
+
+// No --target or --dir on a pack: ask when there is a prompt, otherwise drop
+// the raw source in ./<slug> and tip the fan-out install.
+async function choosePackLocation(
+	ctx: AddContext,
+	detail: PublicSkillDetail,
+	memberCount: number,
+	prompt: Prompt | undefined,
+): Promise<PackLocation> {
+	if (prompt) {
+		const choices = packChoices(detail.targets, ctx.slug, memberCount);
+		ctx.push('', 'Install location:');
+		choices.forEach((choice, i) => ctx.push(`  ${i + 1}) ${choice.label}`));
+		const chosen = choices[await promptIndex(prompt, choices.length, ctx.push)];
+		return chosen.tool ? { tool: chosen.tool, global: chosen.global ?? false } : { dir: ctx.slug };
+	}
+	const mappable = mappableDeclaredTargets(detail.targets);
+	if (mappable.length > 0) {
+		ctx.push(
+			'',
+			`tip: --target ${mappable[0]} installs the ${memberCount} skills into the tool's skills folder`,
+		);
+	}
+	return { dir: ctx.slug };
+}
+
+async function chooseSingleLocation(
+	ctx: AddContext,
+	detail: PublicSkillDetail,
+	prompt: Prompt | undefined,
+): Promise<string> {
+	const choices = installChoices(detail.targets, ctx.slug);
+	if (prompt && choices.length > 1) {
+		ctx.push('', 'Install location:');
+		choices.forEach((choice, i) => ctx.push(`  ${i + 1}) ${choice.label}`));
+		return choices[await promptIndex(prompt, choices.length, ctx.push)].dir;
+	}
+	const mappable = mappableDeclaredTargets(detail.targets);
+	if (mappable.length > 0) {
+		ctx.push('', `tip: --target ${mappable[0]} installs into the tool's skills folder`);
+	}
+	return ctx.slug;
+}
+
+// Fan a pack out into a tool's skills area, one folder per supported member.
+async function installPack(
+	ctx: AddContext,
+	members: SkillEntry[],
+	tool: string,
+	global: boolean,
+): Promise<CommandResult> {
+	const { push, done, slug, preflight } = ctx;
+	const area = resolveTargetArea(tool, global);
+	if (!area.ok) {
+		push('', `error: ${area.message}`);
+		return done(2);
+	}
+	const { installs, skipped } = resolvePackMembers(members, tool);
+	if (installs.length === 0) {
+		push('', `error: none of this pack's skills support ${tool}`);
+		return done(2);
+	}
+	const areaAbs = resolve(ctx.cwd, area.dir);
+	const conflicts = installs.map((m) => join(areaAbs, m.name)).filter(isOccupied);
+	if (conflicts.length > 0) {
+		push(
+			'',
+			'error: these destinations already exist and are not empty; nothing was installed:',
+			...conflicts.map((c) => `  ${c}`),
+		);
+		return done(2);
+	}
+	const download = await downloadVerified(ctx.fetchImpl, ctx.apiUrl, slug, preflight.version, preflight.sourceHash);
+	if (!download.ok) {
+		push('', `error: ${download.message}`);
+		return done(2);
+	}
+	const plans = planMembers(installs, download.files);
+	const missing = plans.find((p) => p.files.length === 0);
+	if (missing) {
+		push('', `error: the snapshot has no files for "${missing.name}"; nothing was installed`);
+		return done(2);
+	}
+	for (const name of skipped) {
+		push('', `note: ${name} does not support ${tool}; skipped`);
+	}
+	const written: string[] = [];
+	try {
+		for (const plan of plans) {
+			writeTree(plan.files, join(areaAbs, plan.name));
+			written.push(plan.name);
+			// Receipt per member as it lands, so a later failure leaves nothing unaccounted for.
+			recordReceipt(areaAbs, plan.name, receiptFor(preflight, slug));
+		}
+	} catch {
+		push(
+			'',
+			`error: could not write ${plans[written.length].name}; installed before the failure: ${written.join(', ') || 'none'}`,
+		);
+		return done(2);
+	}
+	push(
+		'',
+		`Installed ${written.length} skills to ${areaAbs}`,
+		`  ${written.join(', ')}`,
+		'Source hash verified against the Skill Passport.',
+	);
+	return done(0);
+}
+
+// Install one skill (or a pack's raw source) into a single folder.
+async function installSingle(ctx: AddContext, targetDir: string): Promise<CommandResult> {
+	const { push, done, slug, preflight } = ctx;
+	const target = resolve(ctx.cwd, targetDir);
+	if (existsSync(target)) {
+		if (!statSync(target).isDirectory()) {
+			push('', `error: target ${target} already exists and is not a directory`);
+			return done(2);
+		}
+		if (readdirSync(target).length > 0) {
+			push('', `error: target directory ${target} already exists and is not empty`);
+			return done(2);
+		}
+	}
+	const download = await downloadVerified(ctx.fetchImpl, ctx.apiUrl, slug, preflight.version, preflight.sourceHash);
+	if (!download.ok) {
+		push('', `error: ${download.message}`);
+		return done(2);
+	}
+	try {
+		writeTree(download.files, target);
+	} catch {
+		push('', 'error: could not write the install; nothing was installed');
+		return done(2);
+	}
+	const area = knownAreas(ctx.cwd).find((a) => a.dir === dirname(target));
+	if (area) {
+		recordReceipt(area.dir, slug, receiptFor(preflight));
+	}
+	push(
+		'',
+		`Installed ${download.files.length} file(s) to ${target}`,
+		'Source hash verified against the Skill Passport.',
+	);
+	return done(0);
+}
+
 // Exit codes are contract: 0 installed, 1 blocked, 2 refused (confirmation,
 // verification, target, network). Nothing touches disk until the downloaded
 // bytes re-verify against the pinned source hash.
@@ -250,8 +422,7 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 	const isPack = members.length > 0;
 
 	let targetDir = opts.dir;
-	let packTool: string | undefined;
-	let packGlobal = false;
+	let pack: { tool: string; global: boolean } | undefined;
 
 	if (opts.target) {
 		const resolved = isPack
@@ -262,8 +433,7 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 			return done(2);
 		}
 		if (isPack) {
-			packTool = opts.target;
-			packGlobal = opts.global ?? false;
+			pack = { tool: opts.target, global: opts.global ?? false };
 		} else {
 			targetDir = resolved.dir;
 		}
@@ -281,108 +451,23 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 	);
 	if (!confirmed) return done(2);
 
-	const prompt = opts.promptImpl;
-	const promptIndex = async (ask: (question: string) => Promise<string>, count: number) => {
-		while (true) {
-			const answer = (await ask(`Where should it go? [1-${count}, default 1] `)).trim();
-			if (answer === '') {
-				return 0;
-			}
-			const index = /^\d+$/.test(answer) ? Number.parseInt(answer, 10) - 1 : -1;
-			if (index >= 0 && index < count) {
-				return index;
-			}
-			push(`  answer 1-${count}, or press enter for the default`);
-		}
+	const ctx: AddContext = {
+		push,
+		done,
+		fetchImpl,
+		apiUrl,
+		cwd: opts.cwd ?? process.cwd(),
+		slug,
+		preflight,
 	};
 
-	if (isPack && packTool === undefined && targetDir === undefined) {
-		if (prompt) {
-			const choices = packChoices(detail.targets, slug, members.length);
-			push('', 'Install location:');
-			choices.forEach((choice, i) => push(`  ${i + 1}) ${choice.label}`));
-			const chosen = choices[await promptIndex(prompt, choices.length)];
-			if (chosen.tool) {
-				packTool = chosen.tool;
-				packGlobal = chosen.global ?? false;
-			} else {
-				targetDir = slug;
-			}
-		} else {
-			targetDir = slug;
-			const mappable = mappableDeclaredTargets(detail.targets);
-			if (mappable.length > 0) {
-				push(
-					'',
-					`tip: --target ${mappable[0]} installs the ${members.length} skills into the tool's skills folder`,
-				);
-			}
-		}
+	if (isPack && pack === undefined && targetDir === undefined) {
+		const location = await choosePackLocation(ctx, detail, members.length, opts.promptImpl);
+		if ('tool' in location) pack = location;
+		else targetDir = location.dir;
 	}
-
-	if (packTool !== undefined) {
-		const area = resolveTargetArea(packTool, packGlobal);
-		if (!area.ok) {
-			push('', `error: ${area.message}`);
-			return done(2);
-		}
-		const { installs, skipped } = resolvePackMembers(members, packTool);
-		if (installs.length === 0) {
-			push('', `error: none of this pack's skills support ${packTool}`);
-			return done(2);
-		}
-		const areaAbs = resolve(opts.cwd ?? process.cwd(), area.dir);
-		const conflicts = installs.map((m) => join(areaAbs, m.name)).filter(isOccupied);
-		if (conflicts.length > 0) {
-			push(
-				'',
-				'error: these destinations already exist and are not empty; nothing was installed:',
-				...conflicts.map((c) => `  ${c}`),
-			);
-			return done(2);
-		}
-		const download = await downloadVerified(
-			fetchImpl,
-			apiUrl,
-			slug,
-			preflight.version,
-			preflight.sourceHash,
-		);
-		if (!download.ok) {
-			push('', `error: ${download.message}`);
-			return done(2);
-		}
-		const plans = planMembers(installs, download.files);
-		const missing = plans.find((p) => p.files.length === 0);
-		if (missing) {
-			push('', `error: the snapshot has no files for "${missing.name}"; nothing was installed`);
-			return done(2);
-		}
-		for (const name of skipped) {
-			push('', `note: ${name} does not support ${packTool}; skipped`);
-		}
-		const written: string[] = [];
-		try {
-			for (const plan of plans) {
-				writeTree(plan.files, join(areaAbs, plan.name));
-				written.push(plan.name);
-				// Receipt per member as it lands, so a later failure leaves nothing unaccounted for.
-				recordReceipt(areaAbs, plan.name, receiptFor(preflight, slug));
-			}
-		} catch {
-			push(
-				'',
-				`error: could not write ${plans[written.length].name}; installed before the failure: ${written.join(', ') || 'none'}`,
-			);
-			return done(2);
-		}
-		push(
-			'',
-			`Installed ${written.length} skills to ${areaAbs}`,
-			`  ${written.join(', ')}`,
-			'Source hash verified against the Skill Passport.',
-		);
-		return done(0);
+	if (pack !== undefined) {
+		return installPack(ctx, members, pack.tool, pack.global);
 	}
 
 	if (isPack && opts.dir) {
@@ -391,59 +476,5 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 			`note: --dir installs the raw pack source; --target <tool> installs the ${members.length} skills individually`,
 		);
 	}
-
-	if (!targetDir) {
-		const choices = installChoices(detail.targets, slug);
-		if (prompt && choices.length > 1) {
-			push('', 'Install location:');
-			choices.forEach((choice, i) => push(`  ${i + 1}) ${choice.label}`));
-			targetDir = choices[await promptIndex(prompt, choices.length)].dir;
-		} else {
-			targetDir = slug;
-			const mappable = mappableDeclaredTargets(detail.targets);
-			if (mappable.length > 0) {
-				push('', `tip: --target ${mappable[0]} installs into the tool's skills folder`);
-			}
-		}
-	}
-	const target = resolve(opts.cwd ?? process.cwd(), targetDir);
-	if (existsSync(target)) {
-		if (!statSync(target).isDirectory()) {
-			push('', `error: target ${target} already exists and is not a directory`);
-			return done(2);
-		}
-		if (readdirSync(target).length > 0) {
-			push('', `error: target directory ${target} already exists and is not empty`);
-			return done(2);
-		}
-	}
-
-	const download = await downloadVerified(
-		fetchImpl,
-		apiUrl,
-		slug,
-		preflight.version,
-		preflight.sourceHash,
-	);
-	if (!download.ok) {
-		push('', `error: ${download.message}`);
-		return done(2);
-	}
-	try {
-		writeTree(download.files, target);
-	} catch {
-		push('', 'error: could not write the install; nothing was installed');
-		return done(2);
-	}
-	const area = knownAreas(opts.cwd ?? process.cwd()).find((a) => a.dir === dirname(target));
-	if (area) {
-		recordReceipt(area.dir, slug, receiptFor(preflight));
-	}
-
-	push(
-		'',
-		`Installed ${download.files.length} file(s) to ${target}`,
-		'Source hash verified against the Skill Passport.',
-	);
-	return done(0);
+	return installSingle(ctx, targetDir ?? (await chooseSingleLocation(ctx, detail, opts.promptImpl)));
 }
