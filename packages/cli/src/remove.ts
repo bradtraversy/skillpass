@@ -2,7 +2,8 @@ import { existsSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { readReceipts, removeReceipt } from './receipts';
 import type { CommandResult } from './scan';
-import { installAreas, knownAreas, MAPPED_TARGETS, resolveTargetDir } from './targets';
+import { GLOBAL_NEEDS_TARGET, TARGET_OR_DIR } from './install';
+import { knownAreas, resolveTargetDir } from './targets';
 
 export interface RemoveOptions {
 	target?: string;
@@ -19,20 +20,8 @@ function looksLikeInstalledSkill(dir: string): boolean {
 // Candidate locations for a no-flag remove: every known install area plus
 // ./<slug>, mirroring where add can put things without --dir.
 function candidateDirs(slug: string, cwd: string, home?: string): string[] {
-	const dirs: string[] = [];
-	const byTarget = installAreas(home);
-	for (const tool of MAPPED_TARGETS) {
-		const area = byTarget[tool];
-		if (!area) {
-			continue;
-		}
-		dirs.push(resolve(cwd, join(area.project, slug)));
-		if (area.global) {
-			dirs.push(join(area.global, slug));
-		}
-	}
-	dirs.push(resolve(cwd, slug));
-	return [...new Set(dirs)];
+	const inAreas = knownAreas(cwd, home).map((area) => join(area.dir, slug));
+	return [...new Set([...inAreas, resolve(cwd, slug)])];
 }
 
 // Exit codes are contract: 0 removed, 2 anything else (usage, not installed,
@@ -40,10 +29,10 @@ function candidateDirs(slug: string, cwd: string, home?: string): string[] {
 // installed-skill marker, so a stray --dir can never be wiped recursively.
 export function runRemove(slug: string, opts: RemoveOptions = {}): CommandResult {
 	if (opts.target && opts.dir) {
-		return { lines: ['error: pass --target or --dir, not both'], exitCode: 2 };
+		return { lines: [TARGET_OR_DIR], exitCode: 2 };
 	}
 	if (opts.global && !opts.target) {
-		return { lines: ['error: --global needs --target (e.g. --target claude-code)'], exitCode: 2 };
+		return { lines: [GLOBAL_NEEDS_TARGET], exitCode: 2 };
 	}
 	const cwd = opts.cwd ?? process.cwd();
 

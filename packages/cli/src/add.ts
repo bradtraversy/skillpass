@@ -13,6 +13,15 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import type { Target } from 'skill-schema';
 import { loadPackageFromFiles, type PackageFile } from 'validator';
 import { fetchPreflight, resolveApiUrl } from './api';
+import {
+	confirmRisk,
+	createOutput,
+	GLOBAL_NEEDS_TARGET,
+	isOccupied,
+	planMembers,
+	receiptFor,
+	TARGET_OR_DIR,
+} from './install';
 import { resolvePackMembers } from './pack';
 import { recordReceipt } from './receipts';
 import { renderPreflightReport } from './render';
@@ -142,16 +151,6 @@ export function writeTree(files: PackageFile[], target: string): void {
 	}
 }
 
-export function memberFiles(files: PackageFile[], sourceDir: string): PackageFile[] {
-	if (sourceDir === '.') {
-		return files;
-	}
-	const prefix = `${sourceDir}/`;
-	return files
-		.filter((f) => f.path.startsWith(prefix))
-		.map((f) => ({ path: f.path.slice(prefix.length), content: f.content }));
-}
-
 interface InstallChoice {
 	label: string;
 	dir: string;
@@ -223,22 +222,14 @@ export function packChoices(declared: Target[], slug: string, count: number): Pa
 // verification, target, network). Nothing touches disk until the downloaded
 // bytes re-verify against the pinned source hash.
 export async function runAdd(ref: string, opts: AddOptions = {}): Promise<CommandResult> {
-	const lines: string[] = [];
-	const streamed = opts.emit !== undefined;
-	const push = (...next: string[]) => {
-		lines.push(...next);
-		if (next.length > 0) {
-			opts.emit?.(next.join('\n'));
-		}
-	};
-	const done = (exitCode: number): CommandResult => ({ lines, exitCode, streamed });
+	const { push, done } = createOutput(opts.emit);
 
 	if (opts.target && opts.dir) {
-		push('error: pass --target or --dir, not both');
+		push(TARGET_OR_DIR);
 		return done(2);
 	}
 	if (opts.global && !opts.target) {
-		push('error: --global needs --target (e.g. --target claude-code)');
+		push(GLOBAL_NEEDS_TARGET);
 		return done(2);
 	}
 	const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
@@ -281,19 +272,14 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 		}
 	}
 
-	if (preflight.riskLevel !== 'low' && !opts.yes) {
-		if (!opts.confirmImpl) {
-			push('', `error: a ${preflight.riskLevel}-risk skill needs confirmation; rerun with --yes`);
-			return done(2);
-		}
-		const confirmed = await opts.confirmImpl(
-			`Install ${slug}@${preflight.version} (${preflight.riskLevel} risk)? [y/N] `,
-		);
-		if (!confirmed) {
-			push('', 'Install aborted.');
-			return done(2);
-		}
-	}
+	const confirmed = await confirmRisk(
+		preflight,
+		opts,
+		`Install ${slug}@${preflight.version} (${preflight.riskLevel} risk)? [y/N] `,
+		'Install aborted.',
+		push,
+	);
+	if (!confirmed) return done(2);
 
 	const prompt = opts.promptImpl;
 	const promptIndex = async (ask: (question: string) => Promise<string>, count: number) => {
@@ -346,12 +332,7 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 			return done(2);
 		}
 		const areaAbs = resolve(opts.cwd ?? process.cwd(), area.dir);
-		const conflicts = installs
-			.map((m) => join(areaAbs, m.name))
-			.filter(
-				(dest) =>
-					existsSync(dest) && (!statSync(dest).isDirectory() || readdirSync(dest).length > 0),
-			);
+		const conflicts = installs.map((m) => join(areaAbs, m.name)).filter(isOccupied);
 		if (conflicts.length > 0) {
 			push(
 				'',
@@ -371,7 +352,7 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 			push('', `error: ${download.message}`);
 			return done(2);
 		}
-		const plans = installs.map((m) => ({ ...m, files: memberFiles(download.files, m.sourceDir) }));
+		const plans = planMembers(installs, download.files);
 		const missing = plans.find((p) => p.files.length === 0);
 		if (missing) {
 			push('', `error: the snapshot has no files for "${missing.name}"; nothing was installed`);
@@ -386,12 +367,7 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 				writeTree(plan.files, join(areaAbs, plan.name));
 				written.push(plan.name);
 				// Receipt per member as it lands, so a later failure leaves nothing unaccounted for.
-				recordReceipt(areaAbs, plan.name, {
-					version: preflight.version,
-					sourceHash: preflight.sourceHash,
-					installedAt: new Date().toISOString(),
-					pack: { slug, version: preflight.version },
-				});
+				recordReceipt(areaAbs, plan.name, receiptFor(preflight, slug));
 			}
 		} catch {
 			push(
@@ -461,11 +437,7 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 	}
 	const area = knownAreas(opts.cwd ?? process.cwd()).find((a) => a.dir === dirname(target));
 	if (area) {
-		recordReceipt(area.dir, slug, {
-			version: preflight.version,
-			sourceHash: preflight.sourceHash,
-			installedAt: new Date().toISOString(),
-		});
+		recordReceipt(area.dir, slug, receiptFor(preflight));
 	}
 
 	push(

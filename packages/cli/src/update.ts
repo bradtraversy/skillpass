@@ -1,11 +1,19 @@
-import { existsSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { existsSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import {
 	publicPreflightSchema,
 	type PublicPreflight,
 	type PublicSkillDetail,
 } from 'skill-schema';
-import { downloadVerified, memberFiles, writeTree } from './add';
+import { downloadVerified, writeTree } from './add';
+import {
+	confirmRisk,
+	createOutput,
+	GLOBAL_NEEDS_TARGET,
+	isOccupied,
+	planMembers,
+	receiptFor,
+} from './install';
 import { resolvePackMembers } from './pack';
 import { fetchPreflight, getParsed, parseSkillRef, resolveApiUrl } from './api';
 import { identifyByHash } from './outdated';
@@ -116,19 +124,11 @@ export function swapTree(files: { path: string; content: string }[], dir: string
 }
 
 export async function runUpdate(ref: string, opts: UpdateOptions = {}): Promise<CommandResult> {
-	const lines: string[] = [];
-	const streamed = opts.emit !== undefined;
-	const push = (...next: string[]) => {
-		lines.push(...next);
-		if (next.length > 0) {
-			opts.emit?.(next.join('\n'));
-		}
-	};
-	const done = (exitCode: number): CommandResult => ({ lines, exitCode, streamed });
+	const { push, done } = createOutput(opts.emit);
 	const st = opts.style ?? PLAIN;
 
 	if (opts.global && !opts.target) {
-		push('error: --global needs --target (e.g. --target claude-code)');
+		push(GLOBAL_NEEDS_TARGET);
 		return done(2);
 	}
 	const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
@@ -182,19 +182,14 @@ export async function runUpdate(ref: string, opts: UpdateOptions = {}): Promise<
 	if (preflight.blocked) {
 		return done(1);
 	}
-	if (preflight.riskLevel !== 'low' && !opts.yes) {
-		if (!opts.confirmImpl) {
-			push('', `error: a ${preflight.riskLevel}-risk skill needs confirmation; rerun with --yes`);
-			return done(2);
-		}
-		const confirmed = await opts.confirmImpl(
-			`Update ${slug} to ${preflight.version} (${preflight.riskLevel} risk)? [y/N] `,
-		);
-		if (!confirmed) {
-			push('', 'Update aborted; the installed version was left in place.');
-			return done(2);
-		}
-	}
+	const confirmed = await confirmRisk(
+		preflight,
+		opts,
+		`Update ${slug} to ${preflight.version} (${preflight.riskLevel} risk)? [y/N] `,
+		'Update aborted; the installed version was left in place.',
+		push,
+	);
+	if (!confirmed) return done(2);
 
 	const download = await downloadVerified(fetchImpl, apiUrl, slug, preflight.version, preflight.sourceHash);
 	if (!download.ok) {
@@ -207,11 +202,7 @@ export async function runUpdate(ref: string, opts: UpdateOptions = {}): Promise<
 		push('', 'error: could not replace the install; the installed version was left in place');
 		return done(2);
 	}
-	recordReceipt(installed.area.dir, slug, {
-		version: preflight.version,
-		sourceHash: preflight.sourceHash,
-		installedAt: new Date().toISOString(),
-	});
+	recordReceipt(installed.area.dir, slug, receiptFor(preflight));
 	push(
 		'',
 		`Updated ${slug} ${installed.installedVersion ?? '?'} -> ${preflight.version} in ${installed.dir}`,
@@ -279,19 +270,14 @@ async function runPackUpdate(
 	if (preflight.blocked) {
 		return done(1);
 	}
-	if (preflight.riskLevel !== 'low' && !opts.yes) {
-		if (!opts.confirmImpl) {
-			push('', `error: a ${preflight.riskLevel}-risk skill needs confirmation; rerun with --yes`);
-			return done(2);
-		}
-		const confirmed = await opts.confirmImpl(
-			`Update ${slug} to ${preflight.version} (${preflight.riskLevel} risk)? [y/N] `,
-		);
-		if (!confirmed) {
-			push('', 'Update aborted; the installed version was left in place.');
-			return done(2);
-		}
-	}
+	const confirmed = await confirmRisk(
+		preflight,
+		opts,
+		`Update ${slug} to ${preflight.version} (${preflight.riskLevel} risk)? [y/N] `,
+		'Update aborted; the installed version was left in place.',
+		push,
+	);
+	if (!confirmed) return done(2);
 
 	const areaDir = installed.area.dir;
 	const { installs, skipped } = resolvePackMembers(detail.packMembers ?? [], installed.area.tool);
@@ -307,11 +293,7 @@ async function runPackUpdate(
 	const toRemove = currentMembers.filter((name) => !newNames.has(name));
 	const additions = installs.filter((m) => !currentMembers.includes(m.name));
 
-	const conflicts = additions
-		.map((m) => join(areaDir, m.name))
-		.filter(
-			(dest) => existsSync(dest) && (!statSync(dest).isDirectory() || readdirSync(dest).length > 0),
-		);
+	const conflicts = additions.map((m) => join(areaDir, m.name)).filter(isOccupied);
 	if (conflicts.length > 0) {
 		push(
 			'',
@@ -326,7 +308,7 @@ async function runPackUpdate(
 		push('', `error: ${download.message}`);
 		return done(2);
 	}
-	const plans = installs.map((m) => ({ ...m, files: memberFiles(download.files, m.sourceDir) }));
+	const plans = planMembers(installs, download.files);
 	const missing = plans.find((p) => p.files.length === 0);
 	if (missing) {
 		push('', `error: the snapshot has no files for "${missing.name}"; nothing was changed`);
@@ -346,12 +328,7 @@ async function runPackUpdate(
 				writeTree(plan.files, dest);
 			}
 			done1.push(plan.name);
-			recordReceipt(areaDir, plan.name, {
-				version: preflight.version,
-				sourceHash: preflight.sourceHash,
-				installedAt: new Date().toISOString(),
-				pack: { slug, version: preflight.version },
-			});
+			recordReceipt(areaDir, plan.name, receiptFor(preflight, slug));
 		}
 	} catch {
 		push(
