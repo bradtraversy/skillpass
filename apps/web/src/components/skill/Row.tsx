@@ -1,5 +1,5 @@
 import { CATEGORIES, type PublicSkillSummary } from 'skill-schema';
-import { TILE_TINTS } from '../../lib/categoryTints';
+import { TILE_TINTS } from '../../lib/category-tints';
 import { firstSentence, monogram, timeAgo } from '../../lib/format';
 
 export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: number }) {

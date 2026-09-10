@@ -1,6 +1,6 @@
 import type { PublicSkillSummary } from 'skill-schema';
 import { describe, expect, it } from 'vitest';
-import { filterSkills, matchesFilters, type SkillFilters } from './filterSkills';
+import { filterSkills, matchesFilters, type SkillFilters } from './filter-skills';
 
 const base: SkillFilters = {
 	query: '',

@@ -1,7 +1,7 @@
 import { CATEGORIES, INTEGRATIONS, type CategorySlug, type PublicSkillSummary, type Target } from 'skill-schema';
-import { CATEGORY_SWATCHES } from '../../lib/categoryTints';
+import { CATEGORY_SWATCHES } from '../../lib/category-tints';
 import { facetCounts } from '../../lib/facets';
-import type { CategoryFilter, IntegrationFilter, TypeFilter } from '../../lib/filterSkills';
+import type { CategoryFilter, IntegrationFilter, TypeFilter } from '../../lib/filter-skills';
 
 const GROUP_HEADING = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint';
 

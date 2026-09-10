@@ -8,7 +8,7 @@ import {
 	type DirectoryTab,
 	type IntegrationFilter,
 	type TypeFilter,
-} from '../../lib/filterSkills';
+} from '../../lib/filter-skills';
 import { pageItems, paginate } from '../../lib/paginate';
 import Row from '../skill/Row';
 import FilterSidebar from './FilterSidebar';

@@ -21,7 +21,7 @@
 	"author": "Brad Traversy",
 	"type": "module",
 	"bin": {
-		"skillpass": "./bin/skillpass.mjs"
+		"skillpass": "./bin/skillpass.js"
 	},
 	"files": [
 		"bin",
@@ -32,7 +32,7 @@
 		"node": ">=20"
 	},
 	"scripts": {
-		"build": "esbuild src/cli.ts --bundle --platform=node --format=esm --outfile=dist/cli.mjs --log-level=warning",
+		"build": "esbuild src/cli.ts --bundle --platform=node --format=esm --outfile=dist/cli.js --log-level=warning",
 		"prepublishOnly": "pnpm build",
 		"typecheck": "tsc --noEmit"
 	},
