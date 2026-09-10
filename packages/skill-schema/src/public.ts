@@ -6,8 +6,9 @@ import { integrationSlugSchema } from './integrations';
 import { skillEntrySchema } from './manifest';
 import { skillPassportSchema } from './passport';
 
-// What GET /skills returns per row; 7c pages and the CLI consume it.
-export const publicSkillSummarySchema = z.strictObject({
+// What GET /skills returns per row; 7c pages and the CLI consume it. Read
+// contracts strip unknown keys so an installed CLI survives additive API fields.
+export const publicSkillSummarySchema = z.object({
 	slug: z.string().min(1),
 	name: z.string().min(1),
 	summary: z.string().min(1),
@@ -39,7 +40,7 @@ export const publicSkillSummarySchema = z.strictObject({
 
 export const publicSkillListSchema = z.array(publicSkillSummarySchema);
 
-export const publicSkillVersionSchema = z.strictObject({
+export const publicSkillVersionSchema = z.object({
 	version: z.string().min(1),
 	validationStatus: validationStatusSchema,
 	riskLevel: riskLevelSchema,
@@ -52,10 +53,10 @@ export const publicSkillVersionSchema = z.strictObject({
 export const publicSkillDetailSchema = publicSkillSummarySchema.extend({
 	// Full member entries (incl. per-target variants) for a pack; the CLI's
 	// per-target install resolution reads exactly this. Null for single skills.
-	packMembers: z.array(skillEntrySchema).nullable().optional(),
+	packMembers: z.array(z.object(skillEntrySchema.shape)).nullable().optional(),
 	githubRepoUrl: z.string().min(1).nullable(),
 	passport: skillPassportSchema,
-	maintainerInfo: z.strictObject({
+	maintainerInfo: z.object({
 		username: z.string().min(1),
 		displayName: z.string().min(1),
 		avatarUrl: z.string().min(1),
@@ -67,10 +68,10 @@ export const publicSkillDetailSchema = publicSkillSummarySchema.extend({
 
 // What GET /skills/:slug/:version/source returns - the pinned snapshot the
 // validator saw, verbatim; feature 8 and the CLI read the same object.
-export const publicSkillSourceSchema = z.strictObject({
+export const publicSkillSourceSchema = z.object({
 	version: z.string().min(1),
 	sourceHash: z.string().min(1),
-	files: z.array(z.strictObject({ path: z.string().min(1), content: z.string() })),
+	files: z.array(z.object({ path: z.string().min(1), content: z.string() })),
 });
 
 export type PublicSkillSummary = z.infer<typeof publicSkillSummarySchema>;

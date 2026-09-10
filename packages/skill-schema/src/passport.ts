@@ -5,11 +5,11 @@ import { permissionKeySchema } from './permissions';
 import { reportFindingSchema } from './report';
 import { parseWith, type ParseResult } from './result';
 
-export const skillPassportSchema = z.strictObject({
+export const skillPassportSchema = z.object({
 	schemaVersion: z.literal('0.1'),
 	validationStatus: validationStatusSchema,
 	riskLevel: riskLevelSchema,
-	permissionsSummary: z.strictObject({
+	permissionsSummary: z.object({
 		declared: z.array(permissionKeySchema),
 		detected: z.array(permissionKeySchema),
 	}),

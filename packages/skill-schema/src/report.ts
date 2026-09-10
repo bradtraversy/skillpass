@@ -3,11 +3,11 @@ import { riskLevelSchema, validationStatusSchema } from './enums';
 import { permissionKeySchema } from './permissions';
 import { parseWith, type ParseResult } from './result';
 
-export const reportFindingSchema = z.strictObject({
+export const reportFindingSchema = z.object({
 	code: z.string().min(1),
 	message: z.string().min(1),
 	location: z
-		.strictObject({
+		.object({
 			path: z.string().min(1),
 			line: z.number().int().positive().optional(),
 			snippet: z.string().optional(),

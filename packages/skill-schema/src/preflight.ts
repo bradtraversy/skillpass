@@ -21,14 +21,14 @@ export function diffPermissions(
 	};
 }
 
-const permissionSetDiffSchema = z.strictObject({
+const permissionSetDiffSchema = z.object({
 	added: z.array(permissionKeySchema),
 	removed: z.array(permissionKeySchema),
 });
 
 // What GET /skills/:slug/:version/preflight returns; the feature-9 CLI renders
 // the same object. diff is null for the first published version.
-export const publicPreflightSchema = z.strictObject({
+export const publicPreflightSchema = z.object({
 	version: z.string().min(1),
 	validationStatus: validationStatusSchema,
 	riskLevel: riskLevelSchema,
@@ -36,12 +36,12 @@ export const publicPreflightSchema = z.strictObject({
 	sourceVerified: z.boolean(),
 	resolvedCommitSha: z.string().min(1).nullable(),
 	generatedAt: z.iso.datetime(),
-	permissions: z.strictObject({
+	permissions: z.object({
 		declared: z.array(permissionKeySchema),
 		detected: z.array(permissionKeySchema),
 	}),
 	diff: z
-		.strictObject({
+		.object({
 			previousVersion: z.string().min(1),
 			declared: permissionSetDiffSchema,
 			detected: permissionSetDiffSchema,

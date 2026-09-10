@@ -185,6 +185,18 @@ describe('runReport', () => {
 		expect(result.lines[0]).toContain('cannot reach the API');
 	});
 
+	it('ignores fields the API adds later instead of failing the contract', async () => {
+		const result = await runReport('smoke-clean', {
+			fetchImpl: stubFetch({
+				'/skills/smoke-clean': { body: { success: true, data: { ...detail, installCount: 42 } } },
+				'/skills/smoke-clean/2.0.0/preflight': {
+					body: { success: true, data: { ...preflight, installCount: 42 } },
+				},
+			}),
+		});
+		expect(result.exitCode).toBe(0);
+	});
+
 	it('exits 2 when the response does not match the contract', async () => {
 		const result = await runReport('smoke-clean', {
 			fetchImpl: stubFetch({

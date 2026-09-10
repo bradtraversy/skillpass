@@ -40,7 +40,7 @@ describe('publicProfileSchema', () => {
 	});
 
 	it('rejects a malformed skill row', () => {
-		const broken = { ...profile, skills: [{ ...profile.skills[0], snapshotKey: 'x' }] };
+		const broken = { ...profile, skills: [{ ...profile.skills[0], targets: ['notepad'] }] };
 		expect(publicProfileSchema.safeParse(broken).success).toBe(false);
 	});
 });

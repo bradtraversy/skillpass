@@ -71,15 +71,19 @@ describe('publicPreflightSchema', () => {
 		expect(publicPreflightSchema.parse(blocked).blocked).toBe(true);
 	});
 
-	it('rejects extra keys', () => {
-		expect(publicPreflightSchema.safeParse({ ...preflight, snapshotKey: 'x' }).success).toBe(
-			false,
-		);
+	it('strips extra keys so older clients survive additive fields', () => {
+		const parsed = publicPreflightSchema.safeParse({ ...preflight, snapshotKey: 'x' });
+		expect(parsed.success).toBe(true);
+		expect(parsed.success && 'snapshotKey' in parsed.data).toBe(false);
 	});
 
-	it('rejects extra keys inside the diff', () => {
-		const broken = { ...preflight, diff: { ...preflight.diff, snapshotKey: 'x' } };
-		expect(publicPreflightSchema.safeParse(broken).success).toBe(false);
+	it('strips extra keys inside the diff', () => {
+		const widened = { ...preflight, diff: { ...preflight.diff, snapshotKey: 'x' } };
+		const parsed = publicPreflightSchema.safeParse(widened);
+		expect(parsed.success).toBe(true);
+		expect(parsed.success && parsed.data.diff !== null && 'snapshotKey' in parsed.data.diff).toBe(
+			false,
+		);
 	});
 
 	it('rejects an unknown permission key', () => {

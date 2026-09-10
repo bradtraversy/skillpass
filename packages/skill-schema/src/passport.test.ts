@@ -68,7 +68,12 @@ describe('parsePassport rejects', () => {
 		expect(parsePassport(passport({ generatedAt: 'yesterday' })).success).toBe(false);
 	});
 
-	it('an unknown top-level key', () => {
-		expect(parsePassport(passport({ installCount: 40200 })).success).toBe(false);
+});
+
+describe('parsePassport strips', () => {
+	it('an unknown top-level key, so older clients survive additive fields', () => {
+		const parsed = parsePassport(passport({ installCount: 40200 }));
+		expect(parsed.success).toBe(true);
+		expect(parsed.success && 'installCount' in parsed.data).toBe(false);
 	});
 });

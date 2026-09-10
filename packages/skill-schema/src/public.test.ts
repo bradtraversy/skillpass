@@ -71,10 +71,10 @@ describe('publicSkillSummarySchema', () => {
 		expect(publicSkillSummarySchema.parse(attributed).attributedTo).toBe('octocat');
 	});
 
-	it('rejects extra keys', () => {
-		expect(publicSkillSummarySchema.safeParse({ ...summary, snapshotKey: 'x' }).success).toBe(
-			false,
-		);
+	it('strips extra keys so older clients survive additive fields', () => {
+		const parsed = publicSkillSummarySchema.safeParse({ ...summary, snapshotKey: 'x' });
+		expect(parsed.success).toBe(true);
+		expect(parsed.success && 'snapshotKey' in parsed.data).toBe(false);
 	});
 
 	it('rejects an unknown target', () => {
@@ -144,12 +144,14 @@ describe('publicSkillDetailSchema', () => {
 		expect(publicSkillDetailSchema.safeParse(broken).success).toBe(false);
 	});
 
-	it('rejects extra keys on version rows', () => {
-		const broken = {
+	it('strips extra keys on version rows', () => {
+		const widened = {
 			...detail,
 			versions: [{ ...detail.versions[0], snapshotKey: 'x' }],
 		};
-		expect(publicSkillDetailSchema.safeParse(broken).success).toBe(false);
+		const parsed = publicSkillDetailSchema.safeParse(widened);
+		expect(parsed.success).toBe(true);
+		expect(parsed.success && 'snapshotKey' in parsed.data.versions[0]).toBe(false);
 	});
 });
 
@@ -166,12 +168,14 @@ describe('publicSkillSourceSchema', () => {
 		expect(publicSkillSourceSchema.parse(source)).toEqual(source);
 	});
 
-	it('rejects extra keys on files', () => {
-		const broken = {
+	it('strips extra keys on files', () => {
+		const widened = {
 			version: '1.0.0',
 			sourceHash: 'sha256:abc',
 			files: [{ path: 'SKILL.md', content: '', snapshotKey: 'x' }],
 		};
-		expect(publicSkillSourceSchema.safeParse(broken).success).toBe(false);
+		const parsed = publicSkillSourceSchema.safeParse(widened);
+		expect(parsed.success).toBe(true);
+		expect(parsed.success && 'snapshotKey' in parsed.data.files[0]).toBe(false);
 	});
 });

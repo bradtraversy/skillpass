@@ -6,7 +6,7 @@ export type AiReviewVerdict = z.infer<typeof aiReviewVerdictSchema>;
 
 // The LLM review cached on a passport: a plain-English "what it does" plus a
 // hedged safety read. Advisory, never a guarantee - the UI frames it as such.
-export const aiReviewSchema = z.strictObject({
+export const aiReviewSchema = z.object({
 	summary: z.string().min(1).max(600),
 	verdict: aiReviewVerdictSchema,
 	reasoning: z.string().min(1).max(800),

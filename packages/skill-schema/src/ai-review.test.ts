@@ -25,8 +25,13 @@ describe('parseAiReview', () => {
 		['an empty reasoning', { ...valid, reasoning: '' }],
 		['a non-datetime reviewedAt', { ...valid, reviewedAt: '2026-07-26' }],
 		['a missing model', { ...valid, model: undefined }],
-		['an unknown field', { ...valid, riskLevel: 'low' }],
 	])('rejects %s', (_label, input) => {
 		expect(parseAiReview(input).success).toBe(false);
+	});
+
+	it('strips an unknown field so older clients survive additive fields', () => {
+		const parsed = parseAiReview({ ...valid, riskLevel: 'low' });
+		expect(parsed.success).toBe(true);
+		expect(parsed.success && 'riskLevel' in parsed.data).toBe(false);
 	});
 });
