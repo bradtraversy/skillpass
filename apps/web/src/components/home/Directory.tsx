@@ -24,6 +24,7 @@ type LoadState =
 	| { phase: 'ready'; skills: PublicSkillSummary[] };
 
 const SIDEBAR_KEY = 'skillpass:filters-open';
+const DESKTOP = '(min-width: 768px)';
 
 function isTypingTarget(el: EventTarget | null): boolean {
 	return el instanceof HTMLElement && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
@@ -43,12 +44,19 @@ export default function Directory() {
 	// choice in an effect so the server render and hydration always agree.
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	// Which panel the Filters button controls; assumed desktop until measured.
+	const [isDesktop, setIsDesktop] = useState(true);
 	const [page, setPage] = useState(1);
 	const listTopRef = useRef<HTMLDivElement>(null);
 	const searchRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		if (localStorage.getItem(SIDEBAR_KEY) === '0') setSidebarOpen(false);
+		const media = window.matchMedia(DESKTOP);
+		const sync = () => setIsDesktop(media.matches);
+		sync();
+		media.addEventListener('change', sync);
+		return () => media.removeEventListener('change', sync);
 	}, []);
 
 	// The kbd hint in the search box promises this.
@@ -95,7 +103,7 @@ export default function Directory() {
 	}
 
 	function toggleFilters() {
-		if (window.matchMedia('(min-width: 768px)').matches) {
+		if (isDesktop) {
 			const next = !sidebarOpen;
 			setSidebarOpen(next);
 			localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0');
@@ -178,7 +186,7 @@ export default function Directory() {
 					<ListHeader
 						tab={tab}
 						onTabChange={setTab}
-						filtersOpen={sidebarOpen || drawerOpen}
+						filtersOpen={isDesktop ? sidebarOpen : drawerOpen}
 						onToggleFilters={toggleFilters}
 						topRef={listTopRef}
 					/>

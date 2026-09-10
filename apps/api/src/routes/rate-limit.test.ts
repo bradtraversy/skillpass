@@ -1,5 +1,6 @@
+import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
-import { clientKey, createRateLimiter } from './rate-limit';
+import { clientKey, createRateLimiter, rateLimitMiddleware } from './rate-limit';
 
 describe('createRateLimiter', () => {
 	it('allows up to the max within a window, then denies', () => {
@@ -50,5 +51,16 @@ describe('clientKey', () => {
 	it('falls back to a shared bucket without a usable header', () => {
 		expect(clientKey(headers({}))).toBe('unknown');
 		expect(clientKey(headers({ 'x-forwarded-for': ' , ' }))).toBe('unknown');
+	});
+});
+
+describe('rateLimitMiddleware', () => {
+	it('buckets by the supplied key instead of the client address', async () => {
+		const app = new Hono();
+		app.use('*', rateLimitMiddleware(createRateLimiter(1, 60_000), (c) => c.req.header('x-user') ?? 'anon'));
+		app.get('/', (c) => c.text('ok'));
+		expect((await app.request('/', { headers: { 'x-user': 'a' } })).status).toBe(200);
+		expect((await app.request('/', { headers: { 'x-user': 'a' } })).status).toBe(429);
+		expect((await app.request('/', { headers: { 'x-user': 'b' } })).status).toBe(200);
 	});
 });

@@ -49,10 +49,14 @@ export function clientKey(header: (name: string) => string | undefined): string 
 	return hops.at(-1) ?? 'unknown';
 }
 
-export function rateLimitMiddleware(limiter: RateLimiter) {
+// Buckets by client address unless the caller supplies a key (a user id for
+// authenticated routes, where the address is the wrong unit).
+export function rateLimitMiddleware(
+	limiter: RateLimiter,
+	keyOf: (c: Context) => string = (c) => clientKey((name) => c.req.header(name)),
+) {
 	return async (c: Context, next: Next) => {
-		const key = clientKey((name) => c.req.header(name));
-		if (!limiter.allow(key)) {
+		if (!limiter.allow(keyOf(c))) {
 			return c.json({ success: false, error: 'Too many requests, slow down.' }, 429);
 		}
 		await next();

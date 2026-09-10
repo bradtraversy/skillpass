@@ -39,6 +39,7 @@ import {
 	uploadKey,
 } from '../storage/r2';
 import { extractZip } from '../uploads/zip';
+import { createRateLimiter, rateLimitMiddleware } from './rate-limit';
 
 const SOURCE_ERROR_STATUS: Record<SourceErrorCode, ContentfulStatusCode> = {
 	'bad-url': 400,
@@ -355,9 +356,11 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 	const deps: Deps = { env, db, queue };
 	routes.use('*', requireAuth(env, db));
 
-	routes.post('/', (c) => createFromGithub(c, deps));
+	// Each submission costs a GitHub fetch, an R2 write, and a validation run.
+	const perUser = rateLimitMiddleware(createRateLimiter(20, 60 * 60_000), (c) => `user:${c.get('user').id}`);
+	routes.post('/', perUser, (c) => createFromGithub(c, deps));
 
-	routes.post('/zip', (c) => createFromZip(c, deps));
+	routes.post('/zip', perUser, (c) => createFromZip(c, deps));
 
 	routes.get('/', async (c) => {
 		const rows = await listSubmissionsForUser(db, c.get('user').id);

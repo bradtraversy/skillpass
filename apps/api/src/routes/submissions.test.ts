@@ -33,6 +33,13 @@ import { getSnapshotDocument, putBytes, putJson } from '../storage/r2';
 import { RAW_TEST_ENV } from '../testing/env';
 import { sessionCookie } from '../testing/session';
 
+// The route suite shares one app across dozens of submissions; the per-user
+// limiter is covered by rate-limit.test.ts, so it stays out of the way here.
+vi.mock('./rate-limit', async (importOriginal) => ({
+	...(await importOriginal<typeof import('./rate-limit')>()),
+	createRateLimiter: () => ({ allow: () => true }),
+}));
+
 vi.mock('../db/users', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../db/users')>()),
 	findById: vi.fn(),
