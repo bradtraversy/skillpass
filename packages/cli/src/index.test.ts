@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
-import { parseCliArgs, run, USAGE, VERSION } from './index';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { main, parseCliArgs, run, USAGE, VERSION } from './index';
 
 describe('parseCliArgs', () => {
 	it('splits command, positionals, and flags', () => {
@@ -176,5 +176,39 @@ describe('run', () => {
 		const result = await run(['list', 'extra']);
 		expect(result.exitCode).toBe(2);
 		expect(result.lines[0]).toBe('error: list takes no arguments');
+	});
+});
+
+describe('main', () => {
+	afterEach(() => {
+		process.exitCode = undefined;
+		vi.restoreAllMocks();
+	});
+
+	it('sends an error result to stderr and exits 2', async () => {
+		const out = vi.spyOn(console, 'log').mockImplementation(() => {});
+		const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+		await main(['frobnicate']);
+		expect(process.exitCode).toBe(2);
+		expect(out).not.toHaveBeenCalled();
+		expect(String(err.mock.calls[0]?.[0])).toContain('unknown command');
+	});
+
+	it('keeps a successful result on stdout', async () => {
+		const out = vi.spyOn(console, 'log').mockImplementation(() => {});
+		const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+		await main(['--help']);
+		expect(process.exitCode).toBe(0);
+		expect(err).not.toHaveBeenCalled();
+		expect(String(out.mock.calls[0]?.[0])).toBe(USAGE);
+	});
+
+	it('turns a crash into exit 2 on stderr, never the failed-scan code', async () => {
+		const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+		await main(['scan', 'x'], async () => {
+			throw new Error('boom');
+		});
+		expect(process.exitCode).toBe(2);
+		expect(err).toHaveBeenCalledWith('error: boom');
 	});
 });

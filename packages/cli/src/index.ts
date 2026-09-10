@@ -247,10 +247,19 @@ export async function run(argv: string[]): Promise<CommandResult> {
 	return { lines: [`error: unknown command "${args.command}"`, '', USAGE], exitCode: 2 };
 }
 
-export async function main(argv: string[]): Promise<void> {
-	const result = await run(argv);
+// Exit codes: 0 ok, 1 scan found failures, 2 CLI error. Errors go to stderr so
+// `--json | jq` never sees them, and a crash is a CLI error, not a failed scan.
+export async function main(argv: string[], runImpl: typeof run = run): Promise<void> {
+	let result: CommandResult;
+	try {
+		result = await runImpl(argv);
+	} catch (err) {
+		console.error(`error: ${err instanceof Error ? err.message : String(err)}`);
+		process.exitCode = 2;
+		return;
+	}
 	if (!result.streamed) {
-		console.log(result.lines.join('\n'));
+		(result.exitCode === 2 ? console.error : console.log)(result.lines.join('\n'));
 	}
 	process.exitCode = result.exitCode;
 }

@@ -429,6 +429,20 @@ describe('runAdd', () => {
 		expect(text).toContain('Installed 2 skills to');
 	});
 
+	it('receipts each pack member as it lands, so a later failure loses none of them', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const area = join(cwd, '.claude', 'skills');
+		// writeTree stages into `<dest>.tmp-<pid>`; a file squatting there makes the third member fail.
+		mkdirSync(area, { recursive: true });
+		writeFileSync(join(area, `niche.tmp-${process.pid}`), '');
+		const result = await runAdd('blueprint-pack', { target: 'claude-code', cwd, fetchImpl: packStub() });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines.join('\n')).toContain('installed before the failure: adopt, audit');
+		const receipts = readReceipts(area);
+		expect(Object.keys(receipts).sort()).toEqual(['adopt', 'audit']);
+		expect(receipts.adopt?.pack?.slug).toBe('blueprint-pack');
+	});
+
 	it('aborts the whole pack when any member destination is occupied', async () => {
 		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
 		const audit = join(cwd, '.claude', 'skills', 'audit');

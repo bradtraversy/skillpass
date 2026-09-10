@@ -385,6 +385,13 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 			for (const plan of plans) {
 				writeTree(plan.files, join(areaAbs, plan.name));
 				written.push(plan.name);
+				// Receipt per member as it lands, so a later failure leaves nothing unaccounted for.
+				recordReceipt(areaAbs, plan.name, {
+					version: preflight.version,
+					sourceHash: preflight.sourceHash,
+					installedAt: new Date().toISOString(),
+					pack: { slug, version: preflight.version },
+				});
 			}
 		} catch {
 			push(
@@ -392,14 +399,6 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 				`error: could not write ${plans[written.length].name}; installed before the failure: ${written.join(', ') || 'none'}`,
 			);
 			return done(2);
-		}
-		for (const name of written) {
-			recordReceipt(areaAbs, name, {
-				version: preflight.version,
-				sourceHash: preflight.sourceHash,
-				installedAt: new Date().toISOString(),
-				pack: { slug, version: preflight.version },
-			});
 		}
 		push(
 			'',

@@ -1,12 +1,12 @@
 import { strToU8, zipSync } from 'fflate';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { PublicPreflight, PublicSkillDetail } from 'skill-schema';
 import { loadPackageFromFiles } from 'validator';
 import { describe, expect, it, vi } from 'vitest';
 import { readReceipts, recordReceipt } from './receipts';
-import { permissionChanges, runUpdate } from './update';
+import { permissionChanges, runUpdate, swapTree } from './update';
 
 const OLD_FILES = [{ path: 'SKILL.md', content: '# demo v1\n' }];
 const NEW_FILES = [
@@ -115,6 +115,16 @@ describe('permissionChanges', () => {
 			{ declared: ['env.read'], detected: ['shell.execute'] },
 		);
 		expect(changes).toEqual({ added: ['shell.execute'], removed: ['network.fetch'] });
+	});
+});
+
+describe('swapTree', () => {
+	it('installs fresh when the folder was deleted by hand, leaving no .new sibling', () => {
+		const { area } = ctx();
+		const dir = join(area, 'gone');
+		swapTree([{ path: 'SKILL.md', content: '# gone\n' }], dir);
+		expect(readFileSync(join(dir, 'SKILL.md'), 'utf8')).toBe('# gone\n');
+		expect(readdirSync(area).filter((name) => name.startsWith('gone.'))).toEqual([]);
 	});
 });
 

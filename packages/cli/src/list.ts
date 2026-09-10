@@ -13,9 +13,10 @@ export function installedIn(dir: string): string[] {
 	if (!existsSync(dir)) {
 		return [];
 	}
+	// A dangling symlink stats as missing; treat it as not a skill rather than crashing.
 	return readdirSync(dir)
 		.sort()
-		.filter((name) => statSync(join(dir, name)).isDirectory());
+		.filter((name) => statSync(join(dir, name), { throwIfNoEntry: false })?.isDirectory() ?? false);
 }
 
 // Offline by design: reports the known install areas only; --dir installs

@@ -97,16 +97,18 @@ export function permissionChanges(
 }
 
 // Replace the installed tree only after the new one is fully on disk; any
-// failure puts the old folder back.
+// failure puts the old folder back and removes the half-built one. A receipted
+// folder the user deleted by hand has nothing to set aside and installs fresh.
 export function swapTree(files: { path: string; content: string }[], dir: string): void {
 	const fresh = `${dir}.new-${process.pid}`;
 	const aside = `${dir}.old-${process.pid}`;
+	rmSync(fresh, { recursive: true, force: true });
 	writeTree(files, fresh);
-	renameSync(dir, aside);
 	try {
+		if (existsSync(dir)) renameSync(dir, aside);
 		renameSync(fresh, dir);
 	} catch (err) {
-		renameSync(aside, dir);
+		if (existsSync(aside) && !existsSync(dir)) renameSync(aside, dir);
 		rmSync(fresh, { recursive: true, force: true });
 		throw err;
 	}

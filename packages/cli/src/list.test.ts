@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -48,6 +48,17 @@ describe('runList', () => {
 
 		const result = runList({ cwd, home });
 		expect(result.lines).toEqual(['claude-code project (.claude/skills)', '  alpha', '  zulu']);
+	});
+
+	it('ignores a dangling symlink instead of crashing', () => {
+		const cwd = temp('skillpass-list-cwd-');
+		const home = temp('skillpass-list-home-');
+		const area = join(cwd, '.claude', 'skills');
+		mkdirSync(join(area, 'alpha'), { recursive: true });
+		symlinkSync(join(area, 'missing'), join(area, 'ghost'));
+
+		const result = runList({ cwd, home });
+		expect(result.lines).toEqual(['claude-code project (.claude/skills)', '  alpha']);
 	});
 
 	it('reports a friendly empty state', () => {
