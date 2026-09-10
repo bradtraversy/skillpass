@@ -1,8 +1,8 @@
 import { eq, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { reputationInputs, users } from '../db/schema';
+import { REPUTATION_INPUT_TYPES, reputationInputs, users } from '../db/schema';
 
-export type ReputationInputType = 'skill_published' | 'version_published' | 'report_actioned';
+export type ReputationInputType = (typeof REPUTATION_INPUT_TYPES)[number];
 
 // v1 placeholders, flagged for tuning before launch. Changing a weight later
 // does not rewrite history: ledger rows keep the weight they were awarded with.

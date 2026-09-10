@@ -177,11 +177,8 @@ export const skillVersions = pgTable(
 
 export type SkillVersionRow = typeof skillVersions.$inferSelect;
 
-export const reputationInputType = pgEnum('reputation_input_type', [
-	'skill_published',
-	'version_published',
-	'report_actioned',
-]);
+export const REPUTATION_INPUT_TYPES = ['skill_published', 'version_published', 'report_actioned'] as const;
+export const reputationInputType = pgEnum('reputation_input_type', REPUTATION_INPUT_TYPES);
 
 // The ledger is the truth, users.reputation is the cached roll-up; rows are
 // never edited, and they store the weight they were awarded with.

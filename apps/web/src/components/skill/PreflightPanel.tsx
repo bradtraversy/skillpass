@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { PublicPreflight } from 'skill-schema';
 import { downloadUrl, getPreflight } from '../../lib/api';
 import { capitalize } from '../../lib/format';
+import { changedPermissions } from '../../lib/permission-diff';
 import { RISK_DOT } from '../../lib/risk';
 import { VERDICT_TINT } from '../../lib/verdict';
 import PermissionRow from './PermissionRow';
@@ -24,8 +25,7 @@ function DiffLine({ preflight }: { preflight: PublicPreflight }) {
 			<p className="text-[12.5px] text-muted">First published version - nothing to compare.</p>
 		);
 	}
-	const added = [...new Set([...diff.declared.added, ...diff.detected.added])];
-	const removed = [...new Set([...diff.declared.removed, ...diff.detected.removed])];
+	const { added, removed } = changedPermissions(diff);
 	if (added.length === 0 && removed.length === 0) {
 		return (
 			<p className="text-[12.5px] text-muted">

@@ -1,5 +1,6 @@
 import { CATEGORIES, INTEGRATIONS, type CategorySlug, type PublicSkillSummary, type Target } from 'skill-schema';
 import { CATEGORY_SWATCHES } from '../../lib/categoryTints';
+import { facetCounts } from '../../lib/facets';
 import type { CategoryFilter, IntegrationFilter, TypeFilter } from '../../lib/filterSkills';
 
 const GROUP_HEADING = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint';
@@ -25,19 +26,7 @@ export default function FilterSidebar({
 	tool: Target | 'all';
 	onToolChange: (tool: Target | 'all') => void;
 }) {
-	const counts = new Map<string, number>();
-	for (const skill of skills) {
-		const key = skill.category ?? 'uncategorized';
-		counts.set(key, (counts.get(key) ?? 0) + 1);
-	}
-	// Counts always derive from the full unfiltered list, same as categories.
-	const integrationCounts = new Map<string, number>();
-	for (const skill of skills) {
-		for (const slug of skill.integrations ?? []) {
-			integrationCounts.set(slug, (integrationCounts.get(slug) ?? 0) + 1);
-		}
-	}
-	const tools = Array.from(new Set(skills.flatMap((s) => s.targets))).sort();
+	const { categories: counts, integrations: integrationCounts, tools, packs: packCount } = facetCounts(skills);
 
 	const rows: { value: CategoryFilter; label: string; count: number; swatch: string }[] = [
 		{ value: 'all', label: 'All skills', count: skills.length, swatch: 'bg-accent' },
@@ -59,7 +48,6 @@ export default function FilterSidebar({
 			: []),
 	];
 
-	const packCount = skills.filter((s) => (s.packSkills?.length ?? 0) > 0).length;
 	const typeRows: { value: TypeFilter; label: string; count: number }[] = [
 		{ value: 'all', label: 'All skills', count: skills.length },
 		{ value: 'skill', label: 'Single skills', count: skills.length - packCount },

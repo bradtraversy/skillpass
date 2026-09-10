@@ -119,6 +119,14 @@ describe('permissionChanges', () => {
 });
 
 describe('swapTree', () => {
+	it('keeps the old folder and removes the fresh tree when setting the old one aside fails', () => {
+		const { area, dir } = ctx();
+		writeFileSync(`${dir}.old-${process.pid}`, 'squatter');
+		expect(() => swapTree([{ path: 'SKILL.md', content: '# demo v2\n' }], dir)).toThrow();
+		expect(readFileSync(join(dir, 'SKILL.md'), 'utf8')).toBe('# demo v1\n');
+		expect(readdirSync(area).filter((name) => name.startsWith('demo.new'))).toEqual([]);
+	});
+
 	it('installs fresh when the folder was deleted by hand, leaving no .new sibling', () => {
 		const { area } = ctx();
 		const dir = join(area, 'gone');

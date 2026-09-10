@@ -13,7 +13,7 @@ import { homedir } from 'node:os';
 import type { PublicPreflight, PublicSkillDetail } from 'skill-schema';
 import { loadPackageFromFiles } from 'validator';
 import { describe, expect, it, vi } from 'vitest';
-import { installChoices, runAdd } from './add';
+import { installChoices, runAdd, writeTree } from './add';
 import { readReceipts } from './receipts';
 
 const FILES = [
@@ -538,5 +538,16 @@ describe('installChoices', () => {
 			label: 'current directory (./smoke-clean)',
 			dir: 'smoke-clean',
 		});
+	});
+});
+
+describe('writeTree', () => {
+	it('leaves nothing behind when the staging write fails', () => {
+		const dir = mkdtempSync(join(tmpdir(), 'skillpass-writetree-'));
+		const target = join(dir, 'skill');
+		writeFileSync(`${target}.tmp-${process.pid}`, '');
+		expect(() => writeTree([{ path: 'SKILL.md', content: '# x\n' }], target)).toThrow();
+		expect(existsSync(target)).toBe(false);
+		expect(readdirSync(dir)).toEqual([]);
 	});
 });
