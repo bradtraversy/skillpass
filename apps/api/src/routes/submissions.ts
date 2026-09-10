@@ -29,7 +29,7 @@ import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { packageNameFor, parseGithubUrl } from '../github/url';
 import { MAX_ZIP_BYTES, type DetectedPackage, type PublicValidation } from 'skill-schema';
-import { publishSubmission, type PublishOutcome } from '../publish/publish';
+import { MIN_PACK_SKILLS, publishFieldsFrom, publishSubmission, type PublishOutcome } from '../publish/publish';
 import {
 	getSnapshotDocument,
 	putBytes,
@@ -85,7 +85,7 @@ function detectPackage(pkg: LoadedPackage): DetectedPackage {
 		manifest:
 			pkg.manifest.state === 'ok' ? (pkg.manifest.inferred ? 'inferred' : 'ok') : pkg.manifest.state,
 		name: pkg.manifest.state === 'ok' ? pkg.manifest.data.name : null,
-		skillCount: skills.length >= 2 ? skills.length : null,
+		skillCount: skills.length >= MIN_PACK_SKILLS ? skills.length : null,
 	};
 }
 
@@ -360,15 +360,7 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 			outcome = await publishSubmission(db, {
 				submission,
 				report,
-				name: pkg.manifest.data.name,
-				summary: pkg.manifest.data.description,
-				targets: pkg.manifest.data.targets,
-				distribution: pkg.manifest.data.distribution,
-				homepage: pkg.manifest.data.homepage,
-				install: pkg.manifest.data.install,
-				manifestInferred: pkg.manifest.inferred ?? false,
-				packSkills:
-					(pkg.manifest.data.skills?.length ?? 0) >= 2 ? pkg.manifest.data.skills : null,
+				...publishFieldsFrom(pkg.manifest.data, pkg.manifest.inferred ?? false),
 				attributedTo: attributionFor(c.get('user'), submission),
 				verified: c.get('user').role === 'admin',
 				env,

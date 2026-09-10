@@ -9,7 +9,7 @@ import type { Env } from '../env';
 import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { packageNameFor, parseGithubUrl } from '../github/url';
-import { publishSubmission } from '../publish/publish';
+import { publishFieldsFrom, publishSubmission } from '../publish/publish';
 import { processValidationJob } from '../queue/processor';
 import { putJson, snapshotDocument, snapshotKey } from '../storage/r2';
 
@@ -96,14 +96,8 @@ export async function curateSkill(env: Env, db: Db, input: CurateInput): Promise
 		const outcome = await publishSubmission(db, {
 			submission,
 			report,
+			...publishFieldsFrom(manifest, pkg.manifest.inferred ?? false),
 			name,
-			summary: manifest.description,
-			targets: manifest.targets,
-			distribution: manifest.distribution,
-			homepage: manifest.homepage,
-			install: manifest.install,
-			manifestInferred: pkg.manifest.inferred ?? false,
-			packSkills: (manifest.skills?.length ?? 0) >= 2 ? manifest.skills : null,
 			attributedTo: input.attributedTo,
 			verified: true,
 			env,

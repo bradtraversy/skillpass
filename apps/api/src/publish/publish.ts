@@ -2,6 +2,7 @@ import {
 	nextVersion,
 	slugForSkill,
 	type Distribution,
+	type Manifest,
 	type PublishResult,
 	type SkillEntry,
 	type Target,
@@ -50,6 +51,35 @@ export interface PublishInput {
 	// Absent -> publish proceeds with no review (existing callers, tests).
 	env?: Env;
 	now?: Date;
+}
+
+// A listing is a pack only with two or more member skills; a one-entry
+// skills[] is still a single skill.
+export const MIN_PACK_SKILLS = 2;
+
+export function packSkillsOf(manifest: Manifest): SkillEntry[] | null {
+	return (manifest.skills?.length ?? 0) >= MIN_PACK_SKILLS ? (manifest.skills ?? null) : null;
+}
+
+// The PublishInput fields that come straight from a loaded manifest; the
+// submit route and the curate seed publish through this one mapping.
+export function publishFieldsFrom(
+	manifest: Manifest,
+	inferred = false,
+): Pick<
+	PublishInput,
+	'name' | 'summary' | 'targets' | 'distribution' | 'homepage' | 'install' | 'manifestInferred' | 'packSkills'
+> {
+	return {
+		name: manifest.name,
+		summary: manifest.description,
+		targets: manifest.targets,
+		distribution: manifest.distribution,
+		homepage: manifest.homepage,
+		install: manifest.install,
+		manifestInferred: inferred,
+		packSkills: packSkillsOf(manifest),
+	};
 }
 
 export type PublishOutcome =

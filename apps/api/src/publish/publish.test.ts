@@ -1,4 +1,4 @@
-import type { SkillEntry, ValidationReport } from 'skill-schema';
+import type { Manifest, SkillEntry, ValidationReport } from 'skill-schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Db } from '../db/client';
 import type { SkillRow, SkillVersionRow, SubmissionRow, ValidationReportRow } from '../db/schema';
@@ -14,7 +14,7 @@ import { setSubmissionStatus } from '../db/submissions';
 import { awardReputation } from '../reputation/reputation';
 import { ensureIntegrations } from '../review/ensure';
 import { ensureEmbedding } from '../search/ensure';
-import { publishSubmission } from './publish';
+import { publishFieldsFrom, publishSubmission } from './publish';
 
 vi.mock('../db/skills', () => ({
 	findSkillBySlug: vi.fn(),
@@ -382,5 +382,39 @@ describe('publishSubmission', () => {
 		expect(createSkillPassport).not.toHaveBeenCalled();
 		expect(setSubmissionStatus).not.toHaveBeenCalled();
 		expect(awardReputation).not.toHaveBeenCalled();
+	});
+});
+
+describe('publishFieldsFrom', () => {
+	const manifest: Manifest = {
+		schemaVersion: '0.1',
+		name: 'demo',
+		description: 'Demo skill.',
+		targets: ['claude-code'],
+		permissions: [],
+		distribution: 'skill',
+	};
+
+	it('maps the manifest onto publish input as a single, author-declared skill', () => {
+		expect(publishFieldsFrom(manifest)).toEqual({
+			name: 'demo',
+			summary: 'Demo skill.',
+			targets: ['claude-code'],
+			distribution: 'skill',
+			homepage: undefined,
+			install: undefined,
+			manifestInferred: false,
+			packSkills: null,
+		});
+	});
+
+	it('treats two or more member skills as a pack and one as a single', () => {
+		const one = [{ name: 'a', entry: 'skills/a/SKILL.md' }];
+		expect(publishFieldsFrom({ ...manifest, skills: one }).packSkills).toBeNull();
+		const two = [...one, { name: 'b', entry: 'skills/b/SKILL.md' }];
+		expect(publishFieldsFrom({ ...manifest, skills: two }, true)).toMatchObject({
+			packSkills: two,
+			manifestInferred: true,
+		});
 	});
 });
