@@ -4,6 +4,7 @@ import { RISK_DOT } from '../../lib/risk';
 import { VERDICT_TINT } from '../../lib/verdict';
 import Finding from './Finding';
 import PermissionRow from './PermissionRow';
+import { ShieldIcon } from '../ui/icons';
 
 const VERDICT_LABEL: Record<ValidationStatus, string> = {
 	passed: 'Passed',
@@ -57,20 +58,7 @@ export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 				className={`flex items-center justify-between border-b border-dashed border-border-2 px-[18px] py-[13px] font-mono text-[11.5px] uppercase tracking-[0.14em] text-muted ${tint.bg}`}
 			>
 				<span className="flex items-center gap-[9px]">
-					<svg
-						className={`flex-none ${tint.text}`}
-						width="15"
-						height="15"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						aria-hidden="true"
-					>
-						<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-					</svg>
+					<ShieldIcon className={`flex-none ${tint.text}`} />
 					Skill Passport
 				</span>
 				<span>v{detail.version} · immutable</span>

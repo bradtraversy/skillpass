@@ -6,6 +6,7 @@ import { RISK_DOT } from '../../lib/risk';
 import { VERDICT_TINT } from '../../lib/verdict';
 import PermissionRow from './PermissionRow';
 import Stamp from './Stamp';
+import { CheckIcon, CloseIcon, DownloadIcon } from '../ui/icons';
 
 
 const SECTION = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint';
@@ -82,18 +83,7 @@ export default function PreflightPanel({
 					aria-label="Close pre-flight"
 					className="cursor-pointer text-faint hover:text-text"
 				>
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						aria-hidden="true"
-					>
-						<path d="M18 6 6 18M6 6l12 12" />
-					</svg>
+					<CloseIcon size={14} />
 				</button>
 			</div>
 
@@ -117,23 +107,7 @@ export default function PreflightPanel({
 						<span
 							className={`ml-auto flex items-center gap-[5px] font-mono text-[11.5px] ${load.preflight.sourceVerified ? 'text-pass' : 'text-fail'}`}
 						>
-							<svg
-								width="13"
-								height="13"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								aria-hidden="true"
-							>
-								{load.preflight.sourceVerified ? (
-									<path d="M20 6 9 17l-5-5" />
-								) : (
-									<path d="M18 6 6 18M6 6l12 12" />
-								)}
-							</svg>
+							{load.preflight.sourceVerified ? <CheckIcon size={13} /> : <CloseIcon size={13} />}
 							{load.preflight.sourceVerified ? 'source verified' : 'hash mismatch'}
 						</span>
 					</div>
@@ -171,20 +145,7 @@ export default function PreflightPanel({
 							download
 							className="inline-flex items-center gap-[7px] rounded-sm bg-accent px-[15px] py-[9px] text-[13px] font-semibold text-accent-ink hover:bg-accent-hover"
 						>
-							<svg
-								width="15"
-								height="15"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								aria-hidden="true"
-							>
-								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-								<path d="M7 10l5 5 5-5M12 15V3" />
-							</svg>
+							<DownloadIcon />
 							Download {slug}-{version}.zip
 						</a>
 					)}

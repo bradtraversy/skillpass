@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ABUSE_REASON_MAX, ABUSE_REASON_MIN } from 'skill-schema';
 import { getMe, reportSkill, signInUrl } from '../../lib/api';
+import { CloseIcon } from '../ui/icons';
 
 type PanelState =
 	| { phase: 'checking' }
@@ -45,18 +46,7 @@ export default function ReportPanel({ slug, onClose }: { slug: string; onClose: 
 					aria-label="Close report form"
 					className="cursor-pointer text-faint hover:text-text"
 				>
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						aria-hidden="true"
-					>
-						<path d="M18 6 6 18M6 6l12 12" />
-					</svg>
+					<CloseIcon size={14} />
 				</button>
 			</div>
 

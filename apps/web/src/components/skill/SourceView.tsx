@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PublicSkillSource } from 'skill-schema';
 import { getSkillSource } from '../../lib/api';
 import { renderMarkdown } from '../../lib/markdown';
+import { FileIcon } from '../ui/icons';
 
 type LoadState = 'closed' | 'loading' | 'error' | PublicSkillSource;
 
@@ -57,21 +58,7 @@ export default function SourceView({ slug, version }: { slug: string; version: s
 							onClick={() => setOpenPath(openPath === file.path ? null : file.path)}
 							className="flex w-full cursor-pointer items-center gap-[11px] px-[14px] py-[11px] text-[13px] hover:bg-hover"
 						>
-							<svg
-								className="flex-none text-faint"
-								width="15"
-								height="15"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								aria-hidden="true"
-							>
-								<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z" />
-								<path d="M14 2v6h6" />
-							</svg>
+							<FileIcon className="flex-none text-faint" />
 							<span className="font-mono text-text">{file.path}</span>
 							<span className="ml-auto text-[12px] text-faint">
 								{formatBytes(file.content.length)}

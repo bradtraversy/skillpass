@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Distribution } from 'skill-schema';
+import { DownloadIcon } from '../ui/icons';
 import PreflightPanel from './PreflightPanel';
 
 interface Props {
@@ -15,15 +16,6 @@ const BTN =
 	'inline-flex cursor-pointer items-center gap-[7px] rounded-sm bg-accent px-[15px] py-[9px] text-[13px] font-semibold text-accent-ink hover:bg-accent-hover';
 const LINK_BTN =
 	'inline-flex items-center gap-[7px] rounded-sm border border-border-2 px-[15px] py-[9px] text-[13px] font-semibold text-muted hover:text-text';
-
-function DownloadIcon() {
-	return (
-		<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-			<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-			<path d="M7 10l5 5 5-5M12 15V3" />
-		</svg>
-	);
-}
 
 function ExternalIcon() {
 	return (
