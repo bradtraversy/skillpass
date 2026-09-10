@@ -25,12 +25,45 @@ import {
 	publicSkillDetail,
 	publicSkillSummary,
 	setSkillStatus,
+	type PublishedSkillRecord,
 	type VersionWithPassport,
 } from '../db/skills';
 import type { Env } from '../env';
-import { getSnapshotDocument } from '../storage/r2';
+import { getSnapshotDocument, type SnapshotDocument } from '../storage/r2';
 
 export const BLOCKED_REASON = 'this version failed validation and cannot be downloaded';
+
+const notFound = (c: Context) => c.json({ success: false, error: 'not found' }, 404);
+
+interface PinnedHit {
+	record: PublishedSkillRecord;
+	pinned: VersionWithPassport;
+}
+
+// The version-pinned routes all start here: an unpublished slug or an unknown
+// version is a plain 404 before anything touches R2.
+async function findPinned(db: Db, slug: string, version: string): Promise<PinnedHit | undefined> {
+	const record = await findPublishedSkillBySlug(db, slug);
+	if (!record) return undefined;
+	const pinned = await findVersionWithPassport(db, record.skill.id, version);
+	return pinned && { record, pinned };
+}
+
+// An R2 outage is the caller's problem to retry, not a 500: log which route
+// and version failed, answer 502.
+async function snapshotOr502(
+	c: Context,
+	env: Env,
+	route: string,
+	hit: PinnedHit,
+): Promise<SnapshotDocument | Response> {
+	const snapshot = await getSnapshotDocument(env, hit.pinned.version.snapshotKey);
+	if (snapshot.success) return snapshot.data;
+	console.error(
+		`${route}: snapshot fetch failed for ${hit.record.skill.slug}@${hit.pinned.version.version}: ${snapshot.error}`,
+	);
+	return c.json({ success: false, error: 'could not fetch the source snapshot; try again' }, 502);
+}
 
 // The pre-flight report: the pinned passport's verdict, the source hash
 // re-verified against the snapshot the validator saw, and the permission diff
@@ -80,7 +113,7 @@ export function skillRoutes(env: Env, db: Db) {
 	routes.post('/:slug/report', requireAuth(env, db), async (c) => {
 		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
 		if (!record) {
-			return c.json({ success: false, error: 'not found' }, 404);
+			return notFound(c);
 		}
 		let body: unknown;
 		try {
@@ -123,7 +156,7 @@ export function skillRoutes(env: Env, db: Db) {
 		return async (c: Context<{ Variables: AuthVariables }>) => {
 			const skill = await findSkillBySlug(db, c.req.param('slug') ?? '');
 			if (!skill || skill.maintainerId !== c.get('user').id) {
-				return c.json({ success: false, error: 'not found' }, 404);
+				return notFound(c);
 			}
 			if (skill.status !== from) {
 				return c.json({ success: false, error: refusal }, 409);
@@ -170,23 +203,12 @@ export function skillRoutes(env: Env, db: Db) {
 	});
 
 	routes.get('/:slug/:version/preflight', async (c) => {
-		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
-		if (!record) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
-		const pinned = await findVersionWithPassport(db, record.skill.id, c.req.param('version'));
-		if (!pinned) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
-		const snapshot = await getSnapshotDocument(env, pinned.version.snapshotKey);
-		if (!snapshot.success) {
-			console.error(
-				`preflight: snapshot fetch failed for ${record.skill.slug}@${pinned.version.version}: ${snapshot.error}`,
-			);
-			return c.json({ success: false, error: 'could not fetch the source snapshot; try again' }, 502);
-		}
-		const versions = await listVersionsWithPassports(db, record.skill.id);
-		return c.json({ success: true, data: buildPreflight(pinned, versions, snapshot.data.files) });
+		const hit = await findPinned(db, c.req.param('slug'), c.req.param('version'));
+		if (!hit) return notFound(c);
+		const snapshot = await snapshotOr502(c, env, 'preflight', hit);
+		if (snapshot instanceof Response) return snapshot;
+		const versions = await listVersionsWithPassports(db, hit.record.skill.id);
+		return c.json({ success: true, data: buildPreflight(hit.pinned, versions, snapshot.files) });
 	});
 
 	routes.get('/:slug/:version/download', async (c) => {
@@ -194,26 +216,16 @@ export function skillRoutes(env: Env, db: Db) {
 		if (source !== 'web' && source !== 'cli') {
 			return c.json({ success: false, error: 'source must be "web" or "cli"' }, 400);
 		}
-		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
-		if (!record) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
-		const pinned = await findVersionWithPassport(db, record.skill.id, c.req.param('version'));
-		if (!pinned) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
+		const hit = await findPinned(db, c.req.param('slug'), c.req.param('version'));
+		if (!hit) return notFound(c);
+		const { record, pinned } = hit;
 		if (pinned.passport.validationStatus === 'failed') {
 			return c.json({ success: false, error: BLOCKED_REASON }, 403);
 		}
-		const snapshot = await getSnapshotDocument(env, pinned.version.snapshotKey);
-		if (!snapshot.success) {
-			console.error(
-				`download: snapshot fetch failed for ${record.skill.slug}@${pinned.version.version}: ${snapshot.error}`,
-			);
-			return c.json({ success: false, error: 'could not fetch the source snapshot; try again' }, 502);
-		}
+		const snapshot = await snapshotOr502(c, env, 'download', hit);
+		if (snapshot instanceof Response) return snapshot;
 		// Never serve bytes that don't match the pinned hash.
-		if (loadPackageFromFiles(snapshot.data.files).sourceHash !== pinned.version.sourceHash) {
+		if (loadPackageFromFiles(snapshot.files).sourceHash !== pinned.version.sourceHash) {
 			console.error(
 				`download: snapshot failed integrity verification for ${record.skill.slug}@${pinned.version.version}`,
 			);
@@ -222,9 +234,7 @@ export function skillRoutes(env: Env, db: Db) {
 				502,
 			);
 		}
-		const zip = zipSync(
-			Object.fromEntries(snapshot.data.files.map((f) => [f.path, strToU8(f.content)])),
-		);
+		const zip = zipSync(Object.fromEntries(snapshot.files.map((f) => [f.path, strToU8(f.content)])));
 		const userId = await readSessionUserId(c, env);
 		try {
 			await recordDownload(db, { skillVersionId: pinned.version.id, userId, source });
@@ -239,38 +249,22 @@ export function skillRoutes(env: Env, db: Db) {
 	});
 
 	routes.get('/:slug/:version/source', async (c) => {
-		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
-		if (!record) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
-		const pinned = await findVersionWithPassport(db, record.skill.id, c.req.param('version'));
-		if (!pinned) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
-		const snapshot = await getSnapshotDocument(env, pinned.version.snapshotKey);
-		if (!snapshot.success) {
-			console.error(
-				`source: snapshot fetch failed for ${record.skill.slug}@${pinned.version.version}: ${snapshot.error}`,
-			);
-			return c.json({ success: false, error: 'could not fetch the source snapshot; try again' }, 502);
-		}
+		const hit = await findPinned(db, c.req.param('slug'), c.req.param('version'));
+		if (!hit) return notFound(c);
+		const snapshot = await snapshotOr502(c, env, 'source', hit);
+		if (snapshot instanceof Response) return snapshot;
 		const data: PublicSkillSource = {
-			version: pinned.version.version,
-			sourceHash: pinned.version.sourceHash,
-			files: snapshot.data.files,
+			version: hit.pinned.version.version,
+			sourceHash: hit.pinned.version.sourceHash,
+			files: snapshot.files,
 		};
 		return c.json({ success: true, data });
 	});
 
 	routes.get('/:slug/:version', async (c) => {
-		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
-		if (!record) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
-		const pinned = await findVersionWithPassport(db, record.skill.id, c.req.param('version'));
-		if (!pinned) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
+		const hit = await findPinned(db, c.req.param('slug'), c.req.param('version'));
+		if (!hit) return notFound(c);
+		const { record, pinned } = hit;
 		const versions = await listVersionsWithPassports(db, record.skill.id);
 		const review = (await findAiReviewByHash(db, pinned.version.sourceHash))?.review ?? null;
 		return c.json({
@@ -285,9 +279,7 @@ export function skillRoutes(env: Env, db: Db) {
 
 	routes.get('/:slug', async (c) => {
 		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
-		if (!record) {
-			return c.json({ success: false, error: 'not found' }, 404);
-		}
+		if (!record) return notFound(c);
 		const versions = await listVersionsWithPassports(db, record.skill.id);
 		const review = (await findAiReviewByHash(db, record.version.sourceHash))?.review ?? null;
 		return c.json({ success: true, data: publicSkillDetail(record, versions, review) });
