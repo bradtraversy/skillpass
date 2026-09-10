@@ -1,8 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
 import type { Env } from '../env';
+import { askStructured, listingContent } from './structured';
 
-const MODEL = 'claude-haiku-4-5';
-const SUMMARY_CHAR_CAP = 2_000;
 const DISPLAY_NAME_CHAR_CAP = 48;
 // The API does not enforce json_schema maxLength, and Haiku routinely lands a
 // touch over the ~120 it is asked for; the cap only bounds runaway output.
@@ -24,17 +22,14 @@ const SYSTEM_PROMPT = [
 	'Respond only through the structured output.',
 ].join('\n');
 
-const OUTPUT_FORMAT = {
-	type: 'json_schema' as const,
-	schema: {
-		type: 'object',
-		properties: {
-			displayName: { type: 'string', maxLength: DISPLAY_NAME_CHAR_CAP },
-			tagline: { type: 'string', maxLength: TAGLINE_CHAR_CAP },
-		},
-		required: ['displayName', 'tagline'],
-		additionalProperties: false,
+const OUTPUT_SCHEMA = {
+	type: 'object',
+	properties: {
+		displayName: { type: 'string', maxLength: DISPLAY_NAME_CHAR_CAP },
+		tagline: { type: 'string', maxLength: TAGLINE_CHAR_CAP },
 	},
+	required: ['displayName', 'tagline'],
+	additionalProperties: false,
 };
 
 // Returns null (never throws) when the key is absent, the call fails, or the
@@ -43,34 +38,17 @@ export async function generateDisplayCopy(
 	env: Env,
 	listing: { name: string; summary: string },
 ): Promise<DisplayCopy | null> {
-	if (!env.ANTHROPIC_API_KEY) return null;
+	const raw = (await askStructured(env, {
+		system: SYSTEM_PROMPT,
+		user: listingContent('Write display copy for the skill below.', listing),
+		schema: OUTPUT_SCHEMA,
+		maxTokens: 256,
+	})) as { displayName?: unknown; tagline?: unknown } | null;
+	if (!raw) return null;
 
-	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-	try {
-		const response = await client.messages.create({
-			model: MODEL,
-			max_tokens: 256,
-			system: SYSTEM_PROMPT,
-			output_config: { format: OUTPUT_FORMAT },
-			messages: [
-				{
-					role: 'user',
-					content: `Write display copy for the skill below.\n\n<skill_content>\nname: ${listing.name}\nsummary: ${listing.summary.slice(0, SUMMARY_CHAR_CAP)}\n</skill_content>`,
-				},
-			],
-		});
-
-		if (response.stop_reason === 'refusal') return null;
-		const text = response.content.find((block) => block.type === 'text')?.text;
-		if (!text) return null;
-
-		const raw = JSON.parse(text) as { displayName?: unknown; tagline?: unknown };
-		const displayName = typeof raw.displayName === 'string' ? raw.displayName.trim() : '';
-		const tagline = typeof raw.tagline === 'string' ? raw.tagline.trim() : '';
-		if (!displayName || displayName.length > DISPLAY_NAME_CHAR_CAP) return null;
-		if (!tagline || tagline.length > TAGLINE_CHAR_CAP) return null;
-		return { displayName, tagline };
-	} catch {
-		return null;
-	}
+	const displayName = typeof raw.displayName === 'string' ? raw.displayName.trim() : '';
+	const tagline = typeof raw.tagline === 'string' ? raw.tagline.trim() : '';
+	if (!displayName || displayName.length > DISPLAY_NAME_CHAR_CAP) return null;
+	if (!tagline || tagline.length > TAGLINE_CHAR_CAP) return null;
+	return { displayName, tagline };
 }

@@ -1,9 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { aiReviewSchema, type AiReview, type ValidationReport } from 'skill-schema';
 import type { LoadedPackage } from 'validator';
 import type { Env } from '../env';
+import { askStructured, REVIEW_MODEL } from './structured';
 
-const MODEL = 'claude-haiku-4-5';
 const CONTENT_CHAR_CAP = 24_000;
 const SUMMARY_CAP = 600;
 const REASONING_CAP = 800;
@@ -22,18 +21,15 @@ const SYSTEM_PROMPT = [
 	'Judge intent in context: documenting or defending against an attack is not the same as instructing one. Respond only through the structured output.',
 ].join('\n');
 
-const OUTPUT_FORMAT = {
-	type: 'json_schema' as const,
-	schema: {
-		type: 'object',
-		properties: {
-			summary: { type: 'string', description: 'What the skill does, in plain English for a non-expert.' },
-			verdict: { type: 'string', enum: ['clear', 'caution', 'concern'] },
-			reasoning: { type: 'string', description: 'Why that verdict, naming the specific behaviors or lines.' },
-		},
-		required: ['summary', 'verdict', 'reasoning'],
-		additionalProperties: false,
+const OUTPUT_SCHEMA = {
+	type: 'object',
+	properties: {
+		summary: { type: 'string', description: 'What the skill does, in plain English for a non-expert.' },
+		verdict: { type: 'string', enum: ['clear', 'caution', 'concern'] },
+		reasoning: { type: 'string', description: 'Why that verdict, naming the specific behaviors or lines.' },
 	},
+	required: ['summary', 'verdict', 'reasoning'],
+	additionalProperties: false,
 };
 
 function buildUserContent(pkg: LoadedPackage, report: ValidationReport): string {
@@ -75,34 +71,21 @@ export async function reviewSkill(
 	pkg: LoadedPackage,
 	report: ValidationReport,
 ): Promise<AiReview | null> {
-	if (!env.ANTHROPIC_API_KEY) return null;
+	const raw = (await askStructured(env, {
+		system: SYSTEM_PROMPT,
+		user: buildUserContent(pkg, report),
+		schema: OUTPUT_SCHEMA,
+		maxTokens: 1024,
+	})) as { summary?: unknown; reasoning?: unknown } | null;
+	if (!raw) return null;
 
-	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-	try {
-		const response = await client.messages.create({
-			model: MODEL,
-			max_tokens: 1024,
-			system: SYSTEM_PROMPT,
-			output_config: { format: OUTPUT_FORMAT },
-			messages: [{ role: 'user', content: buildUserContent(pkg, report) }],
-		});
-
-		if (response.stop_reason === 'refusal') return null;
-		const text = response.content.find((block) => block.type === 'text')?.text;
-		if (!text) return null;
-
-		const raw = JSON.parse(text) as { summary?: unknown; reasoning?: unknown };
-		const review = {
-			...raw,
-			summary: typeof raw.summary === 'string' ? raw.summary.slice(0, SUMMARY_CAP) : raw.summary,
-			reasoning: typeof raw.reasoning === 'string' ? raw.reasoning.slice(0, REASONING_CAP) : raw.reasoning,
-			model: MODEL,
-			reviewedAt: new Date().toISOString(),
-		};
-
-		const parsed = aiReviewSchema.safeParse(review);
-		return parsed.success ? parsed.data : null;
-	} catch {
-		return null;
-	}
+	const review = {
+		...raw,
+		summary: typeof raw.summary === 'string' ? raw.summary.slice(0, SUMMARY_CAP) : raw.summary,
+		reasoning: typeof raw.reasoning === 'string' ? raw.reasoning.slice(0, REASONING_CAP) : raw.reasoning,
+		model: REVIEW_MODEL,
+		reviewedAt: new Date().toISOString(),
+	};
+	const parsed = aiReviewSchema.safeParse(review);
+	return parsed.success ? parsed.data : null;
 }

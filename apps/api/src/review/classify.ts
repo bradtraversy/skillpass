@@ -1,9 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { CATEGORIES, categorySlugSchema, type CategorySlug } from 'skill-schema';
 import type { Env } from '../env';
-
-const MODEL = 'claude-haiku-4-5';
-const SUMMARY_CHAR_CAP = 2_000;
+import { askStructured, listingContent } from './structured';
 
 // Same content-as-data framing as reviewSkill: the listing text is untrusted
 // and classified, never obeyed. Structured output pins the answer to the enum.
@@ -15,16 +12,13 @@ const SYSTEM_PROMPT = [
 	'Respond only through the structured output with exactly one of those slugs.',
 ].join('\n');
 
-const OUTPUT_FORMAT = {
-	type: 'json_schema' as const,
-	schema: {
-		type: 'object',
-		properties: {
-			category: { type: 'string', enum: CATEGORIES.map((c) => c.slug) },
-		},
-		required: ['category'],
-		additionalProperties: false,
+const OUTPUT_SCHEMA = {
+	type: 'object',
+	properties: {
+		category: { type: 'string', enum: CATEGORIES.map((c) => c.slug) },
 	},
+	required: ['category'],
+	additionalProperties: false,
 };
 
 // Returns null (never throws) when the key is absent, the call fails, or the
@@ -33,31 +27,12 @@ export async function classifyCategory(
 	env: Env,
 	listing: { name: string; summary: string },
 ): Promise<CategorySlug | null> {
-	if (!env.ANTHROPIC_API_KEY) return null;
-
-	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-	try {
-		const response = await client.messages.create({
-			model: MODEL,
-			max_tokens: 128,
-			system: SYSTEM_PROMPT,
-			output_config: { format: OUTPUT_FORMAT },
-			messages: [
-				{
-					role: 'user',
-					content: `Classify the skill below.\n\n<skill_content>\nname: ${listing.name}\nsummary: ${listing.summary.slice(0, SUMMARY_CHAR_CAP)}\n</skill_content>`,
-				},
-			],
-		});
-
-		if (response.stop_reason === 'refusal') return null;
-		const text = response.content.find((block) => block.type === 'text')?.text;
-		if (!text) return null;
-
-		const raw = JSON.parse(text) as { category?: unknown };
-		const parsed = categorySlugSchema.safeParse(raw.category);
-		return parsed.success ? parsed.data : null;
-	} catch {
-		return null;
-	}
+	const raw = (await askStructured(env, {
+		system: SYSTEM_PROMPT,
+		user: listingContent('Classify the skill below.', listing),
+		schema: OUTPUT_SCHEMA,
+		maxTokens: 128,
+	})) as { category?: unknown } | null;
+	const parsed = categorySlugSchema.safeParse(raw?.category);
+	return parsed.success ? parsed.data : null;
 }
