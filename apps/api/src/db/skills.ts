@@ -1,4 +1,5 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, type SQL } from 'drizzle-orm';
+import type { PgSelect } from 'drizzle-orm/pg-core';
 import type {
 	AdminSkillRef,
 	AdminVersionHistory,
@@ -88,19 +89,31 @@ export interface PublishedSkillRecord {
 	maintainer: UserRow;
 }
 
+export const PUBLISHED_SELECT = {
+	skill: skills,
+	version: skillVersions,
+	passport: skillPassports,
+	maintainer: users,
+};
+
+// The joins and predicate that define a PublishedSkillRecord, so "published"
+// means one thing for the directory, profiles, detail, and vector search.
+// Callers pass a dynamic select with their own `from` and add order or limit.
+export function joinPublished<T extends PgSelect>(qb: T, extra?: SQL) {
+	const published = eq(skills.status, 'published');
+	return qb
+		.innerJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
+		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
+		.innerJoin(users, eq(skills.maintainerId, users.id))
+		.where(extra ? and(published, extra) : published);
+}
+
 // Directory order: ranked featured first (rank ascending, Postgres puts nulls
 // last on ASC), then unranked featured, then everything else newest-first. The
 // payload carries no rank field - published CLIs strict-parse these rows, so
 // curated order travels as row order instead of a new key.
 export async function listPublishedSkills(db: Db): Promise<PublishedSkillRecord[]> {
-	return db
-		.select({ skill: skills, version: skillVersions, passport: skillPassports, maintainer: users })
-		.from(skills)
-		.innerJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
-		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
-		.innerJoin(users, eq(skills.maintainerId, users.id))
-		.where(eq(skills.status, 'published'))
-		.orderBy(
+	return joinPublished(db.select(PUBLISHED_SELECT).from(skills).$dynamic()).orderBy(
 			desc(skills.featured),
 			asc(skills.featuredRank),
 			desc(skillVersions.publishedAt),
@@ -112,14 +125,10 @@ export async function listPublishedSkillsByMaintainer(
 	db: Db,
 	maintainerId: number,
 ): Promise<PublishedSkillRecord[]> {
-	return db
-		.select({ skill: skills, version: skillVersions, passport: skillPassports, maintainer: users })
-		.from(skills)
-		.innerJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
-		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
-		.innerJoin(users, eq(skills.maintainerId, users.id))
-		.where(and(eq(skills.status, 'published'), eq(skills.maintainerId, maintainerId)))
-		.orderBy(desc(skillVersions.publishedAt), desc(skills.id));
+	return joinPublished(
+		db.select(PUBLISHED_SELECT).from(skills).$dynamic(),
+		eq(skills.maintainerId, maintainerId),
+	).orderBy(desc(skillVersions.publishedAt), desc(skills.id));
 }
 
 // Every skill a maintainer owns, any status; left joins so a row whose latest
@@ -159,13 +168,7 @@ export async function findPublishedSkillBySlug(
 	db: Db,
 	slug: string,
 ): Promise<PublishedSkillRecord | undefined> {
-	const [row] = await db
-		.select({ skill: skills, version: skillVersions, passport: skillPassports, maintainer: users })
-		.from(skills)
-		.innerJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
-		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
-		.innerJoin(users, eq(skills.maintainerId, users.id))
-		.where(and(eq(skills.slug, slug), eq(skills.status, 'published')));
+	const [row] = await joinPublished(db.select(PUBLISHED_SELECT).from(skills).$dynamic(), eq(skills.slug, slug));
 	return row;
 }
 

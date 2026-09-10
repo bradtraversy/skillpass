@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { cosineDistance, eq } from 'drizzle-orm';
 import type { Db } from './client';
-import { skillEmbeddings, skillPassports, skills, skillVersions, users, type SkillEmbeddingRow } from './schema';
-import type { PublishedSkillRecord } from './skills';
+import { skillEmbeddings, skills, type SkillEmbeddingRow } from './schema';
+import { joinPublished, PUBLISHED_SELECT, type PublishedSkillRecord } from './skills';
 
 // The staleness key: same model + same input text -> same hash -> skip.
 export function embeddingContentHash(model: string, input: string): string {
@@ -24,14 +24,13 @@ export async function searchSkillsByEmbedding(
 	queryVector: number[],
 	limit = 20,
 ): Promise<PublishedSkillRecord[]> {
-	return db
-		.select({ skill: skills, version: skillVersions, passport: skillPassports, maintainer: users })
-		.from(skillEmbeddings)
-		.innerJoin(skills, eq(skillEmbeddings.skillId, skills.id))
-		.innerJoin(skillVersions, eq(skills.latestVersionId, skillVersions.id))
-		.innerJoin(skillPassports, eq(skillPassports.skillVersionId, skillVersions.id))
-		.innerJoin(users, eq(skills.maintainerId, users.id))
-		.where(eq(skills.status, 'published'))
+	return joinPublished(
+		db
+			.select(PUBLISHED_SELECT)
+			.from(skillEmbeddings)
+			.innerJoin(skills, eq(skillEmbeddings.skillId, skills.id))
+			.$dynamic(),
+	)
 		.orderBy(cosineDistance(skillEmbeddings.embedding, queryVector))
 		.limit(limit);
 }
