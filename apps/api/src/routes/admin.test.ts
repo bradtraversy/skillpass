@@ -1,9 +1,6 @@
-import { Hono } from 'hono';
-import { setSignedCookie } from 'hono/cookie';
 import { adminAbuseReportSchema, adminQueueSchema, adminVersionHistorySchema } from 'skill-schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
-import { SESSION_COOKIE } from '../auth/middleware';
 import {
 	findAdminReportById,
 	listOpenAbuseReports,
@@ -27,6 +24,7 @@ import { loadEnv } from '../env';
 import type { ValidationQueue } from '../queue/queue';
 import { awardReputation } from '../reputation/reputation';
 import { RAW_TEST_ENV } from '../testing/env';
+import { sessionCookie } from '../testing/session';
 
 vi.mock('../db/abuse', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../db/abuse')>()),
@@ -149,16 +147,6 @@ const publishedSkill: SkillRow = {
 	updatedAt: NOW,
 };
 
-async function sessionCookie(id: number): Promise<string> {
-	const signer = new Hono();
-	signer.get('/', async (c) => {
-		await setSignedCookie(c, SESSION_COOKIE, String(id), env.SESSION_SECRET);
-		return c.text('ok');
-	});
-	const res = await signer.request('/');
-	return res.headers.getSetCookie()[0].split(';')[0];
-}
-
 beforeEach(() => vi.clearAllMocks());
 
 describe('GET /admin/queue', () => {
@@ -170,7 +158,7 @@ describe('GET /admin/queue', () => {
 	it('403s a signed-in non-admin', async () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
 		const res = await app.request('/admin/queue', {
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(403);
 		// A non-admin must never see queue data.
@@ -184,7 +172,7 @@ describe('GET /admin/queue', () => {
 		vi.mocked(listFlaggedSkills).mockResolvedValue([flaggedRecord]);
 
 		const res = await app.request('/admin/queue', {
-			headers: { Cookie: await sessionCookie(admin.id) },
+			headers: { Cookie: await sessionCookie(admin.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { data: unknown };
@@ -214,7 +202,7 @@ describe('GET /admin/queue', () => {
 		vi.mocked(listFlaggedSkills).mockResolvedValue([]);
 
 		const res = await app.request('/admin/queue', {
-			headers: { Cookie: await sessionCookie(admin.id) },
+			headers: { Cookie: await sessionCookie(admin.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { data: unknown };
@@ -232,7 +220,7 @@ describe('GET /admin/queue', () => {
 		vi.mocked(listFlaggedSkills).mockResolvedValue([]);
 
 		const res = await app.request('/admin/queue', {
-			headers: { Cookie: await sessionCookie(admin.id) },
+			headers: { Cookie: await sessionCookie(admin.id, env.SESSION_SECRET) },
 		});
 		const text = JSON.stringify(await res.json());
 		expect(text).not.toContain('snapshotKey');
@@ -257,7 +245,7 @@ describe('POST /admin/reports/:id/resolve', () => {
 
 	it('403s a signed-in non-admin, touching nothing', async () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
-		const res = await resolve(1, { status: 'actioned' }, await sessionCookie(maintainer.id));
+		const res = await resolve(1, { status: 'actioned' }, await sessionCookie(maintainer.id, env.SESSION_SECRET));
 		expect(res.status).toBe(403);
 		expect(vi.mocked(awardReputation)).not.toHaveBeenCalled();
 		expect(vi.mocked(setAbuseReportStatus)).not.toHaveBeenCalled();
@@ -266,7 +254,7 @@ describe('POST /admin/reports/:id/resolve', () => {
 	it('actioned: docks the maintainer once, then sets the status', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findAdminReportById).mockResolvedValue(reportDetail);
-		const res = await resolve(1, { status: 'actioned' }, await sessionCookie(admin.id));
+		const res = await resolve(1, { status: 'actioned' }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { data: unknown };
 		expect(adminAbuseReportSchema.parse(body.data).status).toBe('actioned');
@@ -282,7 +270,7 @@ describe('POST /admin/reports/:id/resolve', () => {
 	it('reviewed: sets the status with no reputation change', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findAdminReportById).mockResolvedValue(reportDetail);
-		const res = await resolve(1, { status: 'reviewed' }, await sessionCookie(admin.id));
+		const res = await resolve(1, { status: 'reviewed' }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { data: unknown };
 		expect(adminAbuseReportSchema.parse(body.data).status).toBe('reviewed');
@@ -296,7 +284,7 @@ describe('POST /admin/reports/:id/resolve', () => {
 			...reportDetail,
 			report: { ...reportDetail.report, status: 'actioned' },
 		});
-		const res = await resolve(1, { status: 'actioned' }, await sessionCookie(admin.id));
+		const res = await resolve(1, { status: 'actioned' }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(vi.mocked(awardReputation)).not.toHaveBeenCalled();
 		expect(vi.mocked(setAbuseReportStatus)).not.toHaveBeenCalled();
@@ -304,7 +292,7 @@ describe('POST /admin/reports/:id/resolve', () => {
 
 	it('400s an invalid status, without a lookup', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
-		const res = await resolve(1, { status: 'open' }, await sessionCookie(admin.id));
+		const res = await resolve(1, { status: 'open' }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(400);
 		expect(vi.mocked(findAdminReportById)).not.toHaveBeenCalled();
 	});
@@ -312,7 +300,7 @@ describe('POST /admin/reports/:id/resolve', () => {
 	it('404s an unknown report', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findAdminReportById).mockResolvedValue(undefined);
-		const res = await resolve(999, { status: 'actioned' }, await sessionCookie(admin.id));
+		const res = await resolve(999, { status: 'actioned' }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(404);
 		expect(vi.mocked(awardReputation)).not.toHaveBeenCalled();
 	});
@@ -328,7 +316,7 @@ describe('POST /admin/skills/:slug/flag', () => {
 
 	it('403s a non-admin, changing nothing', async () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
-		const res = await flag('bad-skill', await sessionCookie(maintainer.id));
+		const res = await flag('bad-skill', await sessionCookie(maintainer.id, env.SESSION_SECRET));
 		expect(res.status).toBe(403);
 		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
 	});
@@ -336,7 +324,7 @@ describe('POST /admin/skills/:slug/flag', () => {
 	it('flags a published skill', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(publishedSkill);
-		const res = await flag('bad-skill', await sessionCookie(admin.id));
+		const res = await flag('bad-skill', await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(200);
 		expect((await res.json()).data).toEqual({ slug: 'bad-skill', status: 'flagged' });
 		expect(vi.mocked(setSkillStatus)).toHaveBeenCalledWith(expect.anything(), 10, 'flagged');
@@ -345,7 +333,7 @@ describe('POST /admin/skills/:slug/flag', () => {
 	it('409s a skill that is not published', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...publishedSkill, status: 'flagged' });
-		const res = await flag('bad-skill', await sessionCookie(admin.id));
+		const res = await flag('bad-skill', await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
 	});
@@ -353,7 +341,7 @@ describe('POST /admin/skills/:slug/flag', () => {
 	it('404s an unknown slug', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
-		const res = await flag('nope', await sessionCookie(admin.id));
+		const res = await flag('nope', await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(404);
 	});
 });
@@ -369,7 +357,7 @@ describe('POST /admin/skills/:slug/unflag', () => {
 	it('unflags a flagged skill back to published', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...publishedSkill, status: 'flagged' });
-		const res = await unflag('bad-skill', await sessionCookie(admin.id));
+		const res = await unflag('bad-skill', await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(200);
 		expect((await res.json()).data).toEqual({ slug: 'bad-skill', status: 'published' });
 		expect(vi.mocked(setSkillStatus)).toHaveBeenCalledWith(expect.anything(), 10, 'published');
@@ -378,7 +366,7 @@ describe('POST /admin/skills/:slug/unflag', () => {
 	it('409s a skill that is not flagged', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(publishedSkill);
-		const res = await unflag('bad-skill', await sessionCookie(admin.id));
+		const res = await unflag('bad-skill', await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
 	});
@@ -395,7 +383,7 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 
 	it('403s a non-admin, changing nothing', async () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
-		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(maintainer.id));
+		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(maintainer.id, env.SESSION_SECRET));
 		expect(res.status).toBe(403);
 		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
 	});
@@ -403,7 +391,7 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 	it('features a published skill', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(publishedSkill);
-		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(admin.id));
+		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(200);
 		expect((await res.json()).data).toEqual({ slug: 'bad-skill', featured: true });
 		expect(vi.mocked(setSkillCuration)).toHaveBeenCalledWith(expect.anything(), 10, { featured: true });
@@ -412,7 +400,7 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 	it('verifies, and can unset, a published skill', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(publishedSkill);
-		const res = await curate('verify', 'bad-skill', { value: false }, await sessionCookie(admin.id));
+		const res = await curate('verify', 'bad-skill', { value: false }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(200);
 		expect((await res.json()).data).toEqual({ slug: 'bad-skill', verified: false });
 		expect(vi.mocked(setSkillCuration)).toHaveBeenCalledWith(expect.anything(), 10, { verified: false });
@@ -421,7 +409,7 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 	it('409s a skill that is not published', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...publishedSkill, status: 'flagged' });
-		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(admin.id));
+		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
 	});
@@ -429,13 +417,13 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 	it('404s an unknown slug', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
-		const res = await curate('feature', 'nope', { value: true }, await sessionCookie(admin.id));
+		const res = await curate('feature', 'nope', { value: true }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(404);
 	});
 
 	it('400s a non-boolean value, without a lookup', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
-		const res = await curate('feature', 'bad-skill', { value: 'yes' }, await sessionCookie(admin.id));
+		const res = await curate('feature', 'bad-skill', { value: 'yes' }, await sessionCookie(admin.id, env.SESSION_SECRET));
 		expect(res.status).toBe(400);
 		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
 	});
@@ -445,7 +433,7 @@ describe('GET /admin/skills/:slug/history', () => {
 	it('403s a non-admin', async () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
 		const res = await app.request('/admin/skills/bad-skill/history', {
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(403);
 	});
@@ -466,7 +454,7 @@ describe('GET /admin/skills/:slug/history', () => {
 			},
 		]);
 		const res = await app.request('/admin/skills/bad-skill/history', {
-			headers: { Cookie: await sessionCookie(admin.id) },
+			headers: { Cookie: await sessionCookie(admin.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { data: unknown[] };
@@ -478,7 +466,7 @@ describe('GET /admin/skills/:slug/history', () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
 		const res = await app.request('/admin/skills/nope/history', {
-			headers: { Cookie: await sessionCookie(admin.id) },
+			headers: { Cookie: await sessionCookie(admin.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(404);
 	});

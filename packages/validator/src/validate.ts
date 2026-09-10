@@ -4,9 +4,10 @@ import { contentRule } from './rules/content';
 import { detectPermissions } from './rules/permissions';
 import { structureRule } from './rules/structure';
 import type { Rule, RuleFinding } from './rules/types';
+import pkg from '../package.json' with { type: 'json' };
 
-// Bump together with package.json when the rule set changes.
-export const ENGINE_VERSION = '0.3.0';
+// The package version is the engine version: a rule change bumps package.json.
+export const ENGINE_VERSION: string = pkg.version;
 
 export interface ValidatorRule {
 	key: string;

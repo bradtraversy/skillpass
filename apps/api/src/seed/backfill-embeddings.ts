@@ -1,11 +1,9 @@
-import { fileURLToPath } from 'node:url';
-import { createDb, type Db } from '../db/client';
 import { upsertSkillEmbedding } from '../db/embeddings';
 import { skillEmbeddings } from '../db/schema';
 import { listPublishedSkills } from '../db/skills';
-import { loadEnv, type Env } from '../env';
 import { EMBEDDING_MODEL, embedTexts } from '../search/embeddings';
 import { skillEmbeddingContent } from '../search/ensure';
+import { runBackfill } from './runner';
 
 export interface EmbeddingCandidate {
 	skillId: number;
@@ -23,9 +21,7 @@ export function pendingEmbeddings(
 	return candidates.filter((c) => existing.get(c.skillId) !== c.contentHash);
 }
 
-async function main() {
-	const env: Env = loadEnv();
-	const db: Db = createDb(env.DATABASE_URL);
+runBackfill(import.meta.url, async (env, db) => {
 
 	if (!env.VOYAGE_API_KEY) {
 		console.log('VOYAGE_API_KEY is not set; nothing to embed.');
@@ -71,11 +67,4 @@ async function main() {
 	console.log(
 		`\ndone: ${pending.length} embedded, ${candidates.length - pending.length} up to date`,
 	);
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-	main().catch((err) => {
-		console.error('backfill failed:', err);
-		process.exit(1);
-	});
-}
+});

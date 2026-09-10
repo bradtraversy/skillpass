@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { GithubProfile } from '../db/users';
 import { USER_AGENT } from '../lib/http';
-import type { Result } from '../lib/result';
+import type { Result } from 'skill-schema';
 
 const AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 const TOKEN_URL = 'https://github.com/login/oauth/access_token';

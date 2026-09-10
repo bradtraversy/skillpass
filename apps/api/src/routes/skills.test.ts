@@ -1,6 +1,4 @@
 import { strFromU8, unzipSync } from 'fflate';
-import { Hono } from 'hono';
-import { setSignedCookie } from 'hono/cookie';
 import {
 	publicAbuseReportSchema,
 	publicPreflightSchema,
@@ -12,7 +10,6 @@ import {
 import { loadPackageFromFiles } from 'validator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
-import { SESSION_COOKIE } from '../auth/middleware';
 import { createAbuseReport, findOpenReportBySkillAndReporter } from '../db/abuse';
 import { recordDownload } from '../db/downloads';
 import { findAiReviewByHash } from '../db/reviews';
@@ -35,6 +32,7 @@ import type { ValidationQueue } from '../queue/queue';
 import { embedTexts } from '../search/embeddings';
 import { getSnapshotDocument } from '../storage/r2';
 import { RAW_TEST_ENV } from '../testing/env';
+import { sessionCookie } from '../testing/session';
 
 vi.mock('../db/skills', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../db/skills')>()),
@@ -141,16 +139,6 @@ const passport: SkillPassportRow = {
 };
 
 const record: PublishedSkillRecord = { skill, version, passport, maintainer };
-
-async function sessionCookie(id: number): Promise<string> {
-	const signer = new Hono();
-	signer.get('/', async (c) => {
-		await setSignedCookie(c, SESSION_COOKIE, String(id), env.SESSION_SECRET);
-		return c.text('ok');
-	});
-	const res = await signer.request('/');
-	return res.headers.getSetCookie()[0].split(';')[0];
-}
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -750,7 +738,7 @@ describe('GET /skills/:slug/:version/download', () => {
 	it('attributes the event when a valid session cookie rides along', async () => {
 		mockVerified();
 		await app.request('/skills/smoke-clean/1.0.0/download', {
-			headers: { Cookie: await sessionCookie(7) },
+			headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) },
 		});
 		expect(vi.mocked(recordDownload)).toHaveBeenCalledWith(expect.anything(), {
 			skillVersionId: 1,
@@ -844,13 +832,13 @@ describe('POST /skills/:slug/report', () => {
 	it('404s an unknown or unpublished slug', async () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
 		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(undefined);
-		const res = await post({ reason: REASON }, await sessionCookie(1));
+		const res = await post({ reason: REASON }, await sessionCookie(1, env.SESSION_SECRET));
 		expect(res.status).toBe(404);
 	});
 
 	it('400s a too-short reason with the validation message', async () => {
 		mockReporter();
-		const res = await post({ reason: 'bad' }, await sessionCookie(1));
+		const res = await post({ reason: 'bad' }, await sessionCookie(1, env.SESSION_SECRET));
 		expect(res.status).toBe(400);
 		expect(((await res.json()) as { error: string }).error).toContain('at least 10');
 		expect(vi.mocked(createAbuseReport)).not.toHaveBeenCalled();
@@ -866,14 +854,14 @@ describe('POST /skills/:slug/report', () => {
 			status: 'open',
 			createdAt: NOW,
 		});
-		const res = await post({ reason: REASON }, await sessionCookie(1));
+		const res = await post({ reason: REASON }, await sessionCookie(1, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(vi.mocked(createAbuseReport)).not.toHaveBeenCalled();
 	});
 
 	it('201s with the locked confirmation contract and stores the trimmed reason', async () => {
 		mockReporter();
-		const res = await post({ reason: `  ${REASON}  ` }, await sessionCookie(1));
+		const res = await post({ reason: `  ${REASON}  ` }, await sessionCookie(1, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		const body = (await res.json()) as { data: unknown };
 		expect(publicAbuseReportSchema.parse(body.data)).toEqual({
@@ -889,7 +877,7 @@ describe('POST /skills/:slug/report', () => {
 
 	it('leaks no ids on the confirmation', async () => {
 		mockReporter();
-		const res = await post({ reason: REASON }, await sessionCookie(1));
+		const res = await post({ reason: REASON }, await sessionCookie(1, env.SESSION_SECRET));
 		const text = JSON.stringify(await res.json());
 		expect(text).not.toContain('reporterId');
 		expect(text).not.toContain('skillId');
@@ -908,7 +896,7 @@ describe('POST /skills/:slug/unlist and /skills/:slug/relist', () => {
 		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
 		const res = await app.request('/skills/nope/unlist', {
 			method: 'POST',
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(404);
 		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
@@ -919,7 +907,7 @@ describe('POST /skills/:slug/unlist and /skills/:slug/relist', () => {
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill, maintainerId: 99 });
 		const res = await app.request('/skills/smoke-clean/unlist', {
 			method: 'POST',
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(404);
 		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
@@ -930,7 +918,7 @@ describe('POST /skills/:slug/unlist and /skills/:slug/relist', () => {
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill, status: 'flagged' });
 		const res = await app.request('/skills/smoke-clean/unlist', {
 			method: 'POST',
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(409);
 		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
@@ -941,7 +929,7 @@ describe('POST /skills/:slug/unlist and /skills/:slug/relist', () => {
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill });
 		const res = await app.request('/skills/smoke-clean/unlist', {
 			method: 'POST',
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({
@@ -956,7 +944,7 @@ describe('POST /skills/:slug/unlist and /skills/:slug/relist', () => {
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill, status: 'published' });
 		const res = await app.request('/skills/smoke-clean/relist', {
 			method: 'POST',
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(409);
 		expect(vi.mocked(setSkillStatus)).not.toHaveBeenCalled();
@@ -967,7 +955,7 @@ describe('POST /skills/:slug/unlist and /skills/:slug/relist', () => {
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...skill, status: 'private' });
 		const res = await app.request('/skills/smoke-clean/relist', {
 			method: 'POST',
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({

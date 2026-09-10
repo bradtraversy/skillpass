@@ -1,14 +1,10 @@
-import { fileURLToPath } from 'node:url';
 import { and, eq, isNull } from 'drizzle-orm';
-import { createDb, type Db } from '../db/client';
 import { skills } from '../db/schema';
 import { setSkillCategory } from '../db/skills';
-import { loadEnv, type Env } from '../env';
 import { classifyCategory } from '../review/classify';
+import { runBackfill } from './runner';
 
-async function main() {
-	const env: Env = loadEnv();
-	const db: Db = createDb(env.DATABASE_URL);
+runBackfill(import.meta.url, async (env, db) => {
 
 	if (!env.ANTHROPIC_API_KEY) {
 		console.log('ANTHROPIC_API_KEY is not set; nothing to classify.');
@@ -45,11 +41,4 @@ async function main() {
 	for (const [slug, count] of [...distribution.entries()].sort((a, b) => b[1] - a[1])) {
 		console.log(`  ${String(count).padStart(4)} ${slug}`);
 	}
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-	main().catch((err) => {
-		console.error('backfill failed:', err);
-		process.exit(1);
-	});
-}
+});

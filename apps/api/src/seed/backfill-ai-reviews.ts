@@ -1,14 +1,10 @@
-import { fileURLToPath } from 'node:url';
 import { eq } from 'drizzle-orm';
-import { createDb, type Db } from '../db/client';
 import { findAiReviewByHash } from '../db/reviews';
 import { skills, skillVersions, validationReports } from '../db/schema';
-import { loadEnv, type Env } from '../env';
 import { ensureAiReview } from '../review/ensure';
+import { runBackfill } from './runner';
 
-async function main() {
-	const env: Env = loadEnv();
-	const db: Db = createDb(env.DATABASE_URL);
+runBackfill(import.meta.url, async (env, db) => {
 
 	if (!env.ANTHROPIC_API_KEY) {
 		console.log('ANTHROPIC_API_KEY is not set; nothing to generate.');
@@ -47,11 +43,4 @@ async function main() {
 	}
 
 	console.log(`\ndone: ${counts.generated} generated, ${counts.existing} already had one, ${counts.skipped} skipped`);
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-	main().catch((err) => {
-		console.error('backfill failed:', err);
-		process.exit(1);
-	});
-}
+});

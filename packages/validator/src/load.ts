@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { parseManifest, type Manifest, type SkillEntry, type Target } from 'skill-schema';
+import { parseManifest, slugForSkill, type Manifest, type SkillEntry, type Target } from 'skill-schema';
 import { detectPermissions } from './rules/permissions';
 
 export interface PackageFile {
@@ -169,14 +169,6 @@ function firstParagraph(text: string): string | undefined {
 	return kept.length > 0 ? clip(kept.join(' '), DESCRIPTION_MAX) : undefined;
 }
 
-function slugify(value: string): string {
-	const slug = value
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-+|-+$/g, '');
-	return slug || 'skill';
-}
-
 function inferTargets(files: PackageFile[]): Target[] {
 	const targets = new Set<Target>();
 	for (const file of files) {
@@ -192,7 +184,7 @@ function inferTargets(files: PackageFile[]): Target[] {
 function inferManifest(files: PackageFile[], fallbackName: string): Manifest {
 	const skillFile = files.find((f) => f.path === 'SKILL.md');
 	const meta = skillFile ? readSkillMeta(skillFile.content) : {};
-	const name = slugify(meta.name ?? fallbackName);
+	const name = slugForSkill(meta.name ?? fallbackName);
 	const permissions = detectPermissions(files);
 	return {
 		schemaVersion: '0.1',
@@ -263,8 +255,8 @@ function inferNestedManifest(files: PackageFile[], fallbackName: string): Manife
 		const meta = readSkillMeta(file.content);
 		// Frontmatter names can collide across folders; folder names can't
 		// within a layout, so a duplicate falls back to its folder name.
-		let entryName = slugify(meta.name ?? member.folder);
-		if (used.has(entryName)) entryName = slugify(member.folder);
+		let entryName = slugForSkill(meta.name ?? member.folder);
+		if (used.has(entryName)) entryName = slugForSkill(member.folder);
 		used.add(entryName);
 		const targets: Target[] = member.plainPath
 			? inferTargets(files)
@@ -288,7 +280,7 @@ function inferNestedManifest(files: PackageFile[], fallbackName: string): Manife
 	const permissions = detectPermissions(files);
 	return {
 		schemaVersion: '0.1',
-		name: single ? single.name : slugify(fallbackName),
+		name: single ? single.name : slugForSkill(fallbackName),
 		description: single
 			? (single.description ?? single.name)
 			: (readmeProse(files) ?? `A pack of ${entries.length} skills`),

@@ -1,10 +1,8 @@
-import { fileURLToPath } from 'node:url';
 import { eq } from 'drizzle-orm';
 import { loadPackageFromFiles } from 'validator';
-import { createDb, type Db } from '../db/client';
 import { skills, skillVersions } from '../db/schema';
-import { loadEnv, type Env } from '../env';
 import { getSnapshotDocument } from '../storage/r2';
+import { runBackfill } from './runner';
 
 // A summary is broken when an older parser stored a YAML block-scalar indicator
 // (`>`, `>-`, `|-`) or nothing instead of the folded text, or when the old
@@ -21,9 +19,7 @@ export function isBrokenSummary(summary: string | null | undefined): boolean {
 	);
 }
 
-async function main() {
-	const env: Env = loadEnv();
-	const db: Db = createDb(env.DATABASE_URL);
+runBackfill(import.meta.url, async (env, db) => {
 
 	const rows = await db
 		.select({ id: skills.id, slug: skills.slug, summary: skills.summary, snapshotKey: skillVersions.snapshotKey })
@@ -59,11 +55,4 @@ async function main() {
 	}
 
 	console.log(`\ndone: ${counts.fixed} fixed, ${counts.unchanged} unchanged, ${counts.failed} failed`);
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-	main().catch((err) => {
-		console.error('backfill failed:', err);
-		process.exit(1);
-	});
-}
+});

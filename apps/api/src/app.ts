@@ -1,8 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { requireAuth, type AuthVariables } from './auth/middleware';
+import type { AuthVariables } from './auth/middleware';
 import type { Db } from './db/client';
-import { publicUser } from './db/users';
 import type { Env } from './env';
 import type { ValidationQueue } from './queue/queue';
 import { adminRoutes } from './routes/admin';
@@ -30,9 +29,6 @@ export function createApp(env: Env, db: Db, queue: ValidationQueue | null) {
 	app.route('/users', userRoutes(db));
 	app.route('/admin', adminRoutes(env, db));
 
-	app.get('/me', requireAuth(env, db), (c) =>
-		c.json({ success: true, data: publicUser(c.get('user')) }),
-	);
 	app.route('/me', meRoutes(env, db));
 
 	return app;

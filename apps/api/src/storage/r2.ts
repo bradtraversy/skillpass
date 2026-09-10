@@ -2,7 +2,7 @@ import { AwsClient } from 'aws4fetch';
 import type { PackageFile } from 'validator';
 import { z } from 'zod';
 import type { Env } from '../env';
-import type { Result } from '../lib/result';
+import type { Result } from 'skill-schema';
 
 const R2_TIMEOUT_MS = 30_000;
 

@@ -1,9 +1,6 @@
-import { Hono } from 'hono';
-import { setSignedCookie } from 'hono/cookie';
 import { maintainerReportSchema, maintainerSkillSchema } from 'skill-schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
-import { SESSION_COOKIE } from '../auth/middleware';
 import { listReportsAgainstMaintainer, type MaintainerReportRecord } from '../db/abuse';
 import type { Db } from '../db/client';
 import type { UserRow } from '../db/schema';
@@ -12,6 +9,7 @@ import { findById } from '../db/users';
 import { loadEnv } from '../env';
 import type { ValidationQueue } from '../queue/queue';
 import { RAW_TEST_ENV } from '../testing/env';
+import { sessionCookie } from '../testing/session';
 
 vi.mock('../db/skills', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../db/skills')>()),
@@ -110,16 +108,6 @@ const reportRecord: MaintainerReportRecord = {
 	skill: { slug: 'smoke-clean', name: 'Smoke Clean' },
 };
 
-async function sessionCookie(id: number): Promise<string> {
-	const signer = new Hono();
-	signer.get('/', async (c) => {
-		await setSignedCookie(c, SESSION_COOKIE, String(id), env.SESSION_SECRET);
-		return c.text('ok');
-	});
-	const res = await signer.request('/');
-	return res.headers.getSetCookie()[0].split(';')[0];
-}
-
 beforeEach(() => vi.clearAllMocks());
 
 describe('GET /me/skills', () => {
@@ -132,7 +120,7 @@ describe('GET /me/skills', () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
 		vi.mocked(listSkillsByMaintainer).mockResolvedValue([skillRecord]);
 		const res = await app.request('/me/skills', {
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(200);
 		const body = await res.json();
@@ -150,7 +138,7 @@ describe('GET /me/skills', () => {
 			{ skill: { ...skillRecord.skill, latestVersionId: null }, version: null, passport: null },
 		]);
 		const res = await app.request('/me/skills', {
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		const body = await res.json();
 		const row = maintainerSkillSchema.parse(body.data[0]);
@@ -170,7 +158,7 @@ describe('GET /me/reports', () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
 		vi.mocked(listReportsAgainstMaintainer).mockResolvedValue([reportRecord]);
 		const res = await app.request('/me/reports', {
-			headers: { Cookie: await sessionCookie(maintainer.id) },
+			headers: { Cookie: await sessionCookie(maintainer.id, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(200);
 		const raw = await res.text();

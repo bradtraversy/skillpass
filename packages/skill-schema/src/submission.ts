@@ -1,3 +1,4 @@
+import type { Result } from './result';
 import { z } from 'zod';
 
 // Submission lifecycle enums. Distinct from SkillVersion's SourceType
@@ -49,7 +50,7 @@ export interface CreatedSubmission extends PublicSubmission {
 
 // The API's HTTP response wrapper. Structurally like ParseResult, declared
 // separately so the wire contract can grow without touching parse semantics.
-export type ApiEnvelope<T> = { success: true; data: T } | { success: false; error: string };
+export type ApiEnvelope<T> = Result<T>;
 
 // Compressed zip upload cap - part of the API contract so the web island can
 // pre-check before uploading and the API enforces before buffering.

@@ -1,7 +1,7 @@
 import { Queue } from 'bullmq';
 import type { Env } from '../env';
-import type { Result } from '../lib/result';
 import { redisConnection } from './connection';
+import type { Result } from 'skill-schema';
 
 export const VALIDATION_QUEUE_NAME = 'validate-submission';
 

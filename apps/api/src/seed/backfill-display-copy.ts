@@ -1,14 +1,10 @@
-import { fileURLToPath } from 'node:url';
 import { and, eq, isNull, or } from 'drizzle-orm';
-import { createDb, type Db } from '../db/client';
 import { skills } from '../db/schema';
 import { setSkillDisplayCopy } from '../db/skills';
-import { loadEnv, type Env } from '../env';
 import { generateDisplayCopy } from '../review/display-copy';
+import { runBackfill } from './runner';
 
-async function main() {
-	const env: Env = loadEnv();
-	const db: Db = createDb(env.DATABASE_URL);
+runBackfill(import.meta.url, async (env, db) => {
 
 	if (!env.ANTHROPIC_API_KEY) {
 		console.log('ANTHROPIC_API_KEY is not set; nothing to generate.');
@@ -45,11 +41,4 @@ async function main() {
 	}
 
 	console.log(`\ndone: ${rows.length - failed} generated, ${failed} failed`);
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-	main().catch((err) => {
-		console.error('backfill failed:', err);
-		process.exit(1);
-	});
-}
+});

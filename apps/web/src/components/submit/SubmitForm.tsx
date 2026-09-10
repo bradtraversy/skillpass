@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { MAX_ZIP_BYTES, type CreatedSubmission, type PublicUser } from 'skill-schema';
 import { getMe, signInUrl, submitGithubUrl, submitZip } from '../../lib/api';
 import { detectionSummary } from '../../lib/detection-summary';
@@ -32,7 +32,7 @@ export default function SubmitForm() {
 		setResult(null);
 	}
 
-	async function onSubmit(e: FormEvent) {
+	async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
 		e.preventDefault();
 		setError(null);
 		setResult(null);

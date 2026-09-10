@@ -1,11 +1,8 @@
 import { createHash } from 'node:crypto';
 import { strToU8, zipSync } from 'fflate';
-import { Hono } from 'hono';
-import { setSignedCookie } from 'hono/cookie';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadPackageFromFiles } from 'validator';
 import { createApp } from '../app';
-import { SESSION_COOKIE } from '../auth/middleware';
 import type { Db } from '../db/client';
 import type {
 	SkillVersionRow,
@@ -34,6 +31,7 @@ import { resolveCommit } from '../github/pin';
 import { fetchSnapshot } from '../github/snapshot';
 import { getSnapshotDocument, putBytes, putJson } from '../storage/r2';
 import { RAW_TEST_ENV } from '../testing/env';
+import { sessionCookie } from '../testing/session';
 
 vi.mock('../db/users', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../db/users')>()),
@@ -124,16 +122,6 @@ const submissionRow: SubmissionRow = {
 	createdAt: new Date('2026-07-05T12:00:00Z'),
 };
 
-async function sessionCookie(id: number): Promise<string> {
-	const signer = new Hono();
-	signer.get('/', async (c) => {
-		await setSignedCookie(c, SESSION_COOKIE, String(id), env.SESSION_SECRET);
-		return c.text('ok');
-	});
-	const res = await signer.request('/');
-	return res.headers.getSetCookie()[0].split(';')[0];
-}
-
 const jobRow: ValidationJobRow = {
 	id: 55,
 	submissionId: 1,
@@ -177,7 +165,7 @@ describe('POST /submissions', () => {
 
 	it('creates a draft and returns the locked public shape', async () => {
 		mockHappyPath();
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(await res.json()).toEqual({
 			success: true,
@@ -209,7 +197,7 @@ describe('POST /submissions', () => {
 			success: true,
 			data: [{ path: 'README.md', content: 'not a skill\n' }],
 		});
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		const body = (await res.json()) as { data: { detected: unknown } };
 		expect(body.data.detected).toEqual({ skillMd: false, manifest: 'missing', name: null, skillCount: null });
@@ -231,7 +219,7 @@ describe('POST /submissions', () => {
 				{ path: 'skill.json', content: JSON.stringify(manifest) },
 			],
 		});
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		const body = (await res.json()) as { data: { detected: unknown } };
 		expect(body.data.detected).toEqual({ skillMd: true, manifest: 'ok', name: 'demo-skill', skillCount: null });
@@ -248,7 +236,7 @@ describe('POST /submissions', () => {
 				{ path: '.claude/skills/apply/SKILL.md', content: member('apply') },
 			],
 		});
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		const body = (await res.json()) as { data: { detected: unknown } };
 		expect(body.data.detected).toEqual({
@@ -261,19 +249,19 @@ describe('POST /submissions', () => {
 
 	it('400s on a non-JSON body', async () => {
 		mockHappyPath();
-		const res = await post('not json', await sessionCookie(7));
+		const res = await post('not json', await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(400);
 	});
 
 	it('400s on a missing githubUrl', async () => {
 		mockHappyPath();
-		const res = await post({}, await sessionCookie(7));
+		const res = await post({}, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(400);
 	});
 
 	it('400s on a non-github URL without calling github', async () => {
 		mockHappyPath();
-		const res = await post({ githubUrl: 'https://gitlab.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://gitlab.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(400);
 		expect(vi.mocked(resolveCommit)).not.toHaveBeenCalled();
 	});
@@ -283,7 +271,7 @@ describe('POST /submissions', () => {
 		vi.mocked(verifySubmitPermission).mockResolvedValue(
 			sourceError('forbidden', 'you can only submit repositories you own'),
 		);
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(403);
 		expect(vi.mocked(resolveCommit)).not.toHaveBeenCalled();
 	});
@@ -291,7 +279,7 @@ describe('POST /submissions', () => {
 	it('404s when the repo cannot be pinned and never snapshots', async () => {
 		mockHappyPath();
 		vi.mocked(resolveCommit).mockResolvedValue(sourceError('not-found', 'repository not found'));
-		const res = await post({ githubUrl: 'https://github.com/octocat/gone' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/gone' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(404);
 		expect(vi.mocked(fetchSnapshot)).not.toHaveBeenCalled();
 	});
@@ -299,14 +287,14 @@ describe('POST /submissions', () => {
 	it('429s when github rate-limits the pin', async () => {
 		mockHappyPath();
 		vi.mocked(resolveCommit).mockResolvedValue(sourceError('rate-limited', 'rate limit hit'));
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(429);
 	});
 
 	it('413s an over-cap package and never stores it', async () => {
 		mockHappyPath();
 		vi.mocked(fetchSnapshot).mockResolvedValue(sourceError('too-large', 'package exceeds 500 files'));
-		const res = await post({ githubUrl: 'https://github.com/octocat/huge' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/huge' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(413);
 		expect(vi.mocked(putJson)).not.toHaveBeenCalled();
 	});
@@ -314,14 +302,14 @@ describe('POST /submissions', () => {
 	it('502s when the snapshot cannot be stored and never inserts', async () => {
 		mockHappyPath();
 		vi.mocked(putJson).mockResolvedValue({ success: false, error: 'r2 put failed (500)' });
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(502);
 		expect(vi.mocked(createSubmission)).not.toHaveBeenCalled();
 	});
 
 	it('creates a queued job row and enqueues validation after the draft', async () => {
 		mockHappyPath();
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(vi.mocked(createValidationJob)).toHaveBeenCalledWith(expect.anything(), 1);
 		expect(vi.mocked(enqueueValidation)).toHaveBeenCalledWith(expect.anything(), 1);
@@ -334,7 +322,7 @@ describe('POST /submissions', () => {
 		vi.mocked(processValidationJob).mockResolvedValue(undefined);
 		const res = await inlineApp.request('/submissions', {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json', Cookie: await sessionCookie(7) },
+			headers: { 'Content-Type': 'application/json', Cookie: await sessionCookie(7, env.SESSION_SECRET) },
 			body: JSON.stringify({ githubUrl: 'https://github.com/octocat/hello' }),
 		});
 		expect(res.status).toBe(201);
@@ -350,7 +338,7 @@ describe('POST /submissions', () => {
 		vi.mocked(handleValidationFailure).mockResolvedValue(undefined);
 		const res = await inlineApp.request('/submissions', {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json', Cookie: await sessionCookie(7) },
+			headers: { 'Content-Type': 'application/json', Cookie: await sessionCookie(7, env.SESSION_SECRET) },
 			body: JSON.stringify({ githubUrl: 'https://github.com/octocat/hello' }),
 		});
 		expect(res.status).toBe(201);
@@ -369,7 +357,7 @@ describe('POST /submissions', () => {
 			success: false,
 			error: 'enqueue failed: connect ECONNREFUSED',
 		});
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect((await res.json()) as { success: boolean }).toMatchObject({ success: true });
 		expect(vi.mocked(markValidationJobError)).toHaveBeenCalledWith(
@@ -384,7 +372,7 @@ describe('POST /submissions', () => {
 		mockHappyPath();
 		vi.spyOn(console, 'error').mockImplementation(() => {});
 		vi.mocked(createSubmission).mockRejectedValue(new Error('db down'));
-		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7));
+		const res = await post({ githubUrl: 'https://github.com/octocat/hello' }, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(500);
 		expect(await res.json()).toEqual({ success: false, error: 'internal error' });
 	});
@@ -431,7 +419,7 @@ describe('POST /submissions/zip', () => {
 			'pack/.agents/skills/plan/SKILL.md': strToU8(member('plan')),
 			'pack/.claude/skills/apply/SKILL.md': strToU8(member('apply')),
 		});
-		const res = await postZip(new File([packZip], 'my-pack.zip'), await sessionCookie(7));
+		const res = await postZip(new File([packZip], 'my-pack.zip'), await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		const body = (await res.json()) as { data: { detected: unknown } };
 		expect(body.data.detected).toEqual({
@@ -445,7 +433,7 @@ describe('POST /submissions/zip', () => {
 	it('creates a zip draft through the real extractor', async () => {
 		mockHappyPath();
 		vi.mocked(createSubmission).mockResolvedValue(zipRow);
-		const res = await postZip(new File([ZIP_BYTES], 'Demo Skill.zip'), await sessionCookie(7));
+		const res = await postZip(new File([ZIP_BYTES], 'Demo Skill.zip'), await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(await res.json()).toEqual({
 			success: true,
@@ -480,7 +468,7 @@ describe('POST /submissions/zip', () => {
 		mockHappyPath();
 		vi.mocked(createSubmission).mockResolvedValue(zipRow);
 		vi.mocked(createValidationJob).mockResolvedValue({ ...jobRow, submissionId: 3 });
-		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7));
+		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(vi.mocked(createValidationJob)).toHaveBeenCalledWith(expect.anything(), 3);
 		expect(vi.mocked(enqueueValidation)).toHaveBeenCalledWith(expect.anything(), 3);
@@ -495,7 +483,7 @@ describe('POST /submissions/zip', () => {
 			success: false,
 			error: 'enqueue failed: connect ECONNREFUSED',
 		});
-		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7));
+		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(vi.mocked(markValidationJobError)).toHaveBeenCalledWith(
 			expect.anything(),
@@ -507,21 +495,21 @@ describe('POST /submissions/zip', () => {
 
 	it('400s when the file field is missing', async () => {
 		mockHappyPath();
-		const res = await postZip(undefined, await sessionCookie(7));
+		const res = await postZip(undefined, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(400);
 	});
 
 	it('413s an over-cap zip without buffering or storing it', async () => {
 		mockHappyPath();
 		const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'big.zip');
-		const res = await postZip(big, await sessionCookie(7));
+		const res = await postZip(big, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(413);
 		expect(vi.mocked(putBytes)).not.toHaveBeenCalled();
 	});
 
 	it('422s a corrupt zip', async () => {
 		mockHappyPath();
-		const res = await postZip(new File([strToU8('not a zip')], 'bad.zip'), await sessionCookie(7));
+		const res = await postZip(new File([strToU8('not a zip')], 'bad.zip'), await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(422);
 		expect(vi.mocked(putBytes)).not.toHaveBeenCalled();
 	});
@@ -529,7 +517,7 @@ describe('POST /submissions/zip', () => {
 	it('502s when the zip cannot be stored and never inserts', async () => {
 		mockHappyPath();
 		vi.mocked(putBytes).mockResolvedValue({ success: false, error: 'r2 put failed (500)' });
-		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7));
+		const res = await postZip(new File([ZIP_BYTES], 'demo.zip'), await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(502);
 		expect(vi.mocked(createSubmission)).not.toHaveBeenCalled();
 	});
@@ -554,7 +542,7 @@ describe('GET /submissions', () => {
 	it("lists only the authed user's submissions in the public shape", async () => {
 		vi.mocked(findById).mockResolvedValue(userRow);
 		vi.mocked(listSubmissionsForUser).mockResolvedValue([submissionRow]);
-		const res = await app.request('/submissions', { headers: { Cookie: await sessionCookie(7) } });
+		const res = await app.request('/submissions', { headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) } });
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ success: true, data: [publicShape] });
 		expect(vi.mocked(listSubmissionsForUser)).toHaveBeenCalledWith(expect.anything(), 7);
@@ -565,7 +553,7 @@ describe('GET /submissions/:id', () => {
 	it('returns an owned submission in the public shape', async () => {
 		vi.mocked(findById).mockResolvedValue(userRow);
 		vi.mocked(findSubmissionForUser).mockResolvedValue(submissionRow);
-		const res = await app.request('/submissions/1', { headers: { Cookie: await sessionCookie(7) } });
+		const res = await app.request('/submissions/1', { headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) } });
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ success: true, data: publicShape });
 		expect(vi.mocked(findSubmissionForUser)).toHaveBeenCalledWith(expect.anything(), 7, 1);
@@ -575,7 +563,7 @@ describe('GET /submissions/:id', () => {
 		vi.mocked(findById).mockResolvedValue(userRow);
 		// The user-scoped query returns nothing for a row user 7 does not own.
 		vi.mocked(findSubmissionForUser).mockResolvedValue(undefined);
-		const res = await app.request('/submissions/2', { headers: { Cookie: await sessionCookie(7) } });
+		const res = await app.request('/submissions/2', { headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) } });
 		expect(res.status).toBe(404);
 		expect(await res.json()).toEqual({ success: false, error: 'not found' });
 		expect(vi.mocked(findSubmissionForUser)).toHaveBeenCalledWith(expect.anything(), 7, 2);
@@ -583,7 +571,7 @@ describe('GET /submissions/:id', () => {
 
 	it('404s a non-numeric id without touching the db', async () => {
 		vi.mocked(findById).mockResolvedValue(userRow);
-		const res = await app.request('/submissions/abc', { headers: { Cookie: await sessionCookie(7) } });
+		const res = await app.request('/submissions/abc', { headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) } });
 		expect(res.status).toBe(404);
 		expect(vi.mocked(findSubmissionForUser)).not.toHaveBeenCalled();
 	});
@@ -614,7 +602,7 @@ describe('GET /submissions/:id/validation', () => {
 		vi.mocked(findById).mockResolvedValue(userRow);
 		vi.mocked(findSubmissionForUser).mockResolvedValue(undefined);
 		const res = await app.request('/submissions/2/validation', {
-			headers: { Cookie: await sessionCookie(7) },
+			headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(404);
 		expect(vi.mocked(findValidationJobForSubmission)).not.toHaveBeenCalled();
@@ -626,7 +614,7 @@ describe('GET /submissions/:id/validation', () => {
 		vi.mocked(findValidationJobForSubmission).mockResolvedValue(runningJob);
 		vi.mocked(findValidationReportForSubmission).mockResolvedValue(undefined);
 		const res = await app.request('/submissions/1/validation', {
-			headers: { Cookie: await sessionCookie(7) },
+			headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) },
 		});
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({
@@ -645,7 +633,7 @@ describe('GET /submissions/:id/validation', () => {
 		vi.mocked(findValidationJobForSubmission).mockResolvedValue(undefined);
 		vi.mocked(findValidationReportForSubmission).mockResolvedValue(undefined);
 		const res = await app.request('/submissions/1/validation', {
-			headers: { Cookie: await sessionCookie(7) },
+			headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) },
 		});
 		expect(await res.json()).toEqual({
 			success: true,
@@ -685,7 +673,7 @@ describe('GET /submissions/:id/validation', () => {
 			createdAt: new Date('2026-07-07T09:00:10Z'),
 		});
 		const res = await app.request('/submissions/1/validation', {
-			headers: { Cookie: await sessionCookie(7) },
+			headers: { Cookie: await sessionCookie(7, env.SESSION_SECRET) },
 		});
 		const body = (await res.json()) as { data: { report: unknown } };
 		expect(body.data.report).toEqual({
@@ -787,7 +775,7 @@ describe('POST /submissions/:id/publish', () => {
 	it("404s another user's submission without leaking anything", async () => {
 		mockPublishPath();
 		vi.mocked(findSubmissionForUser).mockResolvedValue(undefined);
-		const res = await publish(2, await sessionCookie(7));
+		const res = await publish(2, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(404);
 		expect(vi.mocked(findVersionBySubmission)).not.toHaveBeenCalled();
 	});
@@ -797,7 +785,7 @@ describe('POST /submissions/:id/publish', () => {
 		async (status) => {
 			mockPublishPath();
 			vi.mocked(findSubmissionForUser).mockResolvedValue({ ...submissionRow, status });
-			const res = await publish(1, await sessionCookie(7));
+			const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 			expect(res.status).toBe(409);
 			const body = (await res.json()) as { success: boolean; error: string };
 			expect(body.success).toBe(false);
@@ -809,7 +797,7 @@ describe('POST /submissions/:id/publish', () => {
 	it('409s when a version row already exists (crashed earlier publish)', async () => {
 		mockPublishPath();
 		vi.mocked(findVersionBySubmission).mockResolvedValue(versionRow);
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(await res.json()).toEqual({
 			success: false,
@@ -824,7 +812,7 @@ describe('POST /submissions/:id/publish', () => {
 			...passedReport,
 			status: 'failed',
 		});
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
 	});
@@ -836,7 +824,7 @@ describe('POST /submissions/:id/publish', () => {
 			...passedReport,
 			status: 'warning',
 		});
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(vi.mocked(publishSubmission)).toHaveBeenCalledOnce();
 	});
@@ -847,7 +835,7 @@ describe('POST /submissions/:id/publish', () => {
 			success: false,
 			error: 'r2 get failed (500)',
 		});
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(502);
 		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
 	});
@@ -855,7 +843,7 @@ describe('POST /submissions/:id/publish', () => {
 	it('409s a slug owned by another maintainer', async () => {
 		mockPublishPath();
 		vi.mocked(publishSubmission).mockResolvedValue({ success: false, error: 'slug_taken' });
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(await res.json()).toEqual({
 			success: false,
@@ -865,7 +853,7 @@ describe('POST /submissions/:id/publish', () => {
 
 	it('publishes a passed submission with the manifest name and summary', async () => {
 		mockPublishPath();
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(await res.json()).toEqual({
 			success: true,
@@ -891,7 +879,7 @@ describe('POST /submissions/:id/publish', () => {
 	it('attributes an admin-curated github repo to its owner and verifies it', async () => {
 		mockPublishPath();
 		vi.mocked(findById).mockResolvedValue({ ...userRow, role: 'admin' });
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(vi.mocked(publishSubmission)).toHaveBeenCalledWith(
 			expect.anything(),
@@ -906,7 +894,7 @@ describe('POST /submissions/:id/publish', () => {
 			...passedSubmission,
 			githubUrl: 'https://github.com/bradtraversy/hello',
 		});
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
 		expect(vi.mocked(publishSubmission)).toHaveBeenCalledWith(
 			expect.anything(),
@@ -922,7 +910,7 @@ describe('POST /submissions/:id/publish', () => {
 				constraint: 'skill_versions_skill_id_version_unique',
 			}),
 		);
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(await res.json()).toEqual({
 			success: false,
@@ -938,7 +926,7 @@ describe('POST /submissions/:id/publish', () => {
 				constraint: 'skill_versions_submission_id_unique',
 			}),
 		);
-		const res = await publish(1, await sessionCookie(7));
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(409);
 		expect(await res.json()).toEqual({
 			success: false,
