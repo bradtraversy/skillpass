@@ -8,7 +8,6 @@ const fixture = (name: string) => join(import.meta.dirname, '..', '..', 'fixture
 
 function pkgWith(content: string): LoadedPackage {
 	return {
-		dir: '/fake',
 		files: [{ path: 'SKILL.md', content }],
 		manifest: { state: 'missing' },
 		entries: [{ skillName: 'fake', path: 'SKILL.md', exists: true }],

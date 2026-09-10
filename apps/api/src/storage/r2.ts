@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { Env } from '../env';
 import type { Result } from '../lib/result';
 
-export const R2_TIMEOUT_MS = 30_000;
+const R2_TIMEOUT_MS = 30_000;
 
 // Load-bearing contract: feature 6's worker validates from this document and
 // feature 7's source view renders from it. Files are sorted by path, utf8.
@@ -13,7 +13,7 @@ export interface SnapshotDocument {
 	files: PackageFile[];
 }
 
-export const snapshotDocumentSchema: z.ZodType<SnapshotDocument> = z.object({
+const snapshotDocumentSchema: z.ZodType<SnapshotDocument> = z.object({
 	version: z.literal(1),
 	files: z.array(z.object({ path: z.string(), content: z.string() })),
 });

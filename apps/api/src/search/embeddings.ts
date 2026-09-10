@@ -3,7 +3,6 @@ import type { Env } from '../env';
 export const EMBEDDING_MODEL = 'voyage-3.5-lite';
 // voyage-3.5-lite's default output dimension; the skill_embeddings vector
 // column is fixed to this, so changing it means a migration plus re-embed.
-export const EMBEDDING_DIMENSIONS = 1024;
 
 const VOYAGE_URL = 'https://api.voyageai.com/v1/embeddings';
 // Search waits on this call, so it is bounded like the GitHub and R2 requests.

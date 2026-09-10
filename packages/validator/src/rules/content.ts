@@ -1,6 +1,6 @@
 import type { Rule, RuleFinding } from './types';
 
-export interface PatternRow {
+interface PatternRow {
 	code: string;
 	pattern: RegExp;
 	message: string;
@@ -8,7 +8,7 @@ export interface PatternRow {
 	severity?: 'warning' | 'failure'; // defaults to failure
 }
 
-export const SECRET_PATTERNS: readonly PatternRow[] = [
+const SECRET_PATTERNS: readonly PatternRow[] = [
 	{
 		code: 'secret-pattern',
 		pattern: /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
@@ -46,7 +46,7 @@ export const SECRET_PATTERNS: readonly PatternRow[] = [
 	},
 ];
 
-export const INJECTION_PATTERNS: readonly PatternRow[] = [
+const INJECTION_PATTERNS: readonly PatternRow[] = [
 	{
 		code: 'prompt-injection',
 		pattern: /\bignore\s+(?:all\s+|any\s+)?(?:previous|prior|earlier|above)\s+instructions?\b/i,
@@ -64,7 +64,7 @@ export const INJECTION_PATTERNS: readonly PatternRow[] = [
 	},
 ];
 
-export const DANGEROUS_PATTERNS: readonly PatternRow[] = [
+const DANGEROUS_PATTERNS: readonly PatternRow[] = [
 	{
 		code: 'dangerous-command',
 		pattern: /\b(?:curl|wget)\b[^|\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b/,
@@ -103,7 +103,7 @@ export const DANGEROUS_PATTERNS: readonly PatternRow[] = [
 
 // Harmful-intent rows catch canonical phrasings only (precision over recall);
 // paraphrased malice is the LLM review layer's job (feature 18).
-export const MALWARE_PATTERNS: readonly PatternRow[] = [
+const MALWARE_PATTERNS: readonly PatternRow[] = [
 	{
 		code: 'malware',
 		pattern:
@@ -117,7 +117,7 @@ const SECRET_STORE =
 const SECRET_NOUN = /\b(?:passwords?|credentials?|secrets?|api[\s-]?keys?|tokens?|private\s+keys?)\b/
 	.source;
 
-export const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
+const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
 	{
 		code: 'credential-harvesting',
 		pattern: new RegExp(

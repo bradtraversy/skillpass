@@ -4,7 +4,6 @@ import { filterSkills, matchesFilters, type SkillFilters } from './filterSkills'
 
 const base: SkillFilters = {
 	query: '',
-	verdict: 'all',
 	tool: 'all',
 	category: 'all',
 	integration: 'all',
@@ -105,11 +104,6 @@ describe('filterSkills', () => {
 		expect(filterSkills(sample, { ...base, query: '  gmail  ' })).toHaveLength(1);
 	});
 
-	it('filters by verdict', () => {
-		const result = filterSkills(sample, { ...base, verdict: 'passed' });
-		expect(result.map((s) => s.slug)).toEqual(['commit-message-writer']);
-	});
-
 	it('filters by tool', () => {
 		const result = filterSkills(sample, { ...base, tool: 'aider' });
 		expect(result.map((s) => s.slug)).toEqual(['auto-deploy-runner']);
@@ -134,11 +128,6 @@ describe('filterSkills', () => {
 		];
 		const result = filterSkills(skills, { ...base, category: 'uncategorized' });
 		expect(result.map((s) => s.slug).sort()).toEqual(['absent-cat', 'null-cat']);
-	});
-
-	it('combines query and verdict (AND semantics)', () => {
-		expect(filterSkills(sample, { ...base, query: 'writer', verdict: 'passed' })).toHaveLength(1);
-		expect(filterSkills(sample, { ...base, query: 'writer', verdict: 'failed' })).toHaveLength(0);
 	});
 
 	it('returns an empty array when nothing matches', () => {
@@ -170,10 +159,6 @@ describe('filterSkills tabs', () => {
 		expect(filterSkills(skills, { ...base, tab: 'new' }).map((s) => s.slug)).toEqual(['b', 'c', 'a']);
 	});
 
-	it('verified: only verified skills, newest first', () => {
-		expect(filterSkills(skills, { ...base, tab: 'verified' }).map((s) => s.slug)).toEqual(['b', 'c']);
-	});
-
 	it('an active query overrides the tab and spans the whole catalog', () => {
 		const out = filterSkills(skills, { ...base, tab: 'featured', query: 'bravo' });
 		expect(out.map((s) => s.slug)).toEqual(['b']);
@@ -185,14 +170,13 @@ describe('filterSkills tabs', () => {
 	});
 
 	it('sidebar filters stay tab-scoped', () => {
-		const out = filterSkills(skills, { ...base, tab: 'featured', verdict: 'passed' });
+		const out = filterSkills(skills, { ...base, tab: 'featured', type: 'skill' });
 		expect(out.map((s) => s.slug)).toEqual(['a', 'c']);
 	});
 });
 
 describe('matchesFilters', () => {
 	const fields: Omit<SkillFilters, 'query' | 'tab'> = {
-		verdict: 'all',
 		tool: 'all',
 		category: 'all',
 		integration: 'all',
@@ -202,7 +186,6 @@ describe('matchesFilters', () => {
 	it('applies the sidebar facets without query or tab', () => {
 		const skill = summary({ slug: 's', validationStatus: 'warning', targets: ['codex'] });
 		expect(matchesFilters(skill, fields)).toBe(true);
-		expect(matchesFilters(skill, { ...fields, verdict: 'passed' })).toBe(false);
 		expect(matchesFilters(skill, { ...fields, tool: 'codex' })).toBe(true);
 		expect(matchesFilters(skill, { ...fields, tool: 'aider' })).toBe(false);
 	});

@@ -92,7 +92,7 @@ export function renderPreflightReport(
 	return lines;
 }
 
-export function renderDiff(diff: PublicPreflight['diff']): string[] {
+function renderDiff(diff: PublicPreflight['diff']): string[] {
 	if (!diff) {
 		return ['Changes  first published version - nothing to compare'];
 	}

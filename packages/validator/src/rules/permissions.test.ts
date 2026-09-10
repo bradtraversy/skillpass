@@ -13,16 +13,15 @@ function pkgWith(content: string, permissions: PermissionKey[] = []): LoadedPack
 		distribution: 'skill',
 	};
 	return {
-		dir: '/fake',
 		files: [{ path: 'SKILL.md', content }],
-		manifest: { state: 'ok', data: manifest, raw: '{}' },
+		manifest: { state: 'ok', data: manifest },
 		entries: [{ skillName: 'fake', path: 'SKILL.md', exists: true }],
 		sourceHash: 'sha256:0',
 	};
 }
 
 const detectedKeys = (content: string) =>
-	detectPermissions(pkgWith(content).files).map((d) => d.permission);
+	detectPermissions(pkgWith(content).files);
 
 describe('permission signals', () => {
 	it.each([
@@ -49,12 +48,10 @@ describe('permission signals', () => {
 		expect(detectedKeys(line)).not.toContain(permission);
 	});
 
-	it('deduplicates repeated signals to one detection at the first location', () => {
+	it('reports a repeated signal once', () => {
 		const detected = detectPermissions(
 			pkgWith('Fetch the readme.\nThen fetch the changelog.\nAnd download the icons.').files,
 		);
-		const fetches = detected.filter((d) => d.permission === 'network.fetch');
-		expect(fetches).toHaveLength(1);
-		expect(fetches[0].location.line).toBe(1);
+		expect(detected.filter((key) => key === 'network.fetch')).toHaveLength(1);
 	});
 });

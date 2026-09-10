@@ -189,7 +189,7 @@ interface PackChoice {
 	global?: boolean;
 }
 
-export function packChoices(declared: Target[], slug: string, count: number): PackChoice[] {
+function packChoices(declared: Target[], slug: string, count: number): PackChoice[] {
 	const choices: PackChoice[] = [];
 	const ordered = [
 		...MAPPED_TARGETS.filter((t) => declared.includes(t)),

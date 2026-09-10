@@ -57,7 +57,7 @@ export interface PublishInput {
 // skills[] is still a single skill.
 export const MIN_PACK_SKILLS = 2;
 
-export function packSkillsOf(manifest: Manifest): SkillEntry[] | null {
+function packSkillsOf(manifest: Manifest): SkillEntry[] | null {
 	return (manifest.skills?.length ?? 0) >= MIN_PACK_SKILLS ? (manifest.skills ?? null) : null;
 }
 

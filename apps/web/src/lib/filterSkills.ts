@@ -1,19 +1,12 @@
-import type {
-	CategorySlug,
-	IntegrationSlug,
-	PublicSkillSummary,
-	Target,
-	ValidationStatus,
-} from 'skill-schema';
+import type { CategorySlug, IntegrationSlug, PublicSkillSummary, Target } from 'skill-schema';
 
-export type DirectoryTab = 'featured' | 'new' | 'verified';
+export type DirectoryTab = 'featured' | 'new';
 export type TypeFilter = 'all' | 'skill' | 'pack';
 export type CategoryFilter = CategorySlug | 'all' | 'uncategorized';
 export type IntegrationFilter = IntegrationSlug | 'all';
 
 export interface SkillFilters {
 	query: string;
-	verdict: ValidationStatus | 'all';
 	tool: Target | 'all';
 	category: CategoryFilter;
 	integration: IntegrationFilter;
@@ -31,7 +24,6 @@ export type FieldFilters = Omit<SkillFilters, 'query' | 'tab'>;
 // The sidebar-facet predicates alone - no query, no tab, no sorting. AI search
 // results filter through this so their relevance order survives untouched.
 export function matchesFilters(skill: PublicSkillSummary, filters: FieldFilters): boolean {
-	if (filters.verdict !== 'all' && skill.validationStatus !== filters.verdict) return false;
 	if (filters.tool !== 'all' && !skill.targets.includes(filters.tool)) return false;
 	if (filters.category !== 'all') {
 		// The field is optional in the payload schema, so normalize absent to null.
@@ -78,9 +70,6 @@ export function filterSkills(
 	// would make a Featured-tab miss look like a directory-wide miss.
 	if (query) return matched;
 
-	if (filters.tab === 'verified') {
-		return [...matched].sort(byNewest).filter((s) => s.verified);
-	}
 	if (filters.tab === 'new') {
 		return [...matched].sort(byNewest);
 	}

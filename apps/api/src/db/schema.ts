@@ -257,13 +257,16 @@ export type AiReviewRow = typeof aiReviews.$inferSelect;
 // One embedding per skill, of its current listing copy. contentHash is
 // sha256(model + input text), so unchanged copy is never re-embedded; the
 // dimension is fixed in DDL, so a model swap is a migration + re-embed.
+// Sized to the Voyage model in search/embeddings.ts; changing the model means a migration.
+export const EMBEDDING_DIMENSIONS = 1024;
+
 export const skillEmbeddings = pgTable('skill_embeddings', {
 	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
 	skillId: integer('skill_id')
 		.notNull()
 		.unique()
 		.references(() => skills.id),
-	embedding: vector('embedding', { dimensions: 1024 }).notNull(),
+	embedding: vector('embedding', { dimensions: EMBEDDING_DIMENSIONS }).notNull(),
 	contentHash: text('content_hash').notNull(),
 	model: text('model').notNull(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

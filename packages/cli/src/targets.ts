@@ -10,7 +10,7 @@ export interface InstallArea {
 // Only tools with a real skills-folder convention get an install area;
 // everything else takes --dir rather than an invented path. The home dir is
 // injectable so list/remove tests never touch the real ~/.claude.
-export function installAreas(home: string = homedir()): Partial<Record<Target, InstallArea>> {
+function installAreas(home: string = homedir()): Partial<Record<Target, InstallArea>> {
 	return {
 		'claude-code': { project: join('.claude', 'skills'), global: join(home, '.claude', 'skills') },
 		codex: { project: join('.agents', 'skills') },

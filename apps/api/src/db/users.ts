@@ -22,11 +22,6 @@ export function publicUser(row: UserRow): PublicUser {
 	};
 }
 
-export async function findByGithubId(db: Db, githubId: string): Promise<UserRow | undefined> {
-	const [row] = await db.select().from(users).where(eq(users.githubId, githubId));
-	return row;
-}
-
 export async function findById(db: Db, id: number): Promise<UserRow | undefined> {
 	const [row] = await db.select().from(users).where(eq(users.id, id));
 	return row;

@@ -10,7 +10,7 @@ export interface PackageFile {
 }
 
 export type ManifestState =
-	| { state: 'ok'; data: Manifest; raw: string; inferred?: boolean }
+	| { state: 'ok'; data: Manifest; inferred?: boolean }
 	| { state: 'missing' }
 	| { state: 'invalid'; error: string };
 
@@ -21,7 +21,6 @@ export interface SkillEntryFile {
 }
 
 export interface LoadedPackage {
-	dir: string;
 	files: PackageFile[];
 	manifest: ManifestState;
 	entries: SkillEntryFile[];
@@ -79,7 +78,7 @@ function readManifest(files: PackageFile[]): ManifestState {
 	if (!result.success) {
 		return { state: 'invalid', error: result.error };
 	}
-	return { state: 'ok', data: result.data, raw: file.content };
+	return { state: 'ok', data: result.data };
 }
 
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---/;
@@ -194,7 +193,7 @@ function inferManifest(files: PackageFile[], fallbackName: string): Manifest {
 	const skillFile = files.find((f) => f.path === 'SKILL.md');
 	const meta = skillFile ? readSkillMeta(skillFile.content) : {};
 	const name = slugify(meta.name ?? fallbackName);
-	const permissions = [...new Set(detectPermissions(files).map((d) => d.permission))];
+	const permissions = detectPermissions(files);
 	return {
 		schemaVersion: '0.1',
 		name,
@@ -286,7 +285,7 @@ function inferNestedManifest(files: PackageFile[], fallbackName: string): Manife
 	});
 
 	const single = entries.length === 1 ? entries[0] : null;
-	const permissions = [...new Set(detectPermissions(files).map((d) => d.permission))];
+	const permissions = detectPermissions(files);
 	return {
 		schemaVersion: '0.1',
 		name: single ? single.name : slugify(fallbackName),
@@ -341,11 +340,10 @@ export function loadPackageFromFiles(files: PackageFile[], name = 'package'): Lo
 			? inferManifest(sorted, name)
 			: inferNestedManifest(sorted, name);
 		if (data) {
-			manifest = { state: 'ok', inferred: true, data, raw: JSON.stringify(data, null, 2) };
+			manifest = { state: 'ok', inferred: true, data };
 		}
 	}
 	return {
-		dir: name,
 		files: sorted,
 		manifest,
 		entries: resolveEntries(name, manifest, sorted),

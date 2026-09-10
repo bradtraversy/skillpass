@@ -112,9 +112,9 @@ export default function Directory() {
 	// relevance-ranked results with the sidebar facets applied, order intact.
 	const matches =
 		mode === 'keyword'
-			? filterSkills(skills, { query, verdict: 'all', tool, category, integration, type, tab })
+			? filterSkills(skills, { query, tool, category, integration, type, tab })
 			: (ai.phase === 'ready' ? ai.results : []).filter((s) =>
-					matchesFilters(s, { verdict: 'all', tool, category, integration, type }),
+					matchesFilters(s, { tool, category, integration, type }),
 				);
 	const paged = paginate(matches, page);
 

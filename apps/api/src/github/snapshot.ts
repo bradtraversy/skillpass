@@ -14,7 +14,7 @@ export const MAX_FILE_BYTES = 1024 * 1024;
 export const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
 // Abuse ceiling on everything streamed, kept or skipped - a monorepo subpath
 // submission legitimately skips far more than the 10 MB kept-files cap allows.
-export const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
+const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 
 export async function fetchSnapshot(
 	env: Env,

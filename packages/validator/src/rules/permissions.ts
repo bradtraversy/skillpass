@@ -1,7 +1,7 @@
-import type { PermissionKey, ReportFinding } from 'skill-schema';
+import type { PermissionKey } from 'skill-schema';
 import type { PackageFile } from '../load';
 
-export interface PermissionSignal {
+interface PermissionSignal {
 	pattern: RegExp;
 	permission: PermissionKey;
 	description: string;
@@ -9,7 +9,7 @@ export interface PermissionSignal {
 
 // V0 text signals: instructions that imply a capability. Writing project
 // files is assumed baseline for a skill and deliberately not detected.
-export const PERMISSION_SIGNALS: readonly PermissionSignal[] = [
+const PERMISSION_SIGNALS: readonly PermissionSignal[] = [
 	{
 		pattern: /\b(?:fetch|curl|wget|download)\b/i,
 		permission: 'network.fetch',
@@ -62,26 +62,18 @@ export const PERMISSION_SIGNALS: readonly PermissionSignal[] = [
 	},
 ];
 
-export interface DetectedPermission {
-	permission: PermissionKey;
-	description: string;
-	location: NonNullable<ReportFinding['location']>;
-}
-
-export function detectPermissions(files: PackageFile[]): DetectedPermission[] {
-	const detected = new Map<PermissionKey, DetectedPermission>();
+// Permission keys whose signal fires anywhere in the package, each once, in
+// first-seen order.
+export function detectPermissions(files: PackageFile[]): PermissionKey[] {
+	const detected = new Set<PermissionKey>();
 	for (const file of files) {
-		file.content.split('\n').forEach((line, i) => {
+		for (const line of file.content.split('\n')) {
 			for (const signal of PERMISSION_SIGNALS) {
 				if (!detected.has(signal.permission) && signal.pattern.test(line)) {
-					detected.set(signal.permission, {
-						permission: signal.permission,
-						description: signal.description,
-						location: { path: file.path, line: i + 1, snippet: line.trim() },
-					});
+					detected.add(signal.permission);
 				}
 			}
-		});
+		}
 	}
-	return [...detected.values()];
+	return [...detected];
 }
