@@ -28,6 +28,15 @@ export const structureRule: Rule = (pkg) => {
 		});
 	}
 
+	for (const path of pkg.binaries) {
+		findings.push({
+			severity: 'warning',
+			code: 'binary-dropped',
+			message: `"${path}" is not a text file and was left out of the snapshot; installs will not include it`,
+			location: { path },
+		});
+	}
+
 	for (const entry of pkg.entries) {
 		if (!entry.exists) {
 			findings.push({

@@ -8,7 +8,7 @@ import { extractTarball, fetchSnapshot, MAX_FILE_BYTES, MAX_FILES } from './snap
 
 interface TarEntry {
 	name: string;
-	content?: string;
+	content?: string | Buffer;
 	type?: 'directory' | 'symlink';
 }
 
@@ -176,5 +176,16 @@ describe('fetchSnapshot', () => {
 		vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('socket hang up')));
 		const result = await fetchSnapshot(env, { owner: 'octocat', repo: 'hello' }, 'abc123');
 		expect(result).toMatchObject({ success: false, code: 'upstream' });
+	});
+});
+
+describe('binary entries', () => {
+	it('leaves a binary file out of the snapshot', async () => {
+		const tar = await makeTarGz([
+			{ name: 'repo-abc/SKILL.md', content: '# demo' },
+			{ name: 'repo-abc/logo.png', content: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01]) },
+		]);
+		const result = await extractTarball(asBody(tar));
+		expect(result.success && result.data.map((f) => f.path)).toEqual(['SKILL.md']);
 	});
 });

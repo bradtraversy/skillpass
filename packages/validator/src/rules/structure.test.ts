@@ -11,6 +11,7 @@ function pkg(overrides: Partial<LoadedPackage> = {}): LoadedPackage {
 		manifest: { state: 'missing' },
 		entries: [{ skillName: 'fake', path: 'SKILL.md', exists: true }],
 		sourceHash: 'sha256:0',
+		binaries: [],
 		...overrides,
 	};
 }
@@ -72,5 +73,14 @@ describe('structureRule', () => {
 		expect(findings).toEqual([
 			expect.objectContaining({ severity: 'failure', code: 'empty-package' }),
 		]);
+	});
+});
+
+describe('binary files', () => {
+	it('warns for each file left out of the snapshot', () => {
+		const findings = structureRule(pkg({ binaries: ['assets/logo.png'] }));
+		expect(findings).toContainEqual(
+			expect.objectContaining({ severity: 'warning', code: 'binary-dropped', location: { path: 'assets/logo.png' } }),
+		);
 	});
 });

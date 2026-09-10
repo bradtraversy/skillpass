@@ -1,8 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { loadPackage, loadPackageFromFiles, PackageReadError } from './load';
+import { isBinary, loadPackage, loadPackageFromFiles, PackageReadError } from './load';
 
 const fixture = (name: string) => join(import.meta.dirname, '..', 'fixtures', name);
 
@@ -348,5 +348,38 @@ describe('frontmatter description parsing', () => {
 describe('loadPackage errors', () => {
 	it('throws a typed error for a nonexistent directory', () => {
 		expect(() => loadPackage('/nonexistent/skill-package')).toThrow(PackageReadError);
+	});
+});
+
+describe('isBinary', () => {
+	it.each([
+		['a NUL byte', new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0x0a])],
+		['invalid UTF-8', new Uint8Array([0xff, 0xfe, 0x41])],
+	])('flags %s', (_label, bytes) => {
+		expect(isBinary(bytes)).toBe(true);
+	});
+
+	it.each([
+		['ASCII', '# Skill\n'],
+		['multibyte UTF-8', 'caf\u00e9 \u2713 \u{1F600}'],
+		['an empty file', ''],
+	])('keeps %s', (_label, text) => {
+		expect(isBinary(new TextEncoder().encode(text))).toBe(false);
+	});
+});
+
+describe('loadPackage with binary files', () => {
+	it('leaves a binary out of the snapshot and records its path', () => {
+		const dir = mkdtempSync(join(tmpdir(), 'validator-binary-'));
+		try {
+			writeFileSync(join(dir, 'SKILL.md'), '---\nname: demo\ndescription: Demo.\n---\n');
+			mkdirSync(join(dir, 'assets'));
+			writeFileSync(join(dir, 'assets', 'logo.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]));
+			const pkg = loadPackage(dir);
+			expect(pkg.files.map((f) => f.path)).toEqual(['SKILL.md']);
+			expect(pkg.binaries).toEqual(['assets/logo.png']);
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+		}
 	});
 });

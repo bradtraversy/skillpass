@@ -1,5 +1,5 @@
 import { unzipSync, type UnzipFileInfo } from 'fflate';
-import { byPath, type PackageFile } from 'validator';
+import { byPath, isBinary, type PackageFile } from 'validator';
 import { sourceError, type SourceResult } from '../github/errors';
 import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES } from '../github/snapshot';
 
@@ -87,6 +87,10 @@ export function extractZip(bytes: Uint8Array): SourceResult<PackageFile[]> {
 		actualTotal += data.length;
 		if (data.length > MAX_FILE_BYTES || actualTotal > MAX_TOTAL_BYTES) {
 			return sourceError('too-large', 'zip contents exceed the declared sizes');
+		}
+		if (isBinary(data)) {
+			console.warn(`zip: dropping binary file ${name}`);
+			continue;
 		}
 		files.push({ path: strip(name), content: Buffer.from(data).toString('utf8') });
 	}

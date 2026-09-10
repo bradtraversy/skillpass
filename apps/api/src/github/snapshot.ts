@@ -3,7 +3,7 @@ import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { createGunzip } from 'node:zlib';
 import { extract } from 'tar-stream';
-import { byPath, type PackageFile } from 'validator';
+import { byPath, isBinary, type PackageFile } from 'validator';
 import type { Env } from '../env';
 import { sourceError, type SourceResult } from './errors';
 import { GITHUB_TIMEOUT_MS, githubHeaders } from './pin';
@@ -108,7 +108,10 @@ export async function extractTarball(
 				chunks.push(chunk);
 			}
 			if (keep) {
-				files.push({ path, content: Buffer.concat(chunks).toString('utf8') });
+				const bytes = Buffer.concat(chunks);
+				// Snapshots hold text; a decoded binary would be written back corrupt.
+				if (isBinary(bytes)) console.warn(`snapshot: dropping binary file ${path}`);
+				else files.push({ path, content: bytes.toString('utf8') });
 			}
 		}
 		await pump;

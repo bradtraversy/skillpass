@@ -25,6 +25,22 @@ export interface LoadedPackage {
 	manifest: ManifestState;
 	entries: SkillEntryFile[];
 	sourceHash: string;
+	// Paths left out of the snapshot because they are not text.
+	binaries: string[];
+}
+
+const NUL_SCAN_BYTES = 8_000;
+
+// Snapshots hold text: a NUL byte in the first 8 KB or invalid UTF-8 marks a
+// file that would be corrupted by a decode-then-encode round trip.
+export function isBinary(bytes: Uint8Array): boolean {
+	if (bytes.subarray(0, NUL_SCAN_BYTES).includes(0)) return true;
+	try {
+		new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+		return false;
+	} catch {
+		return true;
+	}
 }
 
 export class PackageReadError extends Error {
@@ -36,20 +52,29 @@ export class PackageReadError extends Error {
 
 const SKIP_DIRS = new Set(['.git', 'node_modules']);
 
-function walk(root: string, rel = ''): PackageFile[] {
-	const files: PackageFile[] = [];
+interface WalkedTree {
+	files: PackageFile[];
+	binaries: string[];
+}
+
+function walk(root: string, rel = ''): WalkedTree {
+	const tree: WalkedTree = { files: [], binaries: [] };
 	for (const name of readdirSync(join(root, rel)).sort()) {
 		const relPath = rel === '' ? name : `${rel}/${name}`;
 		const stats = statSync(join(root, relPath));
 		if (stats.isDirectory()) {
 			if (!SKIP_DIRS.has(name)) {
-				files.push(...walk(root, relPath));
+				const sub = walk(root, relPath);
+				tree.files.push(...sub.files);
+				tree.binaries.push(...sub.binaries);
 			}
 		} else {
-			files.push({ path: relPath, content: readFileSync(join(root, relPath), 'utf8') });
+			const bytes = readFileSync(join(root, relPath));
+			if (isBinary(bytes)) tree.binaries.push(relPath);
+			else tree.files.push({ path: relPath, content: bytes.toString('utf8') });
 		}
 	}
-	return files;
+	return tree;
 }
 
 function hashFiles(files: PackageFile[]): string {
@@ -320,7 +345,11 @@ export const byPath = (a: PackageFile, b: PackageFile) =>
 
 // Canonical load path for both fs and in-memory sources (API snapshots, feature 6's
 // worker); the flat path sort here defines the file order the source hash is built on.
-export function loadPackageFromFiles(files: PackageFile[], name = 'package'): LoadedPackage {
+export function loadPackageFromFiles(
+	files: PackageFile[],
+	name = 'package',
+	binaries: string[] = [],
+): LoadedPackage {
 	const sorted = [...files].sort(byPath);
 	let manifest = readManifest(sorted);
 	// No skill.json but a SKILL.md is present: infer a manifest so the skill lists.
@@ -340,15 +369,16 @@ export function loadPackageFromFiles(files: PackageFile[], name = 'package'): Lo
 		manifest,
 		entries: resolveEntries(name, manifest, sorted),
 		sourceHash: hashFiles(sorted),
+		binaries,
 	};
 }
 
 export function loadPackage(dir: string): LoadedPackage {
-	let files: PackageFile[];
+	let tree: WalkedTree;
 	try {
-		files = walk(dir);
+		tree = walk(dir);
 	} catch (err) {
 		throw new PackageReadError(dir, err);
 	}
-	return loadPackageFromFiles(files, dir);
+	return loadPackageFromFiles(tree.files, dir, tree.binaries);
 }

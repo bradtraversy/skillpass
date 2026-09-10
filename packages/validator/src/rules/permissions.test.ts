@@ -17,6 +17,7 @@ function pkgWith(content: string, permissions: PermissionKey[] = []): LoadedPack
 		manifest: { state: 'ok', data: manifest },
 		entries: [{ skillName: 'fake', path: 'SKILL.md', exists: true }],
 		sourceHash: 'sha256:0',
+		binaries: [],
 	};
 }
 

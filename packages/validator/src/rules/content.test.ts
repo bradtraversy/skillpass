@@ -12,6 +12,7 @@ function pkgWith(content: string): LoadedPackage {
 		manifest: { state: 'missing' },
 		entries: [{ skillName: 'fake', path: 'SKILL.md', exists: true }],
 		sourceHash: 'sha256:0',
+		binaries: [],
 	};
 }
 
