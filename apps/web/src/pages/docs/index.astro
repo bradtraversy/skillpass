@@ -47,7 +47,8 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 	<h2>What SkillPass is not</h2>
 	<p>
 		Validation is <strong>advisory, not gatekeeping</strong>. Findings inform the passport rather
-		than block listings - only a leaked secret value hard-fails a submission. The passport tells
+		than block listings - a submission hard-fails only for a leaked secret value or a package the
+		validator cannot read (no SKILL.md, an invalid skill.json, or no files). The passport tells
 		you what a skill does; the judgment stays yours. There is no pay-to-rank and no engagement
 		bait: listings rank on curation and recency, nothing else.
 	</p>

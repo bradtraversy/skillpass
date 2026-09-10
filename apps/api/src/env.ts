@@ -7,10 +7,10 @@ const envSchema = z
 		GITHUB_CLIENT_SECRET: z.string().min(1),
 		SESSION_SECRET: z.string().min(32, 'use a long random string, e.g. openssl rand -hex 32'),
 		GITHUB_TOKEN: z.string().optional(),
-		// Optional: enables the AI skill reviewer (feature 18). Absent -> the
+		// Optional: enables the AI skill reviewer. Absent -> the
 		// reviewer returns null and publishing proceeds without an AI review.
 		ANTHROPIC_API_KEY: z.string().optional(),
-		// Optional: enables skill embeddings for AI search (feature 20). Absent ->
+		// Optional: enables skill embeddings for AI search. Absent ->
 		// embedding generation no-ops and publishing proceeds without one.
 		VOYAGE_API_KEY: z.string().optional(),
 		R2_ACCOUNT_ID: z.string().min(1),

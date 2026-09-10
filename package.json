@@ -1,8 +1,7 @@
 {
-  "name": "ai-skills-directory",
+  "name": "skillpass-monorepo",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "SkillPass: a validation-first directory of AI agent skills",
   "scripts": {
     "dev": "CHOKIDAR_USEPOLLING=1 pnpm -C apps/web dev",
     "dev:native": "pnpm -C apps/web dev",

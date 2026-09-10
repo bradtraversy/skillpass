@@ -34,7 +34,7 @@ describe('resolveCommit', () => {
 		expect(result).toEqual({ success: true, data: 'abc123' });
 		const [url, init] = fn.mock.calls[0];
 		expect(url).toBe('https://api.github.com/repos/octocat/hello/commits/HEAD');
-		expect(init.headers['User-Agent']).toBe('ai-skills-directory');
+		expect(init.headers['User-Agent']).toBe('skillpass');
 		expect(init.headers.Authorization).toBeUndefined();
 	});
 

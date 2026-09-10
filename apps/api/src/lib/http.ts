@@ -1,1 +1,1 @@
-export const USER_AGENT = 'ai-skills-directory';
+export const USER_AGENT = 'skillpass';

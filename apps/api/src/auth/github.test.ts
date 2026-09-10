@@ -80,7 +80,7 @@ describe('fetchGithubUser', () => {
 		});
 		const [, init] = fn.mock.calls[0];
 		expect(init.headers.Authorization).toBe('Bearer gho_test');
-		expect(init.headers['User-Agent']).toBe('ai-skills-directory');
+		expect(init.headers['User-Agent']).toBe('skillpass');
 	});
 
 	it('falls back to the login when name is null', async () => {

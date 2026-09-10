@@ -40,10 +40,10 @@ pnpm monorepo:
 | Path | What it is |
 | --- | --- |
 | `apps/web` | Static Astro front end (React islands for interactivity) |
-| `apps/api` | Node API: auth, submissions, validation jobs (planned) |
+| `apps/api` | Node API (Hono): GitHub OAuth, submissions, validation, publishing, AI review, search |
 | `packages/skill-schema` | Shared Zod schemas: manifest, report, passport, permission taxonomy |
 | `packages/validator` | The scan engine ("Skill Authenticator") + fixture packages |
-| `packages/cli` | `skillpass scan` / `skillpass report` (planned) |
+| `packages/cli` | The `skillpass` CLI: scan, report, search, add, update, remove, outdated, list |
 
 ## Development
 
@@ -53,7 +53,7 @@ Requires Node >= 22.12 and pnpm.
 pnpm install
 pnpm dev        # dev server at http://localhost:4321
 pnpm test       # Vitest across the monorepo
-pnpm typecheck  # astro check
+pnpm typecheck  # astro check plus tsc in every workspace
 pnpm build      # typecheck + production build
 ```
 

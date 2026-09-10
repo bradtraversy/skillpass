@@ -32,7 +32,8 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 		</li>
 		<li>
 			<strong>Failed</strong> - a hard failure. The version cannot be published or downloaded. In
-			practice only one thing hard-fails: a <strong>leaked secret value</strong> in the files.
+			practice two things hard-fail: a <strong>leaked secret value</strong> in the files, and a
+			package the validator cannot read (no SKILL.md, an invalid skill.json, or no files).
 		</li>
 	</ul>
 	<p>

@@ -443,7 +443,7 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 // Keyed by published slug, not source URL, so submit-flow listings (Brad's
 // packs) rank the same way as seeded ones. Applied by the seed runner after
 // the listing pass; a slug with no published skill is reported, not silently
-// skipped. Every author is capped at two picks.
+// skipped.
 export const FEATURED_SLUGS = [
 	'ai-blueprint',
 	'editorial-workflow-skill',

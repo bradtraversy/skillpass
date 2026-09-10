@@ -6,8 +6,8 @@ import type { Result } from '../lib/result';
 
 const R2_TIMEOUT_MS = 30_000;
 
-// Load-bearing contract: feature 6's worker validates from this document and
-// feature 7's source view renders from it. Files are sorted by path, utf8.
+// The worker validates from this document and the source view renders from
+// it. Files are sorted by path, utf8.
 export interface SnapshotDocument {
 	version: 1;
 	files: PackageFile[];
