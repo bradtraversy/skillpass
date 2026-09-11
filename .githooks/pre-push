@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the same Verify command as GitHub Actions; a push that would fail CI never leaves this machine.
+echo "pre-push: running pnpm verify"
+exec pnpm verify

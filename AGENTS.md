@@ -258,6 +258,8 @@ proxy into `apps/web`.
 - Preview production build: `pnpm preview`
 - Astro CLI passthrough: `pnpm astro <cmd>` (e.g. `pnpm astro add react`)
 - Test (Vitest, run once): `pnpm test`
+- Verify: `pnpm verify` (typecheck, then tests, then build; the one command the
+  pre-push hook and GitHub Actions run)
 - Test (watch): `pnpm test:watch`
 - Skills CLI: `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
   `pnpm cli add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]` /
