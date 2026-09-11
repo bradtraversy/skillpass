@@ -1,9 +1,15 @@
 ---
 name: prototype
-description: Interactively prototype the look of a project. Asks about the desired look and feel and which pages to draft, proposes a plan, and only then writes throwaway static HTML/CSS mockups to prototypes/ that share one theme (a set of CSS theme variables). A plan-first, pre-build helper that sits outside the spec-driven feature loop, like scaffolding. Use when the user runs /prototype, names screens to mock up, or asks to prototype the layout, theme, or look and feel.
+description: Plan and create throwaway static HTML and CSS mockups with shared design tokens before feature implementation. Use for /prototype, screen mockups, layout exploration, themes, or deciding a project's look and feel.
 ---
 
 # prototype - lock the look before you build
+
+**Context reuse:** Reuse any required file already loaded in project instructions or the current session. Read it again only if absent, changed, or exact current bytes or line references are needed.
+
+**First action:** Before project inspection, preflight, or any other tool call,
+publish `running` to `blueprint/.state/run.json` using the dashboard activity
+contract in `AGENTS.md`.
 
 Where this sits in the workflow:
 

@@ -1,5 +1,7 @@
 # <Project Name> - Project Overview
 
+<!-- blueprint:source-hash <computed SHA-256> -->
+
 > <one-line description of the project>
 
 ## Problem

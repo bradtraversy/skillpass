@@ -1,167 +1,189 @@
 ---
 name: feature
-description: Turn a feature from build-plan.md into a buildable spec. With no argument, specs the next unchecked item in the build plan; given a number or name, specs that one. Sizes the feature and splits anything too big into smaller sub-features (4a, 4b, ...), writes small, reviewable build steps to blueprint/context/current-feature.md, then red-teams its own draft for gaps, oversized steps, and scope creep before stopping at a review gate. Use when the user runs /feature, names or numbers a feature, or asks to spec out, break down, or start the next feature.
+description: Turn the next, named, or numbered build-plan feature into a buildable current-feature.md spec with small steps and done-when criteria. Use for /feature, planning a feature, or starting planned work.
+disable-model-invocation: true
 ---
 
-# feature - turn a build-plan feature into a buildable spec
+# feature - create the active implementation spec
 
-Where this sits in the workflow:
+**Context reuse:** Reuse any required file already loaded in project instructions or the current session. Read it again only if absent, changed, or exact current bytes or line references are needed.
 
-    project-overview.md  +  build-plan.md  ->  [this skill]  ->  build
-    (source of truth,        (which feature       (the spec for      (code,
-     from /overview)          to build)            one feature)        reviewed)
+This skill plans one feature and stops before implementation. Its output is
+`blueprint/context/current-feature.md`.
 
-`build-plan.md` is intentionally high-level - one line per feature, no detail,
-no ordering ceremony. All of that is this skill's job: take one listed feature,
-read the full context from `project-overview.md`, and turn it into something
-buildable.
+## Start
 
-## Input
+**First action:** Before project inspection, preflight, or any other tool call,
+publish the `feature` activity as `running` when `blueprint/.state/` exists.
+Combine that write with the first context-gathering tool batch when the adapter
+supports it.
 
-A feature from `build-plan.md`, by number or name - e.g. `/feature 3` or
-`/feature "typing engine"`.
+Read `blueprint/config.json` only for settings that affect the spec. Invalid
+configuration stops mutating work and points to `/doctor`.
 
-**With no argument, build the next one.** `/feature` on its own specs the first
-unchecked item in `build-plan.md`. The build plan is a checklist; finished
-features are checked off, so the first unchecked item is always what's next. (If a
-big item has been split into sub-items, the next unchecked sub-item is the target.)
+Confirm that `blueprint/context/current-feature.md` is the empty stub. If it
+contains active work, stop and direct the user to resume or complete it.
 
-## Step 1 - pick the target
+Resolve the target from `blueprint/build-plan.md`:
 
-- Given a number or name -> use it.
-- No argument -> read `build-plan.md` top to bottom and take the first unchecked
-  leaf (a plain item, or a sub-item under one that was split).
+- Use the requested number or name when it matches a checklist item.
+- With no argument, use the first unchecked leaf item.
+- Read only the matching checklist line, its parent, and nearby text needed to
+  understand the hierarchy.
+- If a plain list has no checkboxes, treat its first item as unchecked and offer
+  to convert the plan after the spec review.
 
-**If the build plan isn't a checklist yet** - a plain list with no `- [ ]` boxes -
-treat every item as unchecked: take the first item as the target, and offer to
-convert the list to a checklist so progress is trackable from here on. Proceed
-with the first item whether or not the user wants the conversion.
+State the selected feature in one sentence.
 
-State which feature you're building before going further.
+## Build one authoritative feature packet
 
-## Step 2 - size it, and split if too big
+Gather the smallest packet that can answer what must be built:
 
-Read the target line from `build-plan.md`, then pull full context from
-`blueprint/context/project-overview.md` (the data model, stack, and conventions). Decide
-how big the feature is:
+1. Search `blueprint/context/project-overview.md` for the feature number, title,
+   and distinctive nouns from the target line. Read the matching feature
+   passage plus only the data-model, stack, UI, security, or deployment passages
+   it directly depends on. Do not read the whole overview by default.
+2. Inspect the repository once, starting from paths named by those passages.
+   Follow only relevant imports, callers, tests, schemas, and configuration.
+   Batch related searches and reads when supported.
+3. Use the Commands section already loaded from `AGENTS.md`. Read it from disk
+   only when it is absent or changed. Read only applicable sections of
+   `blueprint/context/coding-standards.md`.
+4. Run the declared Verify command once when it exists. Record only observed
+   results. Do not start a dev server.
 
-- **Small enough to build and review as one unit** -> one spec. Continue to
-  Step 3.
-- **Too big for one reviewable spec** -> split it. Propose a short list of
-  sub-features in chat (title + one line each), let the user adjust it, then write
-  those sub-items back under the parent in `build-plan.md` as an indented
-  checklist (`4a`, `4b`, `4c` ...). Spec only the **first** sub-feature now; the
-  rest get picked up on later `/feature` runs.
+Finish context gathering in at most four tool rounds after this skill starts:
+target and overview matches, one batched repository inspection, applicable
+standards only if needed, and Verify. Combine or skip rounds when possible. Do
+not inspect other skill directories, `ai-interaction.md`, findings, review records,
+or templates during normal planned-feature work. The only history exception is
+this skill's `reference/build-history.md` and the selected feature's archive metadata,
+exact rollback records, and Git evidence needed to freeze its build attempt below;
+batch this with the target lookup, without loading unrelated history. Do not create
+scratch code or run implementation probes while writing a spec. Put a check in the
+relevant build step when a repository detail cannot be confirmed from existing
+evidence.
 
-Two levels of breakdown - don't confuse them:
+The plans and overview define product intent. The repository defines current
+reality. Do not invent presets, defaults, limits, permissions, money rules,
+destructive behavior, stored fields, or API contracts. A familiar label is not a
+complete contract when it has multiple reasonable meanings. Put unresolved
+material choices under an `Open questions` heading and in the review handoff.
+Stop without writing the spec when implementation cannot begin safely until one
+is answered. Do not block on a reversible internal implementation detail with no
+user-visible, security, persisted-data, or interoperability consequence. Choose
+the simplest repository-native option, record it in the spec, and require a test
+seam when the value is nondeterministic. Planned future persistence alone does
+not make a current in-memory representation a product decision when no stored
+data or external compatibility exists yet.
 
-- **Sub-features** (here) - each is big enough to stand alone: its own branch,
-  spec, review-and-merge cycle, and archive entry.
-- **Build steps** (in the spec, Step 3) - small diffs *within* one feature.
+If `project-overview.md` is 20,000 bytes or larger, stop and ask for `/overview`
+instead of loading it. If the target is too large for one reviewable branch,
+propose sub-features and wait for approval before editing the user-owned build
+plan. After approval, add lettered checklist items under the parent and spec only
+the first one.
 
-Worked example - "Authentication" is too big for one spec, so it splits into
-sub-features in `build-plan.md`:
+## New feature not in the plan
 
-    - [ ] 4. Authentication
-      - [ ] 4a. Registration - sign-up page + create Profile and handle
-      - [ ] 4b. Login - sign-in page + session
-      - [ ] 4c. Route protection - gate saving/drills/leaderboard, plus sign-out
+Do not silently add scope. Search for a duplicate, then propose one checkbox line
+and its placement. Include a `project-plan.md` edit only when the request changes
+the product direction, users, data, stack, monetization, UI, or deployment. Wait
+for approval, update the plans, run the installed `overview` skill, and then
+resume this skill. Bugs and small unplanned changes belong in `/fix`.
 
-Then *within* 4a, the build steps are small: first "registration page UI", then
-"register server action + validation + redirect". The page and its logic are
-steps, not separate features.
+## Write the final spec once
 
-This sizing call is the skill's job, not the build plan's - that's exactly why the
-build plan starts high-level.
+Before review, allocate the selected stable feature ID's build attempt using
+`reference/build-history.md`: first build 1, otherwise one greater than
+the maximum proven prior attempt after all prior builds were reversed. Preserve
+the ID across renamed titles and lettered sub-items. Stop on ambiguous history;
+never infer attempts from a title suffix, file count, or timestamps.
 
-## Step 3 - write the spec
+Draft and critique in context, then write
+`blueprint/context/current-feature.md` once. A later write is only for a
+mechanical correction or user-requested revision. Record `**Branch:**` with the
+full configured feature branch. The first heading and build-plan identity must
+use this canonical form:
 
-For the one (sub-)feature being built now, write a full spec to
-`blueprint/context/current-feature.md` (create `blueprint/context/` if needed), following
-`reference/feature-spec-template.md`. Fill every section: goal, in/out of scope,
-the build loop, small build steps as a checklist (`- [ ]`, each with an observable
-"done when" - `/implement` ticks them off and resumes from the first unchecked
-one), files/areas, data/contracts, testing, and notes for the AI.
+```markdown
+# Feature: <title>
 
-**Visual or replication features need a reference image.** If the feature is
-"make it look like X" - recreating an existing design, matching a mockup, or
-rebuilding a Canva/Figma artifact - prose underspecifies the target and the build
-will approximate it wrong. Ask the user for a screenshot or image if one isn't
-already provided, save it under `blueprint/reference/` (create the folder if
-needed), and link it from the spec's Design reference section. Don't write a
-visual spec from words alone when an image could exist.
+**From build-plan:** feature <id>
+**Build attempt:** <positive integer>
+```
 
-**If `prototypes/` exists, that is your design reference.** When `/prototype` has
-run, the repo holds `prototypes/theme.css` (the locked design tokens) and
-`prototypes/*.html` (the visual mockups). For a UI-facing feature, link the
-relevant mockups from the spec's Design reference section instead of asking for a
-screenshot - they beat a flat image, since they carry the exact tokens. Treat
-`theme.css` as the source of truth for colors, type, and spacing, and make the
-feature's **first build step** port those tokens into the app's global stylesheet
-(`@theme` for Tailwind v4, or the project's equivalent) before building components
-against the mockups. The mockups are throwaway: once the look is built they get
-discarded at `/complete`.
+Then use these section headings:
 
-This is a draft. Don't present it yet - critique it first.
+- Goal
+- Design reference, only for visual or replication work
+- In scope
+- Out of scope
+- Build loop
+- Build steps
+- Files / areas
+- Data / contracts
+- Testing
+- Notes for the AI
+- Open questions, only when a product decision remains unresolved
 
-## Step 4 - red-team the draft, then tighten
+Build steps are ordered checklist items. Each step must leave the project
+working, stay small enough to review, and end with a concrete `Done when` that
+names observable behavior and the relevant check. Follow `workflow.stepReview`
+and `workflow.checkpointCommits` from config in the Build loop. `/complete`
+creates the final feature commit.
 
-Before the user reads it, turn on the spec yourself and try to break it. The
-cheapest place to catch a scope problem or an oversized step is here, before any
-code exists. Run the draft against these questions:
+The spec must preserve every explicit contract in the feature packet, including
+applicable project-wide UX and security requirements. Do not discard a required
+state because the current fixture cannot trigger it yet. Keep later features out,
+define authorization and tenant boundaries, identify client and server
+responsibilities, and name exact files or areas supported by repository evidence.
+Add focused tests for logic when a test command exists. Add browser coverage only
+when a Browser tests command exists and it is proportionate. Do not claim live,
+visual, persisted-data, or integration evidence that was not run.
 
-- **Coverage.** What does this feature need that no step delivers? Push on the
-  unhappy paths the happy-path spec skipped: empty / missing / malformed input,
-  the error / loading / empty states, the first-run case, failure of anything
-  external it calls.
-- **Visual fidelity.** If this is a look-alike or replication feature, is a
-  reference image linked in the spec - or are we about to build a design blind
-  from prose? If `prototypes/` exists, are the relevant mockups linked as the
-  Design reference and is porting `theme.css` into the app the first build step?
-  If a real design exists and nothing is captured, get it before building, not
-  after the approximation lands.
-- **Step size.** Would any step's diff be too big to read in one sitting? If so,
-  split it - oversized steps defeat the review gate.
-- **Order.** Does each step leave the app working, and depend only on earlier
-  steps, never a later one? Resequence if not.
-- **Contracts.** Is any type, route, or stored shape that a later feature will
-  touch left undefined here? Lock it now and flag it load-bearing.
-- **Scope honesty.** Is anything creeping in that belongs to a later feature? Is
-  anything pushed to "out of scope" that this feature actually can't ship without?
-- **Done-whens.** Is each one observable and checkable by `/check`, or is it a
-  vague "it works"? Make it concrete.
-- **Testing.** Does the predicted coverage match the gate - in-scope logic gets a
-  test when a `test` command is declared in `AGENTS.md`, UI/integration rides on
-  screenshot + build?
+Build the branch value from the configured feature prefix plus the feature title
+in lowercase kebab-case. Replace each run of characters other than ASCII letters
+and digits with one hyphen and trim edge hyphens. For attempt N > 1, append
+`--build-N` to that slug before recording the full branch, for example
+`feature/export-reports--build-2`. The reserved double hyphen distinguishes the
+attempt from a title ending in `Build 2`. Before freezing the new spec, check the
+exact archive path and branch availability using `reference/build-history.md`.
+Stop on filesystem entries, existing refs, or prior Git use of that archive path;
+never auto-bump the attempt. Freeze both fields before review; completion and
+resume reuse them rather than allocating again.
 
-Apply the fixes to `current-feature.md`. Then stop and present the spec, leading
-with a short **"what the critique changed"** note - the splits, gaps, or scope
-cuts you made (or "nothing - the draft held up"). That note is the point: it shows
-the gate working before a line of code is written.
+For visual replication, require an existing screenshot or reference. Store a
+provided image under `blueprint/reference/` and link it. If `prototypes/` exists,
+use its relevant HTML and `theme.css`; port shared tokens before feature UI.
 
-Tell the user to review and adjust. This skill plans; it never starts building.
+## Critique gate
 
-## Rules the spec must follow
+Before the single write, check these failure classes:
 
-- **Small, reviewable steps.** Each step ends with something working and a diff
-  small enough to read in full. If a step's diff would be too big to review, the
-  step is too big - split it. This review gate is the point.
-- **Build in order.** Sequence the steps so each builds on the last and leaves
-  the app working.
-- **Lock data contracts early.** If a shape (type, API response, stored field) is
-  used by a later feature, define it now and flag it as load-bearing.
-- **Flag client vs server** and any conventions from `blueprint/context/coding-standards.md`
-  (for example, filtering user-scoped queries by the authenticated user's id).
-- **Scope honestly.** State what is deferred so the feature stays contained.
+- Missing happy, loading, empty, invalid, denied, and unexpected-error behavior
+  that applies to the feature.
+- A product contract from the packet that was omitted, weakened, or contradicted.
+- Scope added from guesswork or pulled forward from a later feature.
+- An oversized or incorrectly ordered build step.
+- A data or API contract leaves a required type, format or encoding, generator,
+  uniqueness rule, default, lifecycle state, serialization rule, or stable
+  result and error shape for later work to reinterpret.
+- A security-sensitive flow leaves the trusted actor source, repository-first
+  tenant scope, atomic uniqueness or mutation boundary, idempotency, or
+  redaction behavior implicit.
+- User-controlled text lacks a safe rendering rule, or validation and error
+  feedback lacks the relevant label, association, announcement, focus, or
+  clearing behavior.
+- A new file, asset, import, or route is not reachable through the current
+  runtime and server behavior.
+- An authorization or URL shape later work would have to reinterpret.
+- A done-when that cannot be observed or a test claim the repository cannot run.
+- A prerequisite that makes the final Verify gate impossible.
 
-## When a (sub-)feature is done
+If a prerequisite is absent, incomplete, untracked, or unverified, say which one
+the evidence shows. Do not bury repair inside this feature. Stop with the exact
+`/fix` or user decision required.
 
-Check its box in `build-plan.md` (and the parent item once all its sub-items are
-checked), archive the finished `blueprint/context/current-feature.md` to
-`blueprint/history/features/NN-name.md`, then run `/feature` again for the next one.
-
-## Formatting
-
-Format the output to match the project's conventions in
-`blueprint/context/ai-interaction.md`: concise, scannable markdown, with lists for
-enumerations and tables for matrices rather than dense paragraphs.
+Otherwise write the tightened spec, update activity to `ready`, and stop for
+review. Lead with a short note naming what the critique changed, or say that it
+found no material change. Never implement from this skill.

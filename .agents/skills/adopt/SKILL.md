@@ -1,9 +1,15 @@
 ---
 name: adopt
-description: Bring the blueprint into an existing (brownfield) codebase. Surveys the real repo, interviews you for the intent code can't reveal, then generates the two plans you own (project-plan.md with shipped features, build-plan.md as a checklist with existing features already checked) plus coding-standards.md reflecting the project's actual conventions - and points you at /overview to finish. Use when the user runs /adopt, is overlaying the blueprint onto an app that already has meaningful code, or asks to adopt or bootstrap the workflow into an existing project. For freshly scaffolded or early projects, use onboard instead.
+description: Adopt Blueprint into an existing brownfield codebase by surveying shipped behavior and generating plans, standards, commands, adapter choices, and visibility setup. Use for /adopt or requests to bootstrap Blueprint into an established app. Use onboard for a fresh scaffold.
 ---
 
 # adopt - bootstrap the blueprint from an existing codebase
+
+**Context reuse:** Reuse any required file already loaded in project instructions or the current session. Read it again only if absent, changed, or exact current bytes or line references are needed.
+
+**First action:** Before project inspection, preflight, or any other tool call,
+publish `running` to `blueprint/.state/run.json` using the dashboard activity
+contract in `AGENTS.md`.
 
 Where this sits in the workflow:
 
@@ -43,8 +49,8 @@ Protect the project README:
 - If the root `README.md` already looks like a real project README, leave it
   alone.
 - If the root `README.md` is the copied Blueprint workflow doc (for example it
-  starts with `# AI Coding Blueprint`), move it to `blueprint/README.md` unless a
-  different `blueprint/README.md` already exists.
+  starts with `# AI Coding Blueprint`), report it as obsolete overlay content
+  and ask before replacing or removing it. Do not move it into `blueprint/`.
 - Do not create or overwrite a root project README for a brownfield app unless
   the user explicitly asks. The existing project face belongs to the app, not the
   workflow.
@@ -64,6 +70,8 @@ Read the repo to establish the facts. Change nothing in this step. Establish:
   code *does*, not what a default template prescribes.
 - **Testing reality** - is a runner configured and are there tests, or none? Be
   honest; don't describe a gate the project doesn't have.
+- **Verification and CI** - note any combined verification command, GitHub
+  remote, `.github/workflows/`, or external CI. Preserve what already exists.
 - **What the app already does** - the shipped features, inferred from routes,
   pages, entry points, and modules. This becomes the *checked* part of the build plan.
 
@@ -105,18 +113,81 @@ it rather than inherit a wrong guess.
   state (the opt-in switch is a `test` command in `AGENTS.md`).
 - **`AGENTS.md` Commands section** - fill in the real dev / build / test / lint
   commands you found, so the rest of the workflow (and the testing gate) uses the
-  project's actual scripts.
+  project's actual scripts. Include `Verify` when a real combined command exists.
 
 Do not write `project-overview.md`; that's `/overview`'s job, downstream of these.
 
-## Step 4 - review gate, then hand off
+## Step 4 - point to optional CI setup
+
+Do not create or change Verify commands or GitHub workflows during adoption.
+Report any verification command or CI already present. When equivalent automatic
+pull-request checks are absent, mention the optional standalone setup:
+
+```text
+Run /ci or $ci when you want automatic GitHub checks.
+```
+
+Explain that CI is not required to finish adoption. The `/ci` skill owns
+project-specific Verify and GitHub workflow setup.
+
+## Step 5 - ask about Blueprint visibility
+
+Ask how the Blueprint workflow files should be handled in git, unless the user
+already gave a preference:
+
+```text
+Blueprint visibility?
+
+1. Commit Blueprint workflow files
+   Portable. Best for teams and working across machines.
+
+2. Keep Blueprint workflow files local
+   Adds .agents/, .claude/, blueprint/, and CLAUDE.md to .gitignore.
+   Keeps AGENTS.md public as the lightweight project agent guide.
+```
+
+Recommend option 1 by default. If the user chooses option 2:
+
+- Add this block to `.gitignore`, preserving existing entries:
+
+  ```gitignore
+  # AI Blueprint local workflow files
+  .agents/
+  .claude/
+  blueprint/
+  CLAUDE.md
+  ```
+
+- Keep `AGENTS.md` tracked. It remains the lightweight public project guide for
+  commands and conventions.
+- Make `AGENTS.md` public-safe: keep project description, commands, testing gate,
+  and coding conventions, but remove or avoid Blueprint workflow explanations,
+  hidden adapter paths, workflow-document pointers, and core skill lists that
+  would expose the local-only workflow.
+- Explain that local-only mode hides the workflow contents from the repo, but the
+  `.gitignore` names still reveal the ignored paths.
+- Explain that Blueprint state, specs, findings, and history will not travel
+  with the repo; another machine needs the Blueprint reinstalled or restored
+  locally.
+- Because adoption runs right after the Blueprint files were added to an
+  existing repository, they are more likely to already be staged or committed
+  than in a fresh install. If any of `.agents/`, `.claude/`, `blueprint/`, or
+  `CLAUDE.md` are already tracked, say `.gitignore` will not hide tracked files.
+  Ask before running
+  `git rm --cached -r .agents .claude blueprint CLAUDE.md`, and
+  only run it if the user explicitly approves. Never delete the local files.
+
+## Step 6 - review gate, then hand off
 
 Stop and show the user what you generated, calling out:
 
 - the **build-plan split** - what you marked shipped vs not, since that's the
   judgment most worth their eyes,
 - every `> TODO (confirm)` you left,
-- anything the survey and the interview disagreed on.
+- anything the survey and the interview disagreed on,
+- verification command and GitHub checks status,
+- Blueprint visibility choice, and a tracked-file warning if local-only mode was
+  chosen after files were already tracked.
 
 These files are the ones the user *owns*. Have them review and adjust, then tell
 them to run `/overview` to distill the plans into `project-overview.md` and start
@@ -134,6 +205,10 @@ the normal loop.
   before touching them. Never run a scaffolder.
 - **Be honest about testing.** If there's no runner, say testing is opt-in and not
   yet set up; don't describe a gate the project hasn't adopted.
+- Keep `AGENTS.md` public in local-only mode unless the user explicitly asks for
+  a more advanced setup.
+- Do not untrack Blueprint files with `git rm --cached` without a separate
+  explicit approval.
 
 ## Formatting
 

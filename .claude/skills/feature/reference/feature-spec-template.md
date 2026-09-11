@@ -1,7 +1,9 @@
 # Feature: <name>
 
 **From build-plan:** feature <n>
+**Build attempt:** <positive integer, starting at 1>
 **Status:** not started
+**Branch:** `feature/<name>`
 
 ## Goal
 
@@ -24,15 +26,12 @@ when the feature has no visual target.
 
 ## Build loop
 
-Build one step at a time, never the whole feature at once.
-
-1. Plan mode lays out the step before any code.
-2. The AI implements just that step.
-3. It shows the diff (not full files); you read it and understand it.
-4. You approve, then choose whether to commit a checkpoint or roll straight on.
-   Checkpoints are optional; `/complete` makes the real feature-level commit at the end.
-
-Never accept a step you haven't read. If a diff is too big to review, the step was too big, so split it.
+Build one small step at a time. Follow `workflow.stepReview` in
+`blueprint/config.json`: `feature` produces one review packet after all steps,
+while `every` pauses for review after each step. Offer checkpoint commits only
+when `workflow.checkpointCommits` is enabled. `/complete` makes the final feature
+commit. Never accept a review packet you have not read; split any diff that is
+too large to review.
 
 ## Build steps
 
@@ -50,6 +49,11 @@ session reads which boxes are ticked and resumes from the first unchecked step.
 ## Data / contracts
 
 - Schema, types, or API shapes involved, or "none yet."
+- For every material field or result, record the required type, format,
+  generation source, uniqueness, default, lifecycle, and error behavior that
+  implementation or later features must preserve.
+- For security-sensitive work, record the trusted actor source, tenant scope,
+  atomicity, idempotency, and redaction rules that apply.
 
 ## Testing
 

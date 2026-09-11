@@ -1,9 +1,11 @@
 ---
 name: brief
-description: "Read-only briefing on an upcoming build-plan feature before you spec it. With no argument, briefs the next unchecked item; given a number or name, briefs that one. Reads build-plan.md and project-overview.md and explains what the feature is, what it depends on, what it will touch, how big it is, and whether it will split - without writing anything. Use when the user runs /brief, asks what the next feature involves, wants to understand or preview a feature before /feature, or is deciding what to build or reorder next."
+description: Brief an upcoming build-plan feature without writing files. Explain scope, dependencies, affected areas, size, and likely splits for the next item or a named item. Use for /brief, feature previews, what comes next, or build-order decisions before /feature.
 ---
 
 # brief - understand a feature before you spec it
+
+**Context reuse:** Reuse any required file already loaded in project instructions or the current session. Read it again only if absent, changed, or exact current bytes or line references are needed.
 
 Where this sits in the workflow:
 

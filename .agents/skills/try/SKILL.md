@@ -1,9 +1,11 @@
 ---
 name: try
-description: Generate a human manual try guide for the current or most recently completed Blueprint feature. Reads the spec, project commands, and available app context, then tells the user exactly what to start, where to go, what to click or run, what to expect, and what would count as wrong. Read-only. Use when the user runs /try, invokes $try, asks how to test manually, asks where to click, asks how to see the change, or wants a manual review path after /implement, /autopilot, /check, or /complete.
+description: Generate a read-only manual try guide for current or recent work with commands, locations, actions, expected results, and failure signs. Use for /try, how to test manually, where to click, how to see a change, or a human review path.
 ---
 
 # try - manual review guide
+
+**Context reuse:** Reuse any required file already loaded in project instructions or the current session. Read it again only if absent, changed, or exact current bytes or line references are needed.
 
 Where this sits in the workflow:
 
@@ -18,14 +20,18 @@ expect this result, and watch for these failure signs.
 It is always read-only. It does not edit files, install dependencies, commit,
 merge, push, or run destructive commands.
 
+The quality-gate config controls when another workflow generates this guide
+automatically. An explicit `/try` or `$try` request always runs. A generated guide
+never counts as evidence that the user performed the walkthrough.
+
 ## Input
 
 Optional scope:
 
-- no argument: use the active feature or fix in
+- no argument: use the active feature, fix, or rollback in
   `blueprint/context/current-feature.md`
-- `latest`: use the most recent archive under `blueprint/history/features/` or
-  `blueprint/history/fixes/`
+- `latest`: use the most recent archive under `blueprint/history/features/`,
+  `blueprint/history/fixes/`, or `blueprint/history/rollbacks/`
 - a step name or number: focus the guide on that current-feature step
 - a path, route, or command: include it as the main thing to try
 
@@ -37,20 +43,24 @@ wants to try instead of guessing.
 Read:
 
 - `AGENTS.md`
+- `blueprint/config.json`
 - `blueprint/context/current-feature.md`
 - `blueprint/context/project-overview.md`
 - `blueprint/context/coding-standards.md`
 - `blueprint/build-plan.md`
-- latest files under `blueprint/history/features/` and
-  `blueprint/history/fixes/`, if the current feature is reset
+- latest files under `blueprint/history/features/`,
+  `blueprint/history/fixes/`, and `blueprint/history/rollbacks/`, if the current
+  feature is reset
 - git branch and working tree status
 
 Prefer the active spec. If `current-feature.md` is the reset stub, use the most
-recent archived feature or fix by filename or modification time and say that is
-what you used.
+recent archived feature, fix, or rollback by filename or modification time and
+say that is what you used.
 
 Do not dump the spec. Pull out the routes, commands, UI surfaces, CLI commands,
 API endpoints, data states, and done-whens that matter for a human trying it.
+For a rollback, lead with the path that proves the removed behavior is gone, then
+include one unaffected regression path from the rollback spec.
 
 ## Step 2 - identify how to run the app
 

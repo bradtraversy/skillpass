@@ -1,9 +1,15 @@
 ---
 name: onboard
-description: Set up the Blueprint after overlaying it onto a freshly scaffolded or early project. Detects the stack, relocates the copied Blueprint README when needed, updates AGENTS.md commands, sets the CLAUDE.md project title when present, tunes coding-standards.md, checks ai-interaction.md and .gitignore, asks whether Blueprint workflow files should be committed or kept local-only, confirms which tool adapters to keep, and tells the user exactly what to fill in before /overview or $overview. Use when the user runs /onboard, invokes $onboard, just copied the Blueprint into a new project, or asks what to do after overlaying the Blueprint. For an existing app with meaningful shipped features, use adopt instead.
+description: Onboard a fresh or early scaffold after Blueprint is overlaid by tuning commands, standards, adapters, visibility, and context loading. Use for /onboard, fresh installation setup, or what to do after installing Blueprint. Use adopt for an established app.
 ---
 
 # onboard - finish the Blueprint overlay setup
+
+**Context reuse:** Reuse any required file already loaded in project instructions or the current session. Read it again only if absent, changed, or exact current bytes or line references are needed.
+
+**First action:** Before project inspection, preflight, or any other tool call,
+publish `running` to `blueprint/.state/run.json` using the dashboard activity
+contract in `AGENTS.md`.
 
 Where this sits in the workflow:
 
@@ -25,7 +31,48 @@ and project behavior already exist and need to be reflected into the plans.
 No argument is required. If the user provides context about the stack, hosting,
 database, auth, or preferred tool, use it as a hint and verify against files.
 
-## Step 0 - confirm this is onboarding, not adoption
+## Step 0 - confirm Git and make an unborn repository usable
+
+Before reading application code or changing setup files, confirm both Git states:
+
+```bash
+git rev-parse --is-inside-work-tree
+git rev-parse --verify HEAD
+```
+
+If this is not a Git repository, stop and ask the user to initialize one, then
+rerun `/onboard`.
+
+An existing first commit may contain only the scaffold or may already contain
+Blueprint. Both are valid. Do not ask the user to rewrite either history shape.
+
+If Git reports an unborn `HEAD`, handle it here instead of sending the user away
+to run Git commands:
+
+1. Inspect status and build a safe scaffold-only candidate from paths outside
+   `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, and `blueprint/`. Exclude
+   secrets, dependencies, caches, build output, generated state, and anything
+   else that should not enter source control. Include the existing `.gitignore`
+   when it is safe.
+2. Resolve the intended default branch from a remote default when available,
+   then an existing `main` or `master`, then Git's configured initial branch,
+   and otherwise `main`. Preserve the current unborn branch name as the setup
+   branch when it is not the intended default. If the intended name is genuinely
+   ambiguous, ask only that one question.
+3. Show the exact candidate and the branch result, then ask once:
+   `Create the initial scaffold commit and continue Onboard? (Recommended)`
+   State that this creates one local commit and never pushes.
+4. On approval, stage only the reviewed candidate, verify the staged diff, and
+   commit it as `chore: scaffold application`. If needed, rename the unborn
+   branch before committing so the root commit establishes the intended default
+   branch. Then create or return to the named setup branch at that same commit
+   and continue Onboard in the same run.
+
+If there is no safe scaffold candidate, stop with the exact blocker rather than
+creating an empty or mixed root commit. Never create the commit without explicit
+approval.
+
+Then confirm this is onboarding, not adoption.
 
 Inspect the repository and the two planning docs:
 
@@ -51,8 +98,11 @@ Read only enough to identify the setup:
   `tailwind.config.*`, database config, test config)
 - source layout, route layout, and app/package directories
 - existing `.gitignore`
-- whether `.agents/` and `.claude/` are both needed
+- `blueprint/.state/manifest.json`, when present, and its selected adapter list
+- which selected tools need `.agents/`, `.claude/`, or both
 - whether Blueprint workflow paths are already tracked by git
+- existing verification commands and `.github/workflows/`
+- `blueprint/config.json`, when present, and whether it parses cleanly
 - project name, from `package.json`, the folder name, existing docs, or the user
 
 Do not infer more than the files support. Mark uncertain items as `> TODO` in the
@@ -60,39 +110,45 @@ summary rather than inventing a convention.
 
 ## Step 2 - update project entry files
 
-If the root `README.md` is the copied Blueprint workflow document, move it out of
-the product README slot:
+If the root `README.md` is a copied Blueprint workflow document, replace that
+obsolete overlay content in the product README slot:
 
 - Detect it conservatively: the first heading is `# AI Coding Blueprint`, or the
   opening section clearly describes the Blueprint workflow rather than this app.
-- Move that workflow document to `blueprint/README.md`.
-- Do not overwrite an existing different `blueprint/README.md`; stop and report
-  the conflict instead.
 - Create a small root `README.md` stub for the actual project using the detected
   project name, one-line purpose when known, and the Commands from `AGENTS.md`.
   Keep it minimal if the project plan is not filled yet.
-- Update any `AGENTS.md` pointer that says the root `README.md` explains the
-  workflow so it points to `blueprint/README.md` instead.
+- Do not move or copy the workflow document into `blueprint/`. Agents use the
+  local skills, plans, and context files directly.
+- Remove any `AGENTS.md` claim that a project README explains the Blueprint
+  workflow.
 
 If the root `README.md` already looks like a real project README, leave it alone.
 Never replace a project README with Blueprint documentation.
 
 Update the Commands section of `AGENTS.md` to match real scripts and commands.
+Remove the shipped `<!-- blueprint:onboarding-required -->` marker and the `For
+a standard Next.js project` instruction when replacing the placeholder
+commands. Status uses the dedicated marker, with the old sentence retained only
+as a migration fallback, to distinguish a fresh overlay from a tuned project.
 Include only commands that exist or are intentionally available:
 
 - dev server
 - build
 - preview or start
 - lint, format, typecheck, and test, if configured
+- verify, when a real combined verification command already exists
 - useful app-specific commands, if obvious
 
 If no test command exists, say so explicitly. Do not claim tests are a gate until
 a real test command is configured.
 
 If `CLAUDE.md` exists and still has the placeholder `# Project Name`, replace it
-with the detected project name. Keep the `@AGENTS.md` and `@blueprint/...`
-imports intact. Do not move detailed app context into `CLAUDE.md`; that belongs
-in `AGENTS.md` and the generated project overview.
+with the detected project name. Keep `@AGENTS.md`. Remove direct imports of
+`project-overview.md`, `current-feature.md`, `coding-standards.md`, and
+`ai-interaction.md`; workflow skills read those files only when relevant.
+Preserve unrelated user imports. Do not move detailed app context into
+`CLAUDE.md`; that belongs in `AGENTS.md` and the generated project overview.
 
 ## Step 3 - tune coding standards
 
@@ -114,19 +170,79 @@ Cover the practical conventions the build loop needs:
 If the project is too new to reveal a convention, leave a concise `> TODO` rather
 than pretending a pattern exists.
 
-## Step 4 - check AI interaction rules
+## Step 4 - check project configuration and AI interaction rules
+
+Read `blueprint/config.json`. A missing file means built-in defaults and is not
+an error. If the file exists but is invalid, stop and show the exact invalid key
+or value before changing other setup files.
+
+Keep project configuration deterministic. Ask before changing preferences and
+edit only values the user actually chose, such as branch prefixes, UI evidence,
+logic-test strictness, regular or Continuous quality gates, review execution, or
+Continuous Mode limits. Independent review defaults to `when-sensitive` for
+regular and Continuous work, and its execution defaults to `automatic`. Audit,
+check, and try guide default to `manual`. Preserve these defaults unless the user
+chooses different policies. A `manual` independent-review gate disables
+automatic selection for that workflow without disabling explicit independent
+audits. Never put
+commands, product requirements, communication prose, secrets, or permission for
+commits, merges, pushes, deployments, publication, destructive actions, failed
+checks, or finding waivers into config.
+
+Unless the user already chose these values, ask one short **Implementation
+style** question using the current tool's selectable prompt when available:
+
+1. **Efficient (Recommended)** - one feature-level review packet, a final code
+   walkthrough option, and no step checkpoint prompts. Write
+   `workflow.stepReview: "feature"` and `workflow.checkpointCommits: "disabled"`.
+2. **Guided** - pause for approval after every step and offer optional checkpoint
+   commits, followed by the same final code walkthrough option. Write
+   `workflow.stepReview: "every"` and `workflow.checkpointCommits: "enabled"`.
+3. **Custom** - ask separately when review should happen and whether checkpoint
+   commits should be offered, then write the selected low-level values.
+
+These are onboarding presets, not a third configuration field. Never write an
+`implementationStyle` key. Show the current two values before asking, preserve
+them if the user chooses not to change them, and explain that either value can be
+edited later. A later `/implement` run reads the current configuration.
+The final code walkthrough is not a configuration setting and remains available
+with every implementation style.
 
 Read `blueprint/context/ai-interaction.md` and update only obvious mismatches.
 Usually the default review loop should stay intact. Flag preferences for the user
 instead of guessing, such as:
 
-- whether commits should be offered after every step
+- whether review should happen once per feature (the lower-context default) or
+  after every step for teaching, close pairing, or high-risk work
+- whether optional step checkpoint commits should be enabled. Explain that the
+  previous workflow requires per-step review and enabled checkpoints together;
+  changing only `stepReview` restores the approval pauses, not checkpoint prompts
 - whether branches should use a different naming pattern
 - whether `/check` should require browser evidence for UI work
+- whether audit, independent review, check, or try guides should stay manual, run only for their
+  documented conditional case, or run for every regular or Continuous work item
+- whether a selected independent review should use the default automatic
+  isolated reviewer or `review.independentExecution: "manual"` for a
+  fresh-session handoff. Explain that automatic execution uses a fresh isolated
+  reviewer only when the active adapter can expose its exact identity and model,
+  and otherwise stops with the manual handoff
 
 If no changes are needed, say so.
 
-## Step 5 - check ignore files, visibility, and adapters
+## Step 5 - point to optional CI setup
+
+Do not create or change Verify commands or GitHub workflows during onboarding.
+Report any verification command or CI already present. When equivalent automatic
+pull-request checks are absent, mention the optional standalone setup:
+
+```text
+Run /ci or $ci when you want automatic GitHub checks.
+```
+
+Explain that CI is not required to continue with planning or the Blueprint build
+loop. The `/ci` skill owns project-specific Verify and GitHub workflow setup.
+
+## Step 6 - check ignore files, visibility, and adapters
 
 Update `.gitignore` for common generated files from the detected stack while
 preserving existing entries. Typical examples include dependencies, build output,
@@ -163,28 +279,47 @@ Recommend option 1 by default. If the user chooses option 2:
   commands and conventions.
 - Make `AGENTS.md` public-safe: keep project description, commands, testing gate,
   and coding conventions, but remove or avoid Blueprint workflow explanations,
-  hidden adapter paths, `blueprint/README.md` pointers, and core skill lists that
+  hidden adapter paths, workflow-document pointers, and core skill lists that
   would expose the local-only workflow.
 - Explain that local-only mode hides the workflow contents from the repo, but the
   `.gitignore` names still reveal the ignored paths.
-- Explain that Blueprint state, specs, and history will not travel with the repo;
-  another machine needs the Blueprint reinstalled or restored locally.
-- If any of `.agents/`, `.claude/`, `blueprint/`, or `CLAUDE.md` are already
-  tracked, say `.gitignore` will not hide tracked files. Ask before running
-  `git rm --cached -r .agents .claude blueprint CLAUDE.md`, and only run it if
-  the user explicitly approves. Never delete the local files.
+- Explain that Blueprint state, specs, findings, and history will not travel
+  with the repo; another machine needs the Blueprint reinstalled or restored
+  locally.
+- If any of `.agents/`, `.claude/`, `blueprint/`, or
+  `CLAUDE.md` are already tracked, say `.gitignore` will not hide tracked files.
+  Ask before running
+  `git rm --cached -r .agents .claude blueprint CLAUDE.md`, and
+  only run it if the user explicitly approves. Never delete the local files.
 
-Then report which adapter folders are needed:
+Then report which selected tools and adapter folders are needed:
 
+- When a valid `blueprint/.state/manifest.json` exists, its `adapters` list is
+  the authoritative installer selection. The presence of `.agents/` means its
+  files are compatible with Codex, GitHub Copilot, and OpenCode; it does not mean
+  all three tools were selected.
+- Do not ask the user to select adapters again when that valid manifest exists.
+  Keep and report the exact selection. If a required adapter tree is missing,
+  report the mismatch and point to `/doctor` instead of guessing or deleting
+  another tree.
+- Without a valid manifest, explain that folder detection cannot distinguish
+  Codex, GitHub Copilot, and OpenCode, then ask which tools the user actually
+  uses instead of assuming all of them are selected.
 - Codex only: keep `AGENTS.md`, `.agents/`, and `blueprint/`; `CLAUDE.md` and
   `.claude/` can be deleted.
 - Claude Code only: keep `AGENTS.md`, `CLAUDE.md`, `.claude/`, and `blueprint/`;
   `.agents/` can be deleted.
-- Mixed tools: keep both adapters.
+- GitHub Copilot only: keep `AGENTS.md`, `.agents/`, and `blueprint/`.
+- OpenCode only: keep `AGENTS.md`, `.agents/`, and `blueprint/`.
+- OpenCode with Claude Code: OpenCode can reuse `.claude/`; no separate
+  `.opencode/skills/` copy is needed.
+- Mixed tools: keep only the compatible adapter trees required by the selected
+  tools. Never duplicate Blueprint skills under `.opencode/skills/` because
+  OpenCode already discovers `.agents/skills/` and `.claude/skills/`.
 
 Do not delete adapters unless the user explicitly asks.
 
-## Step 6 - hand off to planning
+## Step 7 - hand off to planning
 
 Stop with a concise onboarding report:
 
@@ -194,13 +329,21 @@ Stop with a concise onboarding report:
 - Blueprint visibility choice
 - tracked-file warning if local-only mode was chosen after files were already tracked
 - files changed
+- project configuration state and any user-selected overrides
 - commands now available
 - testing gate status
+- verification command and GitHub checks status
 - adapter recommendation
 - TODOs or uncertainties
 - exact next files for the user to fill in:
   - `blueprint/project-plan.md`
   - `blueprint/build-plan.md`
+
+Make the direct path clear: the user can write or develop those files through
+any conversation, then run `/overview`. Also mention `/discovery` or `$discovery`
+as an optional deep planning conversation for users who want guided help. Do not
+start it, make it a prerequisite, or imply that directly written plans are less
+complete.
 
 End with the next command:
 
@@ -217,6 +360,8 @@ $overview
 ## Rules
 
 - Setup files are fair game; planning docs are user-owned.
+- `/discovery` is optional and never runs as part of onboarding. The direct
+  plan-writing path must remain fully supported.
 - Never overwrite real `project-plan.md` or `build-plan.md` content.
 - Never run scaffolders or install dependencies unless the user explicitly asks.
 - Reflect the stack that exists, not the stack the default Blueprint mentions.

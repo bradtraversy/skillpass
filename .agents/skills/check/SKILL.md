@@ -1,9 +1,15 @@
 ---
 name: check
-description: Prove the current work actually does what its spec says by running the real app and observing behavior against the "done when" criteria in current-feature.md. Drives the app (browser, CLI, or server), captures evidence (screenshots, output, console/network errors), and reports pass/fail per criterion. Does not edit source or commit - it observes; fixing stays /implement's job. Use when the user runs /check, asks to confirm a step or feature works, wants proof before /complete, or wants to check a change in the running app rather than just the build. (Supersedes the built-in /verify with a spec-aware version inside blueprint projects.)
+description: Check the running app, CLI, or server against the active spec's done-when criteria and capture observable pass or fail evidence without editing code. Use for /check, proving behavior before completion, or verifying the real result beyond builds and tests.
 ---
 
 # check - prove it works against the spec, with evidence
+
+**Context reuse:** Reuse any required file already loaded in project instructions or the current session. Read it again only if absent, changed, or exact current bytes or line references are needed.
+
+**First action:** Before project inspection, preflight, or any other tool call,
+publish `running` to `blueprint/.state/run.json` using the dashboard activity
+contract in `AGENTS.md`.
 
 Where this sits in the workflow:
 
@@ -30,6 +36,13 @@ verify the whole current feature against every "done when" in
 
 ## Step 1 - build the checklist
 
+Read `blueprint/config.json` first. A missing file means the built-in defaults
+apply. If the file exists but is invalid, stop and point the user to `/doctor`.
+Configuration never grants permission to start a server or take any other action
+that the project instructions or user have not authorized.
+The quality-gate config controls automatic invocation only. An explicit `/check`
+or `$check` request always runs.
+
 Read `blueprint/context/current-feature.md`. Pull the observable "done when"
 criteria from the build steps (and any acceptance notes in the Testing section).
 Turn them into a concrete checklist of claims to prove - each one a specific,
@@ -44,10 +57,14 @@ type:
 
 - **Web app** - start (or reuse) the dev/preview server, then drive a real browser
   to the relevant routes. Prefer reusing an already-running server over starting a
-  duplicate. If Playwright is already installed or declared in `AGENTS.md`, prefer
-  it for browser driving, screenshots, console errors, and failed request checks.
-  If it is not installed, do not add it from `/check`; use another real-browser
-  evidence path and report what you used.
+  duplicate. If `AGENTS.md` declares `Browser tests: <command>`, run that exact
+  command as repeatable evidence and use its harness for covered interactions.
+  Reuse runner-owned server lifecycle instead of starting a duplicate. A green
+  suite is one evidence source, not proof of claims it does not observe. If no
+  command is declared but Playwright is already installed, prefer it for browser
+  driving, screenshots, console errors, and failed request checks. Never install
+  it from `/check`; use another real-browser evidence path and report what you
+  used, or point to `/browser-tests` for later optional setup.
 - **CLI** - run the actual command(s) with representative inputs.
 - **Server/API** - start it and hit the endpoints.
 - **Library** - exercise the public API through an example or the test command.
@@ -66,6 +83,12 @@ Drive the app to each checklist item and capture evidence as you go:
 - Watch for **console errors and failed network requests**; a clean-looking screen
   with errors in the console is not a pass.
 
+With `verification.uiEvidence: "required"`, every UI claim needs direct browser
+evidence, including a screenshot and the relevant console and network check. If
+that evidence path is unavailable, mark the claim unverifiable instead of
+passing it from build output. With `when-available`, use the strongest available
+evidence and report any gap plainly.
+
 ## Step 4 - report
 
 Give a short, honest verdict, one line per checklist item:
@@ -77,15 +100,22 @@ Give a short, honest verdict, one line per checklist item:
 
 Then state the bottom line: are all the feature's done-whens proven, or not yet.
 
-- All proven -> say it's ready for `/complete`.
-- Anything failed -> hand back to `/implement` to fix; name what to fix. Don't fix
-  it here.
-- Anything unverifiable -> say so plainly and why; never report it as a pass.
+- All proven -> update only the `**Status:**` line in
+  `blueprint/context/current-feature.md` to `verified`, then say it is ready for
+  `/complete`.
+- Anything failed -> update only that status line to `verification failed`, then
+  hand back to `/implement`; name what to fix. Do not fix it here.
+- Anything unverifiable -> update only that status line to `verification
+  incomplete`, then say why; never report it as a pass.
+
+The status-line update is generated workflow state, not a product-source edit.
+Do not change the spec, checkboxes, findings, or product files from `/check`.
 
 ## Rules
 
-- **Observe, don't change.** `/check` runs the app and reports. It never edits
-  source, never commits, never merges. Fixing is `/implement`'s job.
+- **Observe product behavior, don't repair it.** `/check` changes only the
+  current spec's status line as described above. It never edits product source,
+  commits, or merges. Fixing is `/implement`'s job.
 - **Evidence or it didn't happen.** Every `pass` is backed by something observed -
   a screenshot, output, a response. No assumed passes from reading the code.
 - **Honest over green.** "Couldn't verify" and "failed" are valid, useful results.

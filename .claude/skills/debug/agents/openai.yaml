@@ -1,0 +1,4 @@
+interface:
+  display_name: "Debug"
+  short_description: "Diagnose failures without changing code"
+  default_prompt: "Use $debug to reproduce this failure, isolate the root cause, and report the evidence without changing code."
