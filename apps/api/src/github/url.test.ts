@@ -24,9 +24,7 @@ describe('parseGithubUrl accepted forms', () => {
 	});
 
 	it('parses a tree URL with a ref and nested subpath', () => {
-		expect(
-			parseGithubUrl('https://github.com/octocat/hello/tree/v1.2.0/.claude/skills/implement'),
-		).toEqual({
+		expect(parseGithubUrl('https://github.com/octocat/hello/tree/v1.2.0/.claude/skills/implement')).toEqual({
 			success: true,
 			data: { owner: 'octocat', repo: 'hello', ref: 'v1.2.0', subpath: '.claude/skills/implement' },
 		});
@@ -68,14 +66,12 @@ describe('packageNameFor', () => {
 	});
 
 	it('uses the folder name for a single-segment subpath', () => {
-		expect(packageNameFor({ owner: 'a', repo: 'plugins', ref: 'main', subpath: 'sales' })).toBe(
-			'sales',
-		);
+		expect(packageNameFor({ owner: 'a', repo: 'plugins', ref: 'main', subpath: 'sales' })).toBe('sales');
 	});
 
 	it('uses the last segment of a nested subpath', () => {
-		expect(
-			packageNameFor({ owner: 'a', repo: 'r', ref: 'main', subpath: 'plugins/expo/skills/expo-router' }),
-		).toBe('expo-router');
+		expect(packageNameFor({ owner: 'a', repo: 'r', ref: 'main', subpath: 'plugins/expo/skills/expo-router' })).toBe(
+			'expo-router',
+		);
 	});
 });

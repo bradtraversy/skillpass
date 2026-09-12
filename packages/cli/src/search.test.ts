@@ -42,17 +42,14 @@ const SKILLS = [
 ];
 
 function stubFetch(payload: unknown = { success: true, data: SKILLS }) {
-	return vi.fn(async () => new Response(JSON.stringify(payload), { status: 200 })) as unknown as
-		typeof fetch;
+	return vi.fn(async () => new Response(JSON.stringify(payload), { status: 200 })) as unknown as typeof fetch;
 }
 
 describe('runSearch', () => {
 	it('lists everything with no query, aligned with a footer', async () => {
 		const result = await runSearch({ fetchImpl: stubFetch() });
 		expect(result.exitCode).toBe(0);
-		expect(result.lines.at(-1)).toBe(
-			'3 of 3 skills - skillpass report <slug> shows the passport',
-		);
+		expect(result.lines.at(-1)).toBe('3 of 3 skills - skillpass report <slug> shows the passport');
 		expect(result.lines[0]).toMatch(/^clean-skill {2,}somedev/);
 	});
 

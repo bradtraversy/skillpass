@@ -139,6 +139,9 @@ test targets.
 - No commented-out code unless specified
 - No unused imports or variables
 - Keep functions under 50 lines when possible
+- ESLint and Prettier are gates: `pnpm lint` and `pnpm format:check` run inside
+  `pnpm verify`. Run `pnpm format` before presenting a diff; fix lint findings
+  rather than suppressing them inline
 
 ## Comments
 

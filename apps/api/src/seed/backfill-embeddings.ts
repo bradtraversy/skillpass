@@ -22,7 +22,6 @@ export function pendingEmbeddings(
 }
 
 runBackfill(import.meta.url, async (env, db) => {
-
 	if (!env.VOYAGE_API_KEY) {
 		console.log('VOYAGE_API_KEY is not set; nothing to embed.');
 		return;
@@ -37,10 +36,7 @@ runBackfill(import.meta.url, async (env, db) => {
 	const existingRows = await db
 		.select({ skillId: skillEmbeddings.skillId, contentHash: skillEmbeddings.contentHash })
 		.from(skillEmbeddings);
-	const pending = pendingEmbeddings(
-		candidates,
-		new Map(existingRows.map((r) => [r.skillId, r.contentHash])),
-	);
+	const pending = pendingEmbeddings(candidates, new Map(existingRows.map((r) => [r.skillId, r.contentHash])));
 	console.log(`${candidates.length} published skills, ${pending.length} need embedding\n`);
 	if (pending.length === 0) {
 		console.log('done: all embeddings up to date');
@@ -48,7 +44,11 @@ runBackfill(import.meta.url, async (env, db) => {
 	}
 
 	// One batched provider call for the whole run; embedTexts chunks internally.
-	const result = await embedTexts(env, pending.map((p) => p.input), 'document');
+	const result = await embedTexts(
+		env,
+		pending.map((p) => p.input),
+		'document',
+	);
 	if (!result.success) {
 		console.error(`embedding failed: ${result.error}`);
 		process.exit(1);
@@ -64,7 +64,5 @@ runBackfill(import.meta.url, async (env, db) => {
 		console.log(`  embedded ${candidate.slug}`);
 	}
 
-	console.log(
-		`\ndone: ${pending.length} embedded, ${candidates.length - pending.length} up to date`,
-	);
+	console.log(`\ndone: ${pending.length} embedded, ${candidates.length - pending.length} up to date`);
 });

@@ -32,7 +32,7 @@ export async function ensureAiReview(
 		const review = await reviewSkill(env, pkg, report);
 		if (review) await upsertAiReview(db, sourceHash, review);
 	} catch (err) {
-		console.error(`ensureAiReview: review for ${sourceHash} failed: ${err}`);
+		console.error(`ensureAiReview: review for ${sourceHash} failed: ${String(err)}`);
 	}
 }
 
@@ -48,7 +48,7 @@ export async function ensureCategory(
 		const category = await classifyCategory(env, { name: skill.name, summary: skill.summary });
 		if (category) await setSkillCategory(db, skill.id, category);
 	} catch (err) {
-		console.error(`ensureCategory: classify for ${skill.slug} failed: ${err}`);
+		console.error(`ensureCategory: classify for ${skill.slug} failed: ${String(err)}`);
 	}
 }
 
@@ -71,7 +71,7 @@ export async function ensureDisplayCopy(
 		const copy = await generateDisplayCopy(env, { name: skill.name, summary: skill.summary });
 		if (copy) await setSkillDisplayCopy(db, skill.id, copy);
 	} catch (err) {
-		console.error(`ensureDisplayCopy: generate for ${skill.slug} failed: ${err}`);
+		console.error(`ensureDisplayCopy: generate for ${skill.slug} failed: ${String(err)}`);
 	}
 }
 
@@ -97,6 +97,6 @@ export async function ensureIntegrations(
 		});
 		if (integrations) await setSkillIntegrations(db, skill.id, integrations);
 	} catch (err) {
-		console.error(`ensureIntegrations: classify for ${skill.slug} failed: ${err}`);
+		console.error(`ensureIntegrations: classify for ${skill.slug} failed: ${String(err)}`);
 	}
 }

@@ -2,12 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Queue } from 'bullmq';
 import { loadEnv } from '../env';
 import { RAW_TEST_ENV } from '../testing/env';
-import {
-	createValidationQueue,
-	enqueueValidation,
-	VALIDATION_QUEUE_NAME,
-	type ValidationQueue,
-} from './queue';
+import { createValidationQueue, enqueueValidation, VALIDATION_QUEUE_NAME, type ValidationQueue } from './queue';
 
 vi.mock('bullmq', () => ({ Queue: vi.fn() }));
 

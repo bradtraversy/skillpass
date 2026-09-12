@@ -87,12 +87,8 @@ describe('runRemove', () => {
 
 	it('rejects --global without --target and --target with --dir', () => {
 		const { cwd, home } = ctx();
-		expect(runRemove('demo', { global: true, cwd, home }).lines[0]).toContain(
-			'--global needs --target',
-		);
-		expect(runRemove('demo', { target: 'claude-code', dir: './x', cwd, home }).lines[0]).toContain(
-			'not both',
-		);
+		expect(runRemove('demo', { global: true, cwd, home }).lines[0]).toContain('--global needs --target');
+		expect(runRemove('demo', { target: 'claude-code', dir: './x', cwd, home }).lines[0]).toContain('not both');
 	});
 
 	it('removes a whole pack family with receipts', () => {

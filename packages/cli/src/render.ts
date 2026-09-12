@@ -65,14 +65,10 @@ export function renderPreflightReport(
 ): string[] {
 	const attribution = detail.attributedTo ? ` (curated from ${detail.attributedTo})` : '';
 	const members = detail.packMembers ?? [];
-	const verified = preflight.sourceVerified
-		? st.green('(verified)')
-		: st.red('(HASH MISMATCH)');
+	const verified = preflight.sourceVerified ? st.green('(verified)') : st.red('(HASH MISMATCH)');
 	const lines = [
 		`Skill     ${st.bold(detail.name)} by ${detail.maintainer}${attribution}`,
-		...(members.length > 0
-			? [`Pack      ${members.length} skills: ${members.map((m) => m.name).join(', ')}`]
-			: []),
+		...(members.length > 0 ? [`Pack      ${members.length} skills: ${members.map((m) => m.name).join(', ')}`] : []),
 		`Version   ${preflight.version}`,
 		`Status    ${statusColor(st, preflight.validationStatus)(statusLabel(preflight.validationStatus))}`,
 		`Risk      ${riskColor(st, preflight.riskLevel)(preflight.riskLevel)}`,
@@ -84,10 +80,7 @@ export function renderPreflightReport(
 		...renderDiff(preflight.diff),
 	];
 	if (preflight.blocked) {
-		lines.push(
-			'',
-			st.red(`BLOCKED: ${preflight.blockedReason ?? 'this version cannot be downloaded'}`),
-		);
+		lines.push('', st.red(`BLOCKED: ${preflight.blockedReason ?? 'this version cannot be downloaded'}`));
 	}
 	return lines;
 }

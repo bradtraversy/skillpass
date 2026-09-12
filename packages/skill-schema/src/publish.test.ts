@@ -46,9 +46,7 @@ describe('nextVersion', () => {
 
 describe('publishResultSchema', () => {
 	it('parses the locked shape', () => {
-		expect(publishResultSchema.safeParse({ slug: 'maintainer-triage', version: '1.0.0' }).success).toBe(
-			true,
-		);
+		expect(publishResultSchema.safeParse({ slug: 'maintainer-triage', version: '1.0.0' }).success).toBe(true);
 	});
 
 	it('rejects an empty slug', () => {

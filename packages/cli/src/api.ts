@@ -18,9 +18,7 @@ export function parseSkillRef(ref: string): { slug: string; version?: string } {
 	return at === -1 ? { slug: ref } : { slug: ref.slice(0, at), version: ref.slice(at + 1) };
 }
 
-export type FetchOutcome<T> =
-	| { ok: true; data: T }
-	| { ok: false; notFound: boolean; message: string };
+export type FetchOutcome<T> = { ok: true; data: T } | { ok: false; notFound: boolean; message: string };
 
 // Structural subset of a zod schema, so the CLI needs no direct zod dependency.
 export interface ContractSchema<T> {
@@ -66,11 +64,7 @@ export type PreflightFetch =
 	| { ok: false; result: CommandResult };
 
 // Shared resolution for report and add: ref -> detail + version-pinned preflight.
-export async function fetchPreflight(
-	fetchImpl: typeof fetch,
-	apiUrl: string,
-	ref: string,
-): Promise<PreflightFetch> {
+export async function fetchPreflight(fetchImpl: typeof fetch, apiUrl: string, ref: string): Promise<PreflightFetch> {
 	const { slug, version } = parseSkillRef(ref);
 	if (!slug || version === '') {
 		return { ok: false, result: { lines: [`error: invalid skill reference "${ref}"`], exitCode: 2 } };

@@ -20,12 +20,7 @@ import {
 import { setSubmissionStatus } from '../db/submissions';
 import type { Env } from '../env';
 import { awardReputation } from '../reputation/reputation';
-import {
-	ensureAiReview,
-	ensureCategory,
-	ensureDisplayCopy,
-	ensureIntegrations,
-} from '../review/ensure';
+import { ensureAiReview, ensureCategory, ensureDisplayCopy, ensureIntegrations } from '../review/ensure';
 import { ensureEmbedding } from '../search/ensure';
 import { buildPassport } from './passport';
 
@@ -82,9 +77,7 @@ export function publishFieldsFrom(
 	};
 }
 
-export type PublishOutcome =
-	| { success: true; data: PublishResult }
-	| { success: false; error: 'slug_taken' };
+export type PublishOutcome = { success: true; data: PublishResult } | { success: false; error: 'slug_taken' };
 
 // No transactions on neon-http: writes are ordered so every prefix is
 // consistent, with the version insert (unique submissionId) as the commit
@@ -183,7 +176,7 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 		await awardReputation(db, submission.userId, existing ? 'version_published' : 'skill_published');
 	} catch (err) {
 		// Reputation is derived data; an award failure must not fail the publish.
-		console.error(`publish: reputation award failed for user ${submission.userId}: ${err}`);
+		console.error(`publish: reputation award failed for user ${submission.userId}: ${String(err)}`);
 	}
 
 	return { success: true, data: { slug, version } };

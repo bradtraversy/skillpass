@@ -34,8 +34,6 @@ const VERDICT_ICON: Record<ValidationStatus, React.ReactNode> = {
 	),
 };
 
-
-
 export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 	const { passport } = detail;
 	const verdict = passport.validationStatus;
@@ -66,12 +64,8 @@ export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 
 			<div className="grid grid-cols-3 gap-px border-b border-border bg-border max-[620px]:grid-cols-1">
 				<div className="bg-surface px-[18px] py-[15px]">
-					<div className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">
-						Verdict
-					</div>
-					<div
-						className={`mt-[5px] flex items-center gap-[7px] text-[14px] font-semibold ${tint.text}`}
-					>
+					<div className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">Verdict</div>
+					<div className={`mt-[5px] flex items-center gap-[7px] text-[14px] font-semibold ${tint.text}`}>
 						<svg
 							width="15"
 							height="15"
@@ -90,9 +84,7 @@ export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 				</div>
 
 				<div className="bg-surface px-[18px] py-[15px]">
-					<div className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">
-						Risk level
-					</div>
+					<div className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">Risk level</div>
 					<div className="mt-[5px] flex items-center gap-[7px] text-[14px] font-semibold">
 						<span className={`size-[8px] rounded-full ${RISK_DOT[passport.riskLevel]}`} />
 						{capitalize(passport.riskLevel)}
@@ -101,31 +93,23 @@ export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 
 				{monoFields.map((field) => (
 					<div key={field.k} className="bg-surface px-[18px] py-[15px]">
-						<div className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">
-							{field.k}
-						</div>
-						<div className="mt-[5px] truncate font-mono text-[13px] font-medium text-muted">
-							{field.v}
-						</div>
+						<div className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-faint">{field.k}</div>
+						<div className="mt-[5px] truncate font-mono text-[13px] font-medium text-muted">{field.v}</div>
 					</div>
 				))}
 			</div>
 
 			<div className="p-[18px]">
-				<div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint">
-					Permissions requested
-				</div>
+				<div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint">Permissions requested</div>
 				{passport.manifestInferred && (
 					<p className="mb-3 rounded-sm border border-border-2 bg-bg-well px-3 py-[9px] text-[12px] text-muted">
-						This skill ships no <span className="font-mono">skill.json</span>, so its permissions
-						were inferred from the skill's content, not declared by the author.
+						This skill ships no <span className="font-mono">skill.json</span>, so its permissions were inferred from the
+						skill's content, not declared by the author.
 					</p>
 				)}
 				<div className="divide-y divide-border">
 					{permissions.length === 0 && (
-						<p className="py-[11px] text-[12.5px] text-muted">
-							No permissions declared or detected.
-						</p>
+						<p className="py-[11px] text-[12.5px] text-muted">No permissions declared or detected.</p>
 					)}
 					{permissions.map((key) => (
 						<PermissionRow key={key} permKey={key} />
@@ -138,9 +122,9 @@ export default function Passport({ detail }: { detail: PublicSkillDetail }) {
 							Things to pay attention to ({passport.warningsSummary.length})
 						</div>
 						<p className="mb-3 text-[12.5px] leading-[1.5] text-muted">
-							Our scanner flagged these lines for your review. Patterns like these are common
-							in legitimate security, DevOps, and automation skills, so a flag here isn't proof
-							of a problem, but it's worth reading before you install.
+							Our scanner flagged these lines for your review. Patterns like these are common in legitimate security,
+							DevOps, and automation skills, so a flag here isn't proof of a problem, but it's worth reading before you
+							install.
 						</p>
 						{passport.warningsSummary.map((finding, i) => (
 							<Finding key={i} finding={finding} open={i === 0} />

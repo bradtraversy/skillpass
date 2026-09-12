@@ -37,9 +37,7 @@ describe('generateDisplayCopy', () => {
 	});
 
 	it('returns trimmed copy on a well-formed answer', async () => {
-		mockCreate.mockResolvedValue(
-			textResponse({ displayName: '  Zeroize Audit ', tagline: ` ${copy.tagline} ` }),
-		);
+		mockCreate.mockResolvedValue(textResponse({ displayName: '  Zeroize Audit ', tagline: ` ${copy.tagline} ` }));
 		expect(await generateDisplayCopy(envWithKey, listing)).toEqual(copy);
 	});
 
@@ -50,14 +48,10 @@ describe('generateDisplayCopy', () => {
 		mockCreate.mockResolvedValue(textResponse({ displayName: copy.displayName }));
 		expect(await generateDisplayCopy(envWithKey, listing)).toBeNull();
 
-		mockCreate.mockResolvedValue(
-			textResponse({ displayName: 'x'.repeat(49), tagline: copy.tagline }),
-		);
+		mockCreate.mockResolvedValue(textResponse({ displayName: 'x'.repeat(49), tagline: copy.tagline }));
 		expect(await generateDisplayCopy(envWithKey, listing)).toBeNull();
 
-		mockCreate.mockResolvedValue(
-			textResponse({ displayName: copy.displayName, tagline: 'y'.repeat(161) }),
-		);
+		mockCreate.mockResolvedValue(textResponse({ displayName: copy.displayName, tagline: 'y'.repeat(161) }));
 		expect(await generateDisplayCopy(envWithKey, listing)).toBeNull();
 	});
 

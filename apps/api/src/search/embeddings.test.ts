@@ -72,21 +72,33 @@ describe('embedTexts', () => {
 	});
 
 	it('returns vectors in input order even when the API responds out of order', async () => {
-		const fetchMock = vi.fn().mockResolvedValue(voyageOk([[1, 2], [3, 4]], true));
+		const fetchMock = vi.fn().mockResolvedValue(
+			voyageOk(
+				[
+					[1, 2],
+					[3, 4],
+				],
+				true,
+			),
+		);
 		vi.stubGlobal('fetch', fetchMock);
 		const result = await embedTexts(env, ['a', 'b'], 'query');
-		expect(result).toEqual({ success: true, data: [[1, 2], [3, 4]] });
+		expect(result).toEqual({
+			success: true,
+			data: [
+				[1, 2],
+				[3, 4],
+			],
+		});
 		const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
 		expect(body).toMatchObject({ model: 'voyage-3.5-lite', input: ['a', 'b'], input_type: 'query' });
 	});
 
 	it('chunks past the 128-text request cap', async () => {
-		const fetchMock = vi
-			.fn()
-			.mockImplementation(async (_url, init: RequestInit) => {
-				const { input } = JSON.parse(init.body as string) as { input: string[] };
-				return voyageOk(input.map((_, i) => [i]));
-			});
+		const fetchMock = vi.fn().mockImplementation(async (_url, init: RequestInit) => {
+			const { input } = JSON.parse(init.body as string) as { input: string[] };
+			return voyageOk(input.map((_, i) => [i]));
+		});
 		vi.stubGlobal('fetch', fetchMock);
 		const texts = Array.from({ length: 130 }, (_, i) => `text-${i}`);
 		const result = await embedTexts(env, texts, 'document');
@@ -98,7 +110,7 @@ describe('embedTexts', () => {
 	});
 
 	it('surfaces an HTTP error as a failed result', async () => {
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429 } as Response));
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429 }));
 		const result = await embedTexts(env, ['a'], 'document');
 		expect(result).toEqual({ success: false, error: 'voyage responded 429' });
 	});

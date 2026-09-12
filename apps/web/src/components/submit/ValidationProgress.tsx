@@ -47,7 +47,7 @@ export default function ValidationProgress({ submissionId }: { submissionId: num
 				setState((s) => ({ ...s, stopped: 'exhausted' }));
 				return;
 			}
-			timer = setTimeout(poll, POLL_MS);
+			timer = setTimeout(() => void poll(), POLL_MS);
 		}
 
 		void poll();
@@ -67,9 +67,7 @@ export default function ValidationProgress({ submissionId }: { submissionId: num
 				{rows.map((row) => (
 					<li key={row.key} className="flex items-center gap-2.5 text-[13px]">
 						<StepIcon state={row.state} />
-						<span className={row.state === 'pending' ? 'text-faint' : 'text-muted'}>
-							{row.label}
-						</span>
+						<span className={row.state === 'pending' ? 'text-faint' : 'text-muted'}>{row.label}</span>
 					</li>
 				))}
 			</ul>
@@ -83,11 +81,7 @@ function Outcome({ validation, stopped, submissionId }: PanelState & { submissio
 		return <p className="mt-3 text-[13px] text-fail">Can't reach the API - is it running?</p>;
 	}
 	if (stopped === 'exhausted') {
-		return (
-			<p className="mt-3 text-[13px] text-muted">
-				Still running - check back later for the result.
-			</p>
-		);
+		return <p className="mt-3 text-[13px] text-muted">Still running - check back later for the result.</p>;
 	}
 	if (stopped !== 'terminal' || !validation) {
 		return null;
@@ -95,8 +89,7 @@ function Outcome({ validation, stopped, submissionId }: PanelState & { submissio
 	if (validation.job?.state === 'error') {
 		return (
 			<p className="mt-3 text-[13px] text-fail">
-				Validation hit a problem: {validation.job.error ?? 'unknown error'}. Your draft is safe -
-				try again later.
+				Validation hit a problem: {validation.job.error ?? 'unknown error'}. Your draft is safe - try again later.
 			</p>
 		);
 	}
@@ -149,9 +142,7 @@ function PublishButton({ submissionId }: { submissionId: number }) {
 			>
 				{state.phase === 'publishing' ? 'Publishing...' : 'Publish skill'}
 			</button>
-			{state.phase === 'idle' && state.error && (
-				<p className="mt-2 text-[13px] text-fail">{state.error}</p>
-			)}
+			{state.phase === 'idle' && state.error && <p className="mt-2 text-[13px] text-fail">{state.error}</p>}
 		</div>
 	);
 }
@@ -246,13 +237,7 @@ function StepIcon({ state }: { state: ProgressStepState }) {
 		case 'warn':
 			return (
 				<svg viewBox="0 0 14 14" className={`${base} text-warn`} aria-hidden="true">
-					<path
-						d="M7 2.2 12.6 11.8H1.4Z"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.4"
-						strokeLinejoin="round"
-					/>
+					<path d="M7 2.2 12.6 11.8H1.4Z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
 					<path d="M7 6v2.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
 					<circle cx="7" cy="10.4" r="0.7" fill="currentColor" />
 				</svg>
@@ -260,12 +245,7 @@ function StepIcon({ state }: { state: ProgressStepState }) {
 		case 'fail':
 			return (
 				<svg viewBox="0 0 14 14" className={`${base} text-fail`} aria-hidden="true">
-					<path
-						d="m4 4 6 6M10 4l-6 6"
-						stroke="currentColor"
-						strokeWidth="1.8"
-						strokeLinecap="round"
-					/>
+					<path d="m4 4 6 6M10 4l-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
 				</svg>
 			);
 	}

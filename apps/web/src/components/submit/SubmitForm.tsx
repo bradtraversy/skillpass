@@ -4,10 +4,7 @@ import { getMe, signInUrl, submitGithubUrl, submitZip } from '../../lib/api';
 import { detectionSummary } from '../../lib/detection-summary';
 import ValidationProgress from './ValidationProgress';
 
-type AuthState =
-	| { state: 'checking' }
-	| { state: 'signed-out' }
-	| { state: 'signed-in'; user: PublicUser };
+type AuthState = { state: 'checking' } | { state: 'signed-out' } | { state: 'signed-in'; user: PublicUser };
 
 type Mode = 'url' | 'zip';
 
@@ -21,9 +18,7 @@ export default function SubmitForm() {
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		getMe().then((res) =>
-			setAuth(res.success ? { state: 'signed-in', user: res.data } : { state: 'signed-out' }),
-		);
+		void getMe().then((res) => setAuth(res.success ? { state: 'signed-in', user: res.data } : { state: 'signed-out' }));
 	}, []);
 
 	function switchMode(next: Mode) {
@@ -43,16 +38,13 @@ export default function SubmitForm() {
 				return;
 			}
 			if (file.size > MAX_ZIP_BYTES) {
-				setError(
-					`"${file.name}" is over the ${MAX_ZIP_BYTES / 1024 / 1024} MB zip limit - nothing was uploaded`,
-				);
+				setError(`"${file.name}" is over the ${MAX_ZIP_BYTES / 1024 / 1024} MB zip limit - nothing was uploaded`);
 				return;
 			}
 		}
 
 		setSubmitting(true);
-		const res =
-			mode === 'url' ? await submitGithubUrl(url.trim()) : await submitZip(file as File);
+		const res = mode === 'url' ? await submitGithubUrl(url.trim()) : await submitZip(file as File);
 		setSubmitting(false);
 		if (res.success) {
 			setResult(res.data);
@@ -72,8 +64,8 @@ export default function SubmitForm() {
 			<div className="mt-10 rounded-lg border border-border bg-surface p-8 text-center">
 				<h2 className="font-semibold">Sign in to submit</h2>
 				<p className="mx-auto mt-2 max-w-[400px] text-[13.5px] text-muted">
-					Submissions are tied to your GitHub account. You can submit repositories you own, or
-					org repositories where your membership is public.
+					Submissions are tied to your GitHub account. You can submit repositories you own, or org repositories where
+					your membership is public.
 				</p>
 				<a
 					href={signInUrl()}
@@ -128,8 +120,8 @@ export default function SubmitForm() {
 							<SubmitButton submitting={submitting} label="Pinning..." />
 						</div>
 						<p className="mt-2 text-[12px] text-faint">
-							The whole repo, or one skill inside it via a /tree/branch/folder URL. The commit is
-							pinned and the source snapshotted before anything else happens.
+							The whole repo, or one skill inside it via a /tree/branch/folder URL. The commit is pinned and the source
+							snapshotted before anything else happens.
 						</p>
 					</>
 				) : (
@@ -157,8 +149,8 @@ export default function SubmitForm() {
 							<SubmitButton submitting={submitting} label="Uploading..." />
 						</div>
 						<p className="mt-2 text-[12px] text-faint">
-							For skills not hosted on GitHub. Max {MAX_ZIP_BYTES / 1024 / 1024} MB. You must own
-							or have permission to share what you upload.
+							For skills not hosted on GitHub. Max {MAX_ZIP_BYTES / 1024 / 1024} MB. You must own or have permission to
+							share what you upload.
 						</p>
 					</>
 				)}

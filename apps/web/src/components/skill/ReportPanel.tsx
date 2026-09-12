@@ -37,9 +37,7 @@ export default function ReportPanel({ slug, onClose }: { slug: string; onClose: 
 	return (
 		<div className="mt-[12px] rounded-md border border-border bg-surface">
 			<div className="flex items-center justify-between border-b border-dashed border-border-2 px-[16px] py-[10px]">
-				<span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-					Report this skill
-				</span>
+				<span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Report this skill</span>
 				<button
 					type="button"
 					onClick={onClose}
@@ -51,9 +49,7 @@ export default function ReportPanel({ slug, onClose }: { slug: string; onClose: 
 			</div>
 
 			<div className="px-[16px] py-[14px]">
-				{state.phase === 'checking' && (
-					<p className="text-[12.5px] text-muted">Checking your session...</p>
-				)}
+				{state.phase === 'checking' && <p className="text-[12.5px] text-muted">Checking your session...</p>}
 
 				{state.phase === 'signedout' && (
 					<p className="text-[12.5px] text-muted">

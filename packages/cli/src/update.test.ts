@@ -78,7 +78,7 @@ function stubFetch(overrides: Record<string, unknown> = {}) {
 			return new Response(JSON.stringify({ success: true, data: match[1] }), { status: 200 });
 		}
 		if (url.includes('/download')) {
-			return new Response(NEW_ZIP.slice().buffer as ArrayBuffer, { status: 200 });
+			return new Response(NEW_ZIP.slice().buffer, { status: 200 });
 		}
 		if (url.endsWith('/2.0.0/preflight')) {
 			return new Response(JSON.stringify({ success: true, data: preflight('2.0.0') }), { status: 200 });
@@ -182,7 +182,7 @@ describe('runUpdate', () => {
 		const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
 			const url = String(input);
 			if (url.includes('/download')) {
-				return new Response(oldZip.slice().buffer as ArrayBuffer, { status: 200 });
+				return new Response(oldZip.slice().buffer, { status: 200 });
 			}
 			if (url.endsWith('/1.0.0/preflight') || url.endsWith('/2.0.0/preflight')) {
 				const version = url.includes('/1.0.0/') ? '1.0.0' : '2.0.0';
@@ -254,7 +254,7 @@ describe('runUpdate', () => {
 		const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
 			const url = String(input);
 			if (url.includes('/download')) {
-				return new Response(newZip.slice().buffer as ArrayBuffer, { status: 200 });
+				return new Response(newZip.slice().buffer, { status: 200 });
 			}
 			if (url.endsWith('/preflight')) {
 				const version = url.includes('/1.0.0/') ? '1.0.0' : '2.0.0';

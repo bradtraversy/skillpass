@@ -187,9 +187,7 @@ describe('GET /admin/queue', () => {
 				reporter: { username: 'reporter' },
 			},
 		]);
-		expect(queue.failedSubmissions[0].report?.failures).toEqual([
-			{ code: 'secret', message: 'hardcoded token' },
-		]);
+		expect(queue.failedSubmissions[0].report?.failures).toEqual([{ code: 'secret', message: 'hardcoded token' }]);
 		expect(queue.flaggedSkills).toEqual([
 			{ slug: 'flagged-one', name: 'Flagged One', maintainer: { username: 'owner' } },
 		]);
@@ -259,11 +257,7 @@ describe('POST /admin/reports/:id/resolve', () => {
 		const body = (await res.json()) as { data: unknown };
 		expect(adminAbuseReportSchema.parse(body.data).status).toBe('actioned');
 		expect(vi.mocked(awardReputation)).toHaveBeenCalledTimes(1);
-		expect(vi.mocked(awardReputation)).toHaveBeenCalledWith(
-			expect.anything(),
-			MAINTAINER_ID,
-			'report_actioned',
-		);
+		expect(vi.mocked(awardReputation)).toHaveBeenCalledWith(expect.anything(), MAINTAINER_ID, 'report_actioned');
 		expect(vi.mocked(setAbuseReportStatus)).toHaveBeenCalledWith(expect.anything(), 1, 'actioned');
 	});
 
@@ -383,7 +377,12 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 
 	it('403s a non-admin, changing nothing', async () => {
 		vi.mocked(findById).mockResolvedValue(maintainer);
-		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(maintainer.id, env.SESSION_SECRET));
+		const res = await curate(
+			'feature',
+			'bad-skill',
+			{ value: true },
+			await sessionCookie(maintainer.id, env.SESSION_SECRET),
+		);
 		expect(res.status).toBe(403);
 		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
 	});
@@ -391,7 +390,12 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 	it('features a published skill', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(publishedSkill);
-		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(admin.id, env.SESSION_SECRET));
+		const res = await curate(
+			'feature',
+			'bad-skill',
+			{ value: true },
+			await sessionCookie(admin.id, env.SESSION_SECRET),
+		);
 		expect(res.status).toBe(200);
 		expect((await res.json()).data).toEqual({ slug: 'bad-skill', featured: true });
 		expect(vi.mocked(setSkillCuration)).toHaveBeenCalledWith(expect.anything(), 10, { featured: true });
@@ -400,7 +404,12 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 	it('verifies, and can unset, a published skill', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue(publishedSkill);
-		const res = await curate('verify', 'bad-skill', { value: false }, await sessionCookie(admin.id, env.SESSION_SECRET));
+		const res = await curate(
+			'verify',
+			'bad-skill',
+			{ value: false },
+			await sessionCookie(admin.id, env.SESSION_SECRET),
+		);
 		expect(res.status).toBe(200);
 		expect((await res.json()).data).toEqual({ slug: 'bad-skill', verified: false });
 		expect(vi.mocked(setSkillCuration)).toHaveBeenCalledWith(expect.anything(), 10, { verified: false });
@@ -409,7 +418,12 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 	it('409s a skill that is not published', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
 		vi.mocked(findSkillBySlug).mockResolvedValue({ ...publishedSkill, status: 'flagged' });
-		const res = await curate('feature', 'bad-skill', { value: true }, await sessionCookie(admin.id, env.SESSION_SECRET));
+		const res = await curate(
+			'feature',
+			'bad-skill',
+			{ value: true },
+			await sessionCookie(admin.id, env.SESSION_SECRET),
+		);
 		expect(res.status).toBe(409);
 		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
 	});
@@ -423,7 +437,12 @@ describe('POST /admin/skills/:slug/{feature,verify}', () => {
 
 	it('400s a non-boolean value, without a lookup', async () => {
 		vi.mocked(findById).mockResolvedValue(admin);
-		const res = await curate('feature', 'bad-skill', { value: 'yes' }, await sessionCookie(admin.id, env.SESSION_SECRET));
+		const res = await curate(
+			'feature',
+			'bad-skill',
+			{ value: 'yes' },
+			await sessionCookie(admin.id, env.SESSION_SECRET),
+		);
 		expect(res.status).toBe(400);
 		expect(vi.mocked(setSkillCuration)).not.toHaveBeenCalled();
 	});

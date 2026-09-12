@@ -49,15 +49,11 @@ export function extractZip(bytes: Uint8Array): SourceResult<PackageFile[]> {
 			throw new ZipReject(sourceError('too-large', `package exceeds ${MAX_FILES} files`));
 		}
 		if (info.originalSize > MAX_FILE_BYTES) {
-			throw new ZipReject(
-				sourceError('too-large', `"${info.name}" exceeds ${MAX_FILE_BYTES / 1024 / 1024} MB`),
-			);
+			throw new ZipReject(sourceError('too-large', `"${info.name}" exceeds ${MAX_FILE_BYTES / 1024 / 1024} MB`));
 		}
 		declaredTotal += info.originalSize;
 		if (declaredTotal > MAX_TOTAL_BYTES) {
-			throw new ZipReject(
-				sourceError('too-large', `package exceeds ${MAX_TOTAL_BYTES / 1024 / 1024} MB total`),
-			);
+			throw new ZipReject(sourceError('too-large', `package exceeds ${MAX_TOTAL_BYTES / 1024 / 1024} MB total`));
 		}
 		return true;
 	};

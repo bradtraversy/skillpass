@@ -25,9 +25,7 @@ export const API_URL: string = import.meta.env.PUBLIC_API_URL ?? 'http://localho
 // The API's envelope, with the HTTP status attached to failures so islands
 // can branch on it (404 vs outage) without matching error copy. A network
 // failure has no response, so status stays undefined.
-export type ApiResult<T> =
-	| { success: true; data: T }
-	| { success: false; error: string; status?: number };
+export type ApiResult<T> = { success: true; data: T } | { success: false; error: string; status?: number };
 
 async function request<T>(path: string, init?: RequestInit): Promise<ApiResult<T>> {
 	let res: Response;
@@ -70,19 +68,12 @@ export function searchSkills(q: string): Promise<ApiResult<PublicSkillSummary[]>
 	return request(`/skills/search?q=${encodeURIComponent(q)}`);
 }
 
-export function getSkill(
-	slug: string,
-	version?: string,
-	init?: RequestInit,
-): Promise<ApiResult<PublicSkillDetail>> {
+export function getSkill(slug: string, version?: string, init?: RequestInit): Promise<ApiResult<PublicSkillDetail>> {
 	const base = `/skills/${encodeURIComponent(slug)}`;
 	return request(version ? `${base}/${encodeURIComponent(version)}` : base, init);
 }
 
-export function getSkillSource(
-	slug: string,
-	version: string,
-): Promise<ApiResult<PublicSkillSource>> {
+export function getSkillSource(slug: string, version: string): Promise<ApiResult<PublicSkillSource>> {
 	return request(`/skills/${encodeURIComponent(slug)}/${encodeURIComponent(version)}/source`);
 }
 
@@ -157,10 +148,7 @@ export function getSkillHistory(slug: string): Promise<ApiResult<AdminVersionHis
 	return request(`/admin/skills/${encodeURIComponent(slug)}/history`);
 }
 
-export function resolveReport(
-	id: number,
-	status: 'reviewed' | 'actioned',
-): Promise<ApiResult<AdminAbuseReport>> {
+export function resolveReport(id: number, status: 'reviewed' | 'actioned'): Promise<ApiResult<AdminAbuseReport>> {
 	return request(`/admin/reports/${id}/resolve`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -176,10 +164,7 @@ export function unflagSkill(slug: string): Promise<ApiResult<{ slug: string; sta
 	return request(`/admin/skills/${encodeURIComponent(slug)}/unflag`, { method: 'POST' });
 }
 
-export function setFeatured(
-	slug: string,
-	value: boolean,
-): Promise<ApiResult<{ slug: string; featured: boolean }>> {
+export function setFeatured(slug: string, value: boolean): Promise<ApiResult<{ slug: string; featured: boolean }>> {
 	return request(`/admin/skills/${encodeURIComponent(slug)}/feature`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -187,10 +172,7 @@ export function setFeatured(
 	});
 }
 
-export function setVerified(
-	slug: string,
-	value: boolean,
-): Promise<ApiResult<{ slug: string; verified: boolean }>> {
+export function setVerified(slug: string, value: boolean): Promise<ApiResult<{ slug: string; verified: boolean }>> {
 	return request(`/admin/skills/${encodeURIComponent(slug)}/verify`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },

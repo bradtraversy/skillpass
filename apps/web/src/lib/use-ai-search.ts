@@ -33,9 +33,7 @@ export function useAiSearch() {
 					: {
 							phase: 'error',
 							message:
-								res.status === 429
-									? 'Slow down a moment, then try again.'
-									: 'AI search is unavailable right now.',
+								res.status === 429 ? 'Slow down a moment, then try again.' : 'AI search is unavailable right now.',
 						},
 			);
 		} finally {

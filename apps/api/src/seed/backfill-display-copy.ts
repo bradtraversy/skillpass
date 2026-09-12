@@ -5,7 +5,6 @@ import { generateDisplayCopy } from '../review/display-copy';
 import { runBackfill } from './runner';
 
 runBackfill(import.meta.url, async (env, db) => {
-
 	if (!env.ANTHROPIC_API_KEY) {
 		console.log('ANTHROPIC_API_KEY is not set; nothing to generate.');
 		return;
@@ -16,12 +15,7 @@ runBackfill(import.meta.url, async (env, db) => {
 		db
 			.select({ id: skills.id, slug: skills.slug, name: skills.name, summary: skills.summary })
 			.from(skills)
-			.where(
-				and(
-					eq(skills.status, 'published'),
-					or(isNull(skills.displayName), isNull(skills.tagline)),
-				),
-			),
+			.where(and(eq(skills.status, 'published'), or(isNull(skills.displayName), isNull(skills.tagline)))),
 	]);
 
 	console.log(

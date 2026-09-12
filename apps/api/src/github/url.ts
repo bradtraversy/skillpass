@@ -19,8 +19,7 @@ export function packageNameFor(target: RepoTarget): string {
 	return segments[segments.length - 1];
 }
 
-const BAD_URL_HINT =
-	'expected https://github.com/{owner}/{repo}, optionally with /tree/{branch}[/{subpath}]';
+const BAD_URL_HINT = 'expected https://github.com/{owner}/{repo}, optionally with /tree/{branch}[/{subpath}]';
 
 // Branch names containing "/" mis-split into ref + subpath here; resolving such a
 // ref then 404s. Accepted v1 limitation - disambiguating requires extra API calls.

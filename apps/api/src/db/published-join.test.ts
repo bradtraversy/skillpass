@@ -28,7 +28,11 @@ describe('joinPublished', () => {
 
 	it('works from another table that joins to skills first', () => {
 		const { sql } = joinPublished(
-			db.select(PUBLISHED_SELECT).from(skillEmbeddings).innerJoin(skills, eq(skillEmbeddings.skillId, skills.id)).$dynamic(),
+			db
+				.select(PUBLISHED_SELECT)
+				.from(skillEmbeddings)
+				.innerJoin(skills, eq(skillEmbeddings.skillId, skills.id))
+				.$dynamic(),
 		).toSQL();
 		expect(sql).toMatch(/from "skill_embeddings" inner join "skills"/);
 		expect(sql).toContain('inner join "skill_passports"');

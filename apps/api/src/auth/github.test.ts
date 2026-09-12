@@ -7,10 +7,7 @@ function mockFetch(response: { ok?: boolean; status?: number; json?: unknown; re
 		return Promise.resolve({
 			ok: response.ok ?? true,
 			status: response.status ?? 200,
-			json: () =>
-				response.json instanceof Error
-					? Promise.reject(response.json)
-					: Promise.resolve(response.json),
+			json: () => (response.json instanceof Error ? Promise.reject(response.json) : Promise.resolve(response.json)),
 		});
 	});
 	vi.stubGlobal('fetch', fn);

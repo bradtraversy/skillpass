@@ -2,12 +2,7 @@ import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import { parseResolveReportInput, type AdminAbuseReport, type AdminQueue } from 'skill-schema';
 import { requireAuth, requireRole, type AuthVariables } from '../auth/middleware';
-import {
-	adminAbuseReport,
-	findAdminReportById,
-	listOpenAbuseReports,
-	setAbuseReportStatus,
-} from '../db/abuse';
+import { adminAbuseReport, findAdminReportById, listOpenAbuseReports, setAbuseReportStatus } from '../db/abuse';
 import type { Db } from '../db/client';
 import {
 	adminSkillRef,

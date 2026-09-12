@@ -19,9 +19,7 @@ import Pagination from './Pagination';
 import SearchBox, { type SearchMode } from './SearchBox';
 
 type LoadState =
-	| { phase: 'loading' }
-	| { phase: 'error'; message: string }
-	| { phase: 'ready'; skills: PublicSkillSummary[] };
+	{ phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready'; skills: PublicSkillSummary[] };
 
 const SIDEBAR_KEY = 'skillpass:filters-open';
 const DESKTOP = '(min-width: 768px)';

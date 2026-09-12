@@ -8,53 +8,52 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 	description="How SkillPass validates skills: the pipeline, the permission taxonomy, risk levels, and what passes, warns, or fails a submission."
 >
 	<p>
-		Every submission is validated before it can be listed, and every published version carries the
-		result forever in its Skill Passport. This page explains what the checks mean and what they do
-		not.
+		Every submission is validated before it can be listed, and every published version carries the result forever in its
+		Skill Passport. This page explains what the checks mean and what they do not.
 	</p>
 
 	<h2>How validation works</h2>
 	<p>
-		The validator runs against the pinned snapshot - the exact commit that was submitted, never a
-		branch. It parses the manifest (explicit <code>skill.json</code> or inferred from
-		<code>SKILL.md</code> layouts), reads every file, detects the permissions the instructions
-		actually use, and applies rules for risky patterns: leaked credentials, prompt-injection
-		markers, dangerous commands. An AI review then reads the skill the way an agent would and
-		writes a plain-English account of what it does.
+		The validator runs against the pinned snapshot - the exact commit that was submitted, never a branch. It parses the
+		manifest (explicit <code>skill.json</code> or inferred from
+		<code>SKILL.md</code> layouts), reads every file, detects the permissions the instructions actually use, and applies
+		rules for risky patterns: leaked credentials, prompt-injection markers, dangerous commands. An AI review then reads
+		the skill the way an agent would and writes a plain-English account of what it does.
 	</p>
 
 	<h2>Statuses</h2>
 	<ul>
-		<li><strong>Passed</strong> - no findings that need your attention.</li>
 		<li>
-			<strong>Warning</strong> - the skill listed with advisory findings. Read them; they are
-			"things to pay attention to", not verdicts.
+			<strong>Passed</strong> - no findings that need your attention.
 		</li>
 		<li>
-			<strong>Failed</strong> - a hard failure. The version cannot be published or downloaded. In
-			practice two things hard-fail: a <strong>leaked secret value</strong> in the files, and a
-			package the validator cannot read (no SKILL.md, an invalid skill.json, or no files).
+			<strong>Warning</strong> - the skill listed with advisory findings. Read them; they are "things to pay attention
+			to", not verdicts.
+		</li>
+		<li>
+			<strong>Failed</strong> - a hard failure. The version cannot be published or downloaded. In practice two things
+			hard-fail: a <strong>leaked secret value</strong> in the files, and a package the validator cannot read (no
+			SKILL.md, an invalid skill.json, or no files).
 		</li>
 	</ul>
 	<p>
-		This is deliberate: validation is <strong>advisory, not gatekeeping</strong>. A linter that
-		blocks everything suspicious would just push authors elsewhere; a passport that shows you
-		everything keeps the judgment where it belongs - with you.
+		This is deliberate: validation is <strong>advisory, not gatekeeping</strong>. A linter that blocks everything
+		suspicious would just push authors elsewhere; a passport that shows you everything keeps the judgment where it
+		belongs - with you.
 	</p>
 
 	<h2>Risk levels</h2>
 	<p>
-		Each version gets a <strong>low / medium / high / critical</strong> risk level rolled up from
-		its detected permissions and findings. The CLI stays quiet about low risk and makes anything
-		elevated impossible to miss - a medium-or-higher install asks for explicit confirmation.
+		Each version gets a <strong>low / medium / high / critical</strong> risk level rolled up from its detected
+		permissions and findings. The CLI stays quiet about low risk and makes anything elevated impossible to miss - a
+		medium-or-higher install asks for explicit confirmation.
 	</p>
 
 	<h2>The permission taxonomy</h2>
 	<p>
-		Permissions describe what a skill's instructions ask an agent to do. The validator detects
-		them from the files (a skill also may declare them in its manifest - the passport shows both,
-		and the gap between declared and detected is itself a signal). This table renders from the
-		same definitions the validator uses, so it cannot drift:
+		Permissions describe what a skill's instructions ask an agent to do. The validator detects them from the files (a
+		skill also may declare them in its manifest - the passport shows both, and the gap between declared and detected is
+		itself a signal). This table renders from the same definitions the validator uses, so it cannot drift:
 	</p>
 	<table>
 		<thead>
@@ -66,36 +65,32 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 			</tr>
 		</thead>
 		<tbody>
-			{
-				PERMISSIONS.map((permission) => (
-					<tr>
-						<td>
-							<code>{permission.key}</code>
-						</td>
-						<td>{permission.label}</td>
-						<td>{permission.description}</td>
-						<td>{permission.riskWeight}</td>
-					</tr>
-				))
-			}
+			{PERMISSIONS.map((permission) => (
+				<tr>
+					<td>
+						<code>{permission.key}</code>
+					</td>
+					<td>{permission.label}</td>
+					<td>{permission.description}</td>
+					<td>{permission.riskWeight}</td>
+				</tr>
+			))}
 		</tbody>
 	</table>
 
 	<h2>The AI review</h2>
 	<p>
-		Alongside the rule-based checks, a language model reads the skill's instructions and bundled
-		scripts and answers the question regex cannot: <em>what does this skill actually do?</em> It
-		produces a short summary and a judgment - clear, caution, or concern. The review runs once per
-		source hash and is cached on the immutable passport. Skill content is treated as untrusted
-		data throughout, so instructions inside a skill cannot steer its own review.
+		Alongside the rule-based checks, a language model reads the skill's instructions and bundled scripts and answers the
+		question regex cannot: <em>what does this skill actually do?</em> It produces a short summary and a judgment -
+		clear, caution, or concern. The review runs once per source hash and is cached on the immutable passport. Skill
+		content is treated as untrusted data throughout, so instructions inside a skill cannot steer its own review.
 	</p>
 
 	<h2>Immutability and diffs</h2>
 	<p>
-		A passport never changes after it is generated. A new version of a skill gets a new passport,
-		and the download pre-flight diffs permissions between versions - so when a skill that never
-		touched the network suddenly asks for <code>network.fetch</code>, you see it before anything
-		is installed. The <a href="/docs/cli">CLI's</a> <code>update</code> command shows the same
-		diff against the version you actually have.
+		A passport never changes after it is generated. A new version of a skill gets a new passport, and the download
+		pre-flight diffs permissions between versions - so when a skill that never touched the network suddenly asks for{' '}
+		<code>network.fetch</code>, you see it before anything is installed. The <a href="/docs/cli">CLI's</a>{' '}
+		<code>update</code> command shows the same diff against the version you actually have.
 	</p>
 </DocsShell>

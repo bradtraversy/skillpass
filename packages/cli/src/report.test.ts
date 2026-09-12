@@ -1,8 +1,4 @@
-import {
-	publicPreflightSchema,
-	type PublicPreflight,
-	type PublicSkillDetail,
-} from 'skill-schema';
+import { publicPreflightSchema, type PublicPreflight, type PublicSkillDetail } from 'skill-schema';
 import { describe, expect, it, vi } from 'vitest';
 import { parseSkillRef } from './api';
 import { runReport } from './report';

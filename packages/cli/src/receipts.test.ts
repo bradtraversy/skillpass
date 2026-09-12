@@ -36,10 +36,7 @@ describe('receipts', () => {
 
 	it('filters malformed entries but keeps valid ones', () => {
 		const dir = temp();
-		writeFileSync(
-			join(dir, RECEIPT_FILE),
-			JSON.stringify({ good: receipt, bad: { version: 42 }, worse: 'nope' }),
-		);
+		writeFileSync(join(dir, RECEIPT_FILE), JSON.stringify({ good: receipt, bad: { version: 42 }, worse: 'nope' }));
 		expect(Object.keys(readReceipts(dir))).toEqual(['good']);
 	});
 

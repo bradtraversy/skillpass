@@ -48,12 +48,7 @@ export function resolveTargetArea(target: string, global = false, home?: string)
 	return { ok: true, dir: area.project };
 }
 
-export function resolveTargetDir(
-	target: string,
-	slug: string,
-	global = false,
-	home?: string,
-): ResolvedTarget {
+export function resolveTargetDir(target: string, slug: string, global = false, home?: string): ResolvedTarget {
 	const area = resolveTargetArea(target, global, home);
 	return area.ok ? { ok: true, dir: join(area.dir, slug) } : area;
 }

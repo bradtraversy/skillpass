@@ -227,11 +227,7 @@ describe('GET /skills', () => {
 	});
 
 	describe('GET /skills/search', () => {
-		const aiApp = createApp(
-			loadEnv({ ...RAW_TEST_ENV, VOYAGE_API_KEY: 'vk-test' }),
-			{} as Db,
-			{} as ValidationQueue,
-		);
+		const aiApp = createApp(loadEnv({ ...RAW_TEST_ENV, VOYAGE_API_KEY: 'vk-test' }), {} as Db, {} as ValidationQueue);
 
 		it('embeds the query and returns matches in relevance order', async () => {
 			vi.mocked(embedTexts).mockResolvedValue({ success: true, data: [[0.1, 0.2]] });
@@ -297,9 +293,7 @@ describe('GET /skills', () => {
 	});
 
 	it('passes category through from the skill row', async () => {
-		vi.mocked(listPublishedSkills).mockResolvedValue([
-			{ ...record, skill: { ...skill, category: 'security-review' } },
-		]);
+		vi.mocked(listPublishedSkills).mockResolvedValue([{ ...record, skill: { ...skill, category: 'security-review' } }]);
 		const res = await app.request('/skills');
 		const body = (await res.json()) as { data: { category: string | null }[] };
 		expect(body.data[0].category).toBe('security-review');
@@ -439,11 +433,7 @@ describe('GET /skills/:slug/:version', () => {
 		expect(detail.validationStatus).toBe('warning');
 		expect(detail.riskLevel).toBe('medium');
 		expect(detail.versions).toHaveLength(2);
-		expect(vi.mocked(findVersionWithPassport)).toHaveBeenCalledWith(
-			expect.anything(),
-			1,
-			'2.0.0',
-		);
+		expect(vi.mocked(findVersionWithPassport)).toHaveBeenCalledWith(expect.anything(), 1, '2.0.0');
 	});
 });
 
@@ -475,10 +465,7 @@ describe('GET /skills/:slug/:version/source', () => {
 			sourceHash: 'sha256:abc',
 			files: FILES,
 		});
-		expect(vi.mocked(getSnapshotDocument)).toHaveBeenCalledWith(
-			expect.anything(),
-			'snapshots/abc.json',
-		);
+		expect(vi.mocked(getSnapshotDocument)).toHaveBeenCalledWith(expect.anything(), 'snapshots/abc.json');
 	});
 
 	it('502s when R2 is down', async () => {
@@ -597,9 +584,7 @@ describe('GET /skills/:slug/:version/preflight', () => {
 
 	it('returns a null diff for the first published version', async () => {
 		mockPinned({ version: currentVersion, passport: currentPassport });
-		vi.mocked(listVersionsWithPassports).mockResolvedValue([
-			{ version: currentVersion, passport: currentPassport },
-		]);
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([{ version: currentVersion, passport: currentPassport }]);
 		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
 		const body = (await res.json()) as { data: unknown };
 		expect(publicPreflightSchema.parse(body.data).diff).toBeNull();
@@ -608,9 +593,7 @@ describe('GET /skills/:slug/:version/preflight', () => {
 	it('reports sourceVerified false when the snapshot does not match the pinned hash', async () => {
 		const tampered: SkillVersionRow = { ...currentVersion, sourceHash: 'sha256:pinned-other' };
 		mockPinned({ version: tampered, passport: currentPassport });
-		vi.mocked(listVersionsWithPassports).mockResolvedValue([
-			{ version: tampered, passport: currentPassport },
-		]);
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([{ version: tampered, passport: currentPassport }]);
 		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { data: unknown };
@@ -625,9 +608,7 @@ describe('GET /skills/:slug/:version/preflight', () => {
 			passport: { ...currentPassport.passport, validationStatus: 'failed', riskLevel: 'critical' },
 		};
 		mockPinned({ version: currentVersion, passport: failedPassport });
-		vi.mocked(listVersionsWithPassports).mockResolvedValue([
-			{ version: currentVersion, passport: failedPassport },
-		]);
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([{ version: currentVersion, passport: failedPassport }]);
 		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
 		const body = (await res.json()) as { data: unknown };
 		const preflight = publicPreflightSchema.parse(body.data);
@@ -648,9 +629,7 @@ describe('GET /skills/:slug/:version/preflight', () => {
 
 	it('leaks no internal fields', async () => {
 		mockPinned({ version: currentVersion, passport: currentPassport });
-		vi.mocked(listVersionsWithPassports).mockResolvedValue([
-			{ version: currentVersion, passport: currentPassport },
-		]);
+		vi.mocked(listVersionsWithPassports).mockResolvedValue([{ version: currentVersion, passport: currentPassport }]);
 		const res = await app.request('/skills/smoke-clean/2.0.0/preflight');
 		const text = JSON.stringify(await res.json());
 		expect(text).not.toContain('snapshotKey');
@@ -699,9 +678,7 @@ describe('GET /skills/:slug/:version/download', () => {
 		const res = await app.request('/skills/smoke-clean/1.0.0/download');
 		expect(res.status).toBe(200);
 		expect(res.headers.get('Content-Type')).toBe('application/zip');
-		expect(res.headers.get('Content-Disposition')).toBe(
-			'attachment; filename="smoke-clean-1.0.0.zip"',
-		);
+		expect(res.headers.get('Content-Disposition')).toBe('attachment; filename="smoke-clean-1.0.0.zip"');
 		const unzipped = unzipSync(new Uint8Array(await res.arrayBuffer()));
 		expect(Object.keys(unzipped).sort()).toEqual(['SKILL.md', 'skill.json']);
 		expect(strFromU8(unzipped['SKILL.md'])).toBe('# smoke-clean\n');
@@ -962,10 +939,6 @@ describe('POST /skills/:slug/unlist and /skills/:slug/relist', () => {
 			success: true,
 			data: { slug: 'smoke-clean', status: 'published' },
 		});
-		expect(vi.mocked(setSkillStatus)).toHaveBeenCalledWith(
-			expect.anything(),
-			skill.id,
-			'published',
-		);
+		expect(vi.mocked(setSkillStatus)).toHaveBeenCalledWith(expect.anything(), skill.id, 'published');
 	});
 });

@@ -10,9 +10,7 @@ export interface PackageFile {
 }
 
 export type ManifestState =
-	| { state: 'ok'; data: Manifest; inferred?: boolean }
-	| { state: 'missing' }
-	| { state: 'invalid'; error: string };
+	{ state: 'ok'; data: Manifest; inferred?: boolean } | { state: 'missing' } | { state: 'invalid'; error: string };
 
 export interface SkillEntryFile {
 	skillName: string;
@@ -132,10 +130,7 @@ function readSkillMeta(content: string): { name?: string; description?: string }
 					else if (/^\s/.test(lines[j])) gathered.push(lines[j].trim());
 					else break;
 				}
-				const text =
-					block[1] === '>'
-						? gathered.join(' ').replace(/\s+/g, ' ').trim()
-						: gathered.join('\n').trim();
+				const text = block[1] === '>' ? gathered.join(' ').replace(/\s+/g, ' ').trim() : gathered.join('\n').trim();
 				if (text) out[key] = text;
 			} else {
 				// A plain scalar may continue on indented lines; YAML folds them with spaces.
@@ -158,12 +153,7 @@ const STRUCTURAL_LINE_RE = /^(#|!\[|\[!\[|---$|\*\*\*$|___$)|^<h[1-6][\s>]/i;
 const DESCRIPTION_MAX = 200;
 
 const cleanInline = (line: string): string =>
-	line
-		.replace(HTML_TAG_RE, ' ')
-		.replace(MD_LINK_RE, '$1')
-		.replace(/^>\s?/, '')
-		.replace(/\s+/g, ' ')
-		.trim();
+	line.replace(HTML_TAG_RE, ' ').replace(MD_LINK_RE, '$1').replace(/^>\s?/, '').replace(/\s+/g, ' ').trim();
 
 // Prefer ending on a sentence; otherwise cut on a word and drop a dangling
 // comma so the result never reads as a wrap-truncated fragment.
@@ -265,9 +255,7 @@ function readmeProse(files: PackageFile[]): string | undefined {
 // skill.json. Same-named adapter folders pair into one entry with a codex
 // variant. Returns null when no recognized layout matches.
 function inferNestedManifest(files: PackageFile[], fallbackName: string): Manifest | null {
-	const members = collectMemberFiles(files).sort((a, b) =>
-		a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0,
-	);
+	const members = collectMemberFiles(files).sort((a, b) => (a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0));
 	if (members.length === 0) {
 		return null;
 	}
@@ -275,7 +263,7 @@ function inferNestedManifest(files: PackageFile[], fallbackName: string): Manife
 	const used = new Set<string>();
 	const packTargets = new Set<Target>();
 	const entries: SkillEntry[] = members.map((member) => {
-		const entryPath = member.claudePath ?? member.agentsPath ?? (member.plainPath as string);
+		const entryPath: string = member.claudePath ?? member.agentsPath ?? (member.plainPath as string);
 		const file = files.find((f) => f.path === entryPath) as PackageFile;
 		const meta = readSkillMeta(file.content);
 		// Frontmatter names can collide across folders; folder names can't
@@ -285,19 +273,14 @@ function inferNestedManifest(files: PackageFile[], fallbackName: string): Manife
 		used.add(entryName);
 		const targets: Target[] = member.plainPath
 			? inferTargets(files)
-			: [
-					...(member.claudePath ? (['claude-code'] as const) : []),
-					...(member.agentsPath ? (['codex'] as const) : []),
-				];
+			: [...(member.claudePath ? (['claude-code'] as const) : []), ...(member.agentsPath ? (['codex'] as const) : [])];
 		for (const target of targets) packTargets.add(target);
 		return {
 			name: entryName,
 			...(meta.description ? { description: meta.description } : {}),
 			entry: entryPath,
 			targets,
-			...(member.claudePath && member.agentsPath
-				? { variants: { codex: member.agentsPath } }
-				: {}),
+			...(member.claudePath && member.agentsPath ? { variants: { codex: member.agentsPath } } : {}),
 		};
 	});
 
@@ -340,16 +323,11 @@ function resolveEntries(dir: string, manifest: ManifestState, files: PackageFile
 	]);
 }
 
-export const byPath = (a: PackageFile, b: PackageFile) =>
-	a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
+export const byPath = (a: PackageFile, b: PackageFile) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 
 // Canonical load path for both fs and in-memory sources (API snapshots, feature 6's
 // worker); the flat path sort here defines the file order the source hash is built on.
-export function loadPackageFromFiles(
-	files: PackageFile[],
-	name = 'package',
-	binaries: string[] = [],
-): LoadedPackage {
+export function loadPackageFromFiles(files: PackageFile[], name = 'package', binaries: string[] = []): LoadedPackage {
 	const sorted = [...files].sort(byPath);
 	let manifest = readManifest(sorted);
 	// No skill.json but a SKILL.md is present: infer a manifest so the skill lists.

@@ -1,33 +1,33 @@
 {
-  "name": "apps-web",
-  "type": "module",
-  "version": "0.0.1",
-  "engines": {
-    "node": ">=22.12.0"
-  },
-  "scripts": {
-    "dev": "astro dev",
-    "typecheck": "astro check",
-    "build": "astro check && astro build",
-    "preview": "astro preview",
-    "astro": "astro"
-  },
-  "dependencies": {
-    "@astrojs/node": "^11.0.2",
-    "@astrojs/react": "^6.0.0",
-    "@fontsource-variable/geist": "^5.2.9",
-    "@fontsource-variable/geist-mono": "^5.2.8",
-    "@tailwindcss/vite": "^4.3.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "astro": "^7.0.4",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "skill-schema": "workspace:*",
-    "tailwindcss": "^4.3.2"
-  },
-  "devDependencies": {
-    "@astrojs/check": "^0.9.9",
-    "typescript": "^6.0.3"
-  }
+	"name": "apps-web",
+	"type": "module",
+	"version": "0.0.1",
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"scripts": {
+		"dev": "astro dev",
+		"typecheck": "astro check",
+		"build": "astro check && astro build",
+		"preview": "astro preview",
+		"astro": "astro"
+	},
+	"dependencies": {
+		"@astrojs/node": "^11.0.2",
+		"@astrojs/react": "^6.0.0",
+		"@fontsource-variable/geist": "^5.2.9",
+		"@fontsource-variable/geist-mono": "^5.2.8",
+		"@tailwindcss/vite": "^4.3.2",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"astro": "^7.0.4",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"skill-schema": "workspace:*",
+		"tailwindcss": "^4.3.2"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.9",
+		"typescript": "^6.0.3"
+	}
 }

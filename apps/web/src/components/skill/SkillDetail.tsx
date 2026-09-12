@@ -11,7 +11,6 @@ import SourceView from './SourceView';
 import Stamp from './Stamp';
 import { SECTION_HEADING } from '../../lib/classes';
 
-
 type LoadState =
 	| { phase: 'loading' }
 	| { phase: 'notfound' }
@@ -50,11 +49,7 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 		);
 	}
 	if (load.phase === 'error') {
-		return (
-			<p className="py-16 text-center text-[13px] text-fail">
-				Can't reach the API - is it running?
-			</p>
-		);
+		return <p className="py-16 text-center text-[13px] text-fail">Can't reach the API - is it running?</p>;
 	}
 
 	const { detail } = load;
@@ -76,8 +71,7 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 				<section className="mt-[26px]">
 					<h2 className={SECTION_HEADING}>Skills in this pack</h2>
 					<p className="mb-1 text-[12px] text-faint">
-						{detail.packMembers?.length} skills that install together - the passport above covers
-						the whole pack.
+						{detail.packMembers?.length} skills that install together - the passport above covers the whole pack.
 					</p>
 					<div className="divide-y divide-border">
 						{detail.packMembers?.map((member) => (
@@ -160,16 +154,10 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 						href={`/u/${detail.maintainerInfo.username}`}
 						className="flex items-center gap-[12px] rounded-md hover:bg-surface"
 					>
-						<img
-							src={detail.maintainerInfo.avatarUrl}
-							alt=""
-							className="size-[38px] flex-none rounded-full"
-						/>
+						<img src={detail.maintainerInfo.avatarUrl} alt="" className="size-[38px] flex-none rounded-full" />
 						<div>
 							<div className="font-semibold">{detail.maintainerInfo.username}</div>
-							<div className="mt-[2px] text-[12px] text-faint">
-								{detail.maintainerInfo.displayName}
-							</div>
+							<div className="mt-[2px] text-[12px] text-faint">{detail.maintainerInfo.displayName}</div>
 						</div>
 					</a>
 				)}
@@ -190,8 +178,7 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 			</section>
 
 			<footer className="py-[46px] text-center text-[12.5px] text-faint">
-				Passport is immutable and pinned to source hash{' '}
-				<span className="font-mono">{detail.passport.sourceHash}</span>.
+				Passport is immutable and pinned to source hash <span className="font-mono">{detail.passport.sourceHash}</span>.
 			</footer>
 		</>
 	);

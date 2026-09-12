@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+pnpm-lock.yaml
+apps/api/drizzle/
+blueprint/
+.claude/
+.agents/
+*.md
+packages/validator/fixtures/

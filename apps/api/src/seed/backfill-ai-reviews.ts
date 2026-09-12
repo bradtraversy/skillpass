@@ -5,7 +5,6 @@ import { ensureAiReview } from '../review/ensure';
 import { runBackfill } from './runner';
 
 runBackfill(import.meta.url, async (env, db) => {
-
 	if (!env.ANTHROPIC_API_KEY) {
 		console.log('ANTHROPIC_API_KEY is not set; nothing to generate.');
 		return;

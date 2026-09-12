@@ -86,9 +86,7 @@ describe('ensureAiReview', () => {
 		vi.mocked(findAiReviewByHash).mockResolvedValue(undefined);
 		vi.mocked(reviewSkill).mockRejectedValue(new Error('boom'));
 
-		await expect(
-			ensureAiReview(envWithKey, db, 'sha256:abc', 'snapshots/abc.json', report),
-		).resolves.toBeUndefined();
+		await expect(ensureAiReview(envWithKey, db, 'sha256:abc', 'snapshots/abc.json', report)).resolves.toBeUndefined();
 		expect(upsertAiReview).not.toHaveBeenCalled();
 	});
 

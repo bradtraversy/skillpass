@@ -28,9 +28,7 @@ export default function ListHeader({
 					onClick={() => onTabChange(value)}
 					aria-pressed={tab === value}
 					className={`-mb-px border-b-2 pb-[13px] ${
-						tab === value
-							? 'border-accent font-medium text-text'
-							: 'border-transparent text-muted hover:text-text'
+						tab === value ? 'border-accent font-medium text-text' : 'border-transparent text-muted hover:text-text'
 					}`}
 				>
 					{label}

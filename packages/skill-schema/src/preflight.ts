@@ -9,10 +9,7 @@ export interface PermissionSetDiff {
 }
 
 // Order-stable: added follows current's order, removed follows previous's.
-export function diffPermissions(
-	current: PermissionKey[],
-	previous: PermissionKey[],
-): PermissionSetDiff {
+export function diffPermissions(current: PermissionKey[], previous: PermissionKey[]): PermissionSetDiff {
 	const currentSet = new Set(current);
 	const previousSet = new Set(previous);
 	return {

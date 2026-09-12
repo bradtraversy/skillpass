@@ -9,15 +9,11 @@ describe('embeddingContentHash', () => {
 	});
 
 	it('changes when the input changes', () => {
-		expect(embeddingContentHash('voyage-3.5-lite', 'a')).not.toBe(
-			embeddingContentHash('voyage-3.5-lite', 'b'),
-		);
+		expect(embeddingContentHash('voyage-3.5-lite', 'a')).not.toBe(embeddingContentHash('voyage-3.5-lite', 'b'));
 	});
 
 	it('changes when the model changes, so a model swap re-embeds', () => {
-		expect(embeddingContentHash('voyage-3.5-lite', 'a')).not.toBe(
-			embeddingContentHash('voyage-4', 'a'),
-		);
+		expect(embeddingContentHash('voyage-3.5-lite', 'a')).not.toBe(embeddingContentHash('voyage-4', 'a'));
 	});
 
 	it('does not collide across the model/input boundary', () => {

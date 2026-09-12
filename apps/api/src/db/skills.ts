@@ -15,7 +15,6 @@ import {
 	skillPassports,
 	skills,
 	skillVersions,
-	submissions,
 	users,
 	validationReports,
 	type SkillPassportRow,
@@ -33,23 +32,14 @@ export async function findSkillBySlug(db: Db, slug: string): Promise<SkillRow | 
 	return row;
 }
 
-export async function findVersionBySubmission(
-	db: Db,
-	submissionId: number,
-): Promise<SkillVersionRow | undefined> {
-	const [row] = await db
-		.select()
-		.from(skillVersions)
-		.where(eq(skillVersions.submissionId, submissionId));
+export async function findVersionBySubmission(db: Db, submissionId: number): Promise<SkillVersionRow | undefined> {
+	const [row] = await db.select().from(skillVersions).where(eq(skillVersions.submissionId, submissionId));
 	return row;
 }
 
 // Latest by insert order, not skills.latestVersionId, so a publish that crashed
 // before setLatestVersion still bumps from the newest inserted version.
-export async function findLatestVersionForSkill(
-	db: Db,
-	skillId: number,
-): Promise<SkillVersionRow | undefined> {
+export async function findLatestVersionForSkill(db: Db, skillId: number): Promise<SkillVersionRow | undefined> {
 	const [row] = await db
 		.select()
 		.from(skillVersions)
@@ -64,18 +54,12 @@ export async function createSkill(db: Db, values: NewSkill): Promise<SkillRow> {
 	return row;
 }
 
-export async function createSkillVersion(
-	db: Db,
-	values: NewSkillVersion,
-): Promise<SkillVersionRow> {
+export async function createSkillVersion(db: Db, values: NewSkillVersion): Promise<SkillVersionRow> {
 	const [row] = await db.insert(skillVersions).values(values).returning();
 	return row;
 }
 
-export async function createSkillPassport(
-	db: Db,
-	values: NewSkillPassport,
-): Promise<SkillPassportRow> {
+export async function createSkillPassport(db: Db, values: NewSkillPassport): Promise<SkillPassportRow> {
 	const [row] = await db.insert(skillPassports).values(values).returning();
 	return row;
 }
@@ -114,17 +98,14 @@ export function joinPublished<T extends PgSelect>(qb: T, extra?: SQL) {
 // curated order travels as row order instead of a new key.
 export async function listPublishedSkills(db: Db): Promise<PublishedSkillRecord[]> {
 	return joinPublished(db.select(PUBLISHED_SELECT).from(skills).$dynamic()).orderBy(
-			desc(skills.featured),
-			asc(skills.featuredRank),
-			desc(skillVersions.publishedAt),
-			desc(skills.id),
-		);
+		desc(skills.featured),
+		asc(skills.featuredRank),
+		desc(skillVersions.publishedAt),
+		desc(skills.id),
+	);
 }
 
-export async function listPublishedSkillsByMaintainer(
-	db: Db,
-	maintainerId: number,
-): Promise<PublishedSkillRecord[]> {
+export async function listPublishedSkillsByMaintainer(db: Db, maintainerId: number): Promise<PublishedSkillRecord[]> {
 	return joinPublished(
 		db.select(PUBLISHED_SELECT).from(skills).$dynamic(),
 		eq(skills.maintainerId, maintainerId),
@@ -139,10 +120,7 @@ export interface MaintainerSkillRecord {
 	passport: SkillPassportRow | null;
 }
 
-export async function listSkillsByMaintainer(
-	db: Db,
-	maintainerId: number,
-): Promise<MaintainerSkillRecord[]> {
+export async function listSkillsByMaintainer(db: Db, maintainerId: number): Promise<MaintainerSkillRecord[]> {
 	return db
 		.select({ skill: skills, version: skillVersions, passport: skillPassports })
 		.from(skills)
@@ -164,10 +142,7 @@ export function maintainerSkill(r: MaintainerSkillRecord): MaintainerSkill {
 	};
 }
 
-export async function findPublishedSkillBySlug(
-	db: Db,
-	slug: string,
-): Promise<PublishedSkillRecord | undefined> {
+export async function findPublishedSkillBySlug(db: Db, slug: string): Promise<PublishedSkillRecord | undefined> {
 	const [row] = await joinPublished(db.select(PUBLISHED_SELECT).from(skills).$dynamic(), eq(skills.slug, slug));
 	return row;
 }
@@ -217,10 +192,7 @@ export async function setSkillCuration(
 
 // Every version's validation verdict, newest first. A skill_version only exists
 // after a passed publish, so its submission always has a report - inner join.
-export async function listSkillValidationHistory(
-	db: Db,
-	skillId: number,
-): Promise<AdminVersionHistory[]> {
+export async function listSkillValidationHistory(db: Db, skillId: number): Promise<AdminVersionHistory[]> {
 	const rows = await db
 		.select({ version: skillVersions, report: validationReports })
 		.from(skillVersions)
@@ -257,10 +229,7 @@ export async function findVersionWithPassport(
 	return row;
 }
 
-export async function listVersionsWithPassports(
-	db: Db,
-	skillId: number,
-): Promise<VersionWithPassport[]> {
+export async function listVersionsWithPassports(db: Db, skillId: number): Promise<VersionWithPassport[]> {
 	return db
 		.select({ version: skillVersions, passport: skillPassports })
 		.from(skillVersions)
@@ -332,11 +301,7 @@ export async function setLatestVersion(
 		.where(eq(skills.id, skillId));
 }
 
-export async function setSkillCategory(
-	db: Db,
-	skillId: number,
-	category: CategorySlug,
-): Promise<void> {
+export async function setSkillCategory(db: Db, skillId: number, category: CategorySlug): Promise<void> {
 	await db.update(skills).set({ category }).where(eq(skills.id, skillId));
 }
 
@@ -348,10 +313,6 @@ export async function setSkillDisplayCopy(
 	await db.update(skills).set(copy).where(eq(skills.id, skillId));
 }
 
-export async function setSkillIntegrations(
-	db: Db,
-	skillId: number,
-	integrations: IntegrationSlug[],
-): Promise<void> {
+export async function setSkillIntegrations(db: Db, skillId: number, integrations: IntegrationSlug[]): Promise<void> {
 	await db.update(skills).set({ integrations }).where(eq(skills.id, skillId));
 }

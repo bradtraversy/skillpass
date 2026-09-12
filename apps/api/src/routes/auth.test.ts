@@ -58,9 +58,7 @@ async function happyCallback(): Promise<Response> {
 
 function sessionCookieFrom(res: Response): string {
 	const setCookies = res.headers.getSetCookie();
-	const session = setCookies.find(
-		(c) => c.startsWith('skillpass_session=') && !c.includes('Max-Age=0'),
-	);
+	const session = setCookies.find((c) => c.startsWith('skillpass_session=') && !c.includes('Max-Age=0'));
 	expect(session).toBeDefined();
 	return (session as string).split(';')[0];
 }

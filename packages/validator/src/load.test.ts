@@ -153,15 +153,13 @@ describe('loadPackageFromFiles', () => {
 		);
 		if (pkg.manifest.state !== 'ok') throw new Error('expected ok');
 		expect(pkg.manifest.data.description).toBe('A pack of 2 skills');
-		expect(pkg.manifest.data.skills?.map((s) => s.entry)).toEqual([
-			'skills/one/SKILL.md',
-			'skills/two/SKILL.md',
-		]);
+		expect(pkg.manifest.data.skills?.map((s) => s.entry)).toEqual(['skills/one/SKILL.md', 'skills/two/SKILL.md']);
 		expect(pkg.manifest.data.skills?.every((s) => !s.variants)).toBe(true);
 	});
 
 	it('skips README HTML and badge lines when inferring the pack description', () => {
-		const readme = '<p align="center">\n<img src="logo.png" />\n</p>\n\n# Pack\n\n[![CI](x)](y)\n\nThe real first prose line.\n';
+		const readme =
+			'<p align="center">\n<img src="logo.png" />\n</p>\n\n# Pack\n\n[![CI](x)](y)\n\nThe real first prose line.\n';
 		const pkg = loadPackageFromFiles(
 			[
 				{ path: 'skills/one/SKILL.md', content: skillMd('one') },
@@ -196,9 +194,7 @@ describe('loadPackageFromFiles', () => {
 		expect(pkg.manifest.data.name).toBe('lonely');
 		expect(pkg.manifest.data.description).toBe('Does lonely things.');
 		expect(pkg.manifest.data.skills).toHaveLength(1);
-		expect(pkg.entries).toEqual([
-			{ skillName: 'lonely', path: '.claude/skills/lonely/SKILL.md', exists: true },
-		]);
+		expect(pkg.entries).toEqual([{ skillName: 'lonely', path: '.claude/skills/lonely/SKILL.md', exists: true }]);
 	});
 
 	it('falls back to folder names when frontmatter names collide', () => {
@@ -275,9 +271,11 @@ describe('prose description inference', () => {
 	});
 
 	it('joins a wrapped paragraph instead of stopping at the first line', () => {
-		expect(packDescription('# Pack\n\nYou provide two short planning docs.\nThe AI turns them into context.\n\nSecond paragraph.\n')).toBe(
-			'You provide two short planning docs. The AI turns them into context.',
-		);
+		expect(
+			packDescription(
+				'# Pack\n\nYou provide two short planning docs.\nThe AI turns them into context.\n\nSecond paragraph.\n',
+			),
+		).toBe('You provide two short planning docs. The AI turns them into context.');
 	});
 
 	it('strips a blockquote marker and markdown link syntax', () => {
@@ -329,11 +327,7 @@ describe('frontmatter description parsing', () => {
 			'name: x\ndescription: >\n  Wycheproof provides test vectors.\n  Use when testing crypto code.\n',
 			'Wycheproof provides test vectors. Use when testing crypto code.',
 		],
-		[
-			'a literal (|) block scalar',
-			'name: x\ndescription: |\n  Line one.\n  Line two.\n',
-			'Line one.\nLine two.',
-		],
+		['a literal (|) block scalar', 'name: x\ndescription: |\n  Line one.\n  Line two.\n', 'Line one.\nLine two.'],
 	])('reads %s', (_label, content, expected) => {
 		expect(describeFor(`---\n${content}---\n\n# Heading\n`)).toBe(expected);
 	});
@@ -374,7 +368,10 @@ describe('loadPackage with binary files', () => {
 		try {
 			writeFileSync(join(dir, 'SKILL.md'), '---\nname: demo\ndescription: Demo.\n---\n');
 			mkdirSync(join(dir, 'assets'));
-			writeFileSync(join(dir, 'assets', 'logo.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]));
+			writeFileSync(
+				join(dir, 'assets', 'logo.png'),
+				Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]),
+			);
 			const pkg = loadPackage(dir);
 			expect(pkg.files.map((f) => f.path)).toEqual(['SKILL.md']);
 			expect(pkg.binaries).toEqual(['assets/logo.png']);

@@ -45,14 +45,12 @@ export const INTEGRATIONS: Integration[] = [
 	{
 		slug: 'obsidian',
 		label: 'Obsidian',
-		description:
-			'Reads or writes Obsidian vaults, notes, canvases, or plugins, or drives the Obsidian app or CLI.',
+		description: 'Reads or writes Obsidian vaults, notes, canvases, or plugins, or drives the Obsidian app or CLI.',
 	},
 	{
 		slug: 'office-files',
 		label: 'Office files',
-		description:
-			'Creates or edits Word (.docx), PowerPoint (.pptx), or Excel/spreadsheet (.xlsx, .csv) documents.',
+		description: 'Creates or edits Word (.docx), PowerPoint (.pptx), or Excel/spreadsheet (.xlsx, .csv) documents.',
 	},
 	{
 		slug: 'pdf',
@@ -73,8 +71,7 @@ export const INTEGRATIONS: Integration[] = [
 	{
 		slug: 'mcp',
 		label: 'MCP',
-		description:
-			'Builds, configures, or connects Model Context Protocol servers or clients.',
+		description: 'Builds, configures, or connects Model Context Protocol servers or clients.',
 	},
 	{
 		slug: 'anthropic-api',
@@ -115,8 +112,7 @@ export const INTEGRATIONS: Integration[] = [
 	{
 		slug: 'aws',
 		label: 'AWS',
-		description:
-			'Provisions or operates AWS services: S3, Lambda, EC2, IAM, CloudFormation, or the AWS CLI.',
+		description: 'Provisions or operates AWS services: S3, Lambda, EC2, IAM, CloudFormation, or the AWS CLI.',
 	},
 	{
 		slug: 'kubernetes',

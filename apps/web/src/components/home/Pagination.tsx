@@ -42,12 +42,7 @@ export default function Pagination({
 					</button>
 				),
 			)}
-			<button
-				type="button"
-				onClick={() => onPage(page + 1)}
-				disabled={page === pageCount}
-				className={EDGE_BTN}
-			>
+			<button type="button" onClick={() => onPage(page + 1)} disabled={page === pageCount} className={EDGE_BTN}>
 				Next
 			</button>
 		</nav>

@@ -16,11 +16,7 @@ export const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
 // submission legitimately skips far more than the 10 MB kept-files cap allows.
 const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 
-export async function fetchSnapshot(
-	env: Env,
-	target: RepoTarget,
-	sha: string,
-): Promise<SourceResult<PackageFile[]>> {
+export async function fetchSnapshot(env: Env, target: RepoTarget, sha: string): Promise<SourceResult<PackageFile[]>> {
 	const url = `https://codeload.github.com/${target.owner}/${target.repo}/tar.gz/${encodeURIComponent(sha)}`;
 
 	let res: Response;
@@ -70,12 +66,7 @@ export async function extractTarball(
 
 			// GitHub tarballs nest everything under "{repo}-{sha}/"; strip that root.
 			const rel = segments.slice(1).join('/');
-			const path =
-				subpath === undefined
-					? rel
-					: rel.startsWith(`${subpath}/`)
-						? rel.slice(subpath.length + 1)
-						: '';
+			const path = subpath === undefined ? rel : rel.startsWith(`${subpath}/`) ? rel.slice(subpath.length + 1) : '';
 			const keep = entry.header.type === 'file' && path !== '';
 			if (keep && files.length >= MAX_FILES) {
 				return sourceError('too-large', `package exceeds ${MAX_FILES} files`);
@@ -100,10 +91,7 @@ export async function extractTarball(
 					return sourceError('too-large', `"${path}" exceeds ${MAX_FILE_BYTES / 1024 / 1024} MB`);
 				}
 				if (totalBytes > MAX_TOTAL_BYTES) {
-					return sourceError(
-						'too-large',
-						`package exceeds ${MAX_TOTAL_BYTES / 1024 / 1024} MB total`,
-					);
+					return sourceError('too-large', `package exceeds ${MAX_TOTAL_BYTES / 1024 / 1024} MB total`);
 				}
 				chunks.push(chunk);
 			}

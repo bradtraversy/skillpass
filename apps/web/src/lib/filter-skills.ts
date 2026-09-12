@@ -28,11 +28,9 @@ export function matchesFilters(skill: PublicSkillSummary, filters: FieldFilters)
 	if (filters.category !== 'all') {
 		// The field is optional in the payload schema, so normalize absent to null.
 		const category = skill.category ?? null;
-		if (filters.category === 'uncategorized' ? category !== null : category !== filters.category)
-			return false;
+		if (filters.category === 'uncategorized' ? category !== null : category !== filters.category) return false;
 	}
-	if (filters.integration !== 'all' && !(skill.integrations ?? []).includes(filters.integration))
-		return false;
+	if (filters.integration !== 'all' && !(skill.integrations ?? []).includes(filters.integration)) return false;
 	const isPack = (skill.packSkills?.length ?? 0) > 0;
 	if (filters.type === 'pack' && !isPack) return false;
 	if (filters.type === 'skill' && isPack) return false;
@@ -43,23 +41,14 @@ export function matchesFilters(skill: PublicSkillSummary, filters: FieldFilters)
 // maintainer, and target tools. The API returns rows in curated directory
 // order (ranked featured, unranked featured, then newest), so featured views
 // preserve input order instead of re-sorting; the payload carries no rank.
-export function filterSkills(
-	skills: PublicSkillSummary[],
-	filters: SkillFilters,
-): PublicSkillSummary[] {
+export function filterSkills(skills: PublicSkillSummary[], filters: SkillFilters): PublicSkillSummary[] {
 	const query = filters.query.trim().toLowerCase();
 
 	const matched = skills.filter((skill) => {
 		if (!matchesFilters(skill, filters)) return false;
 		if (!query) return true;
 
-		const haystack = [
-			skill.name,
-			skill.summary,
-			skill.maintainer,
-			...skill.targets,
-			...(skill.packSkills ?? []),
-		]
+		const haystack = [skill.name, skill.summary, skill.maintainer, ...skill.targets, ...(skill.packSkills ?? [])]
 			.join(' ')
 			.toLowerCase();
 

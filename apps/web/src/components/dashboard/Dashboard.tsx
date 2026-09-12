@@ -38,11 +38,7 @@ export default function Dashboard() {
 	const [load, setLoad] = useState<LoadState>({ phase: 'loading' });
 
 	const refresh = useCallback(async () => {
-		const [skills, submissions, reports] = await Promise.all([
-			getMySkills(),
-			getMySubmissions(),
-			getMyReports(),
-		]);
+		const [skills, submissions, reports] = await Promise.all([getMySkills(), getMySubmissions(), getMyReports()]);
 		if (skills.success && submissions.success && reports.success) {
 			setLoad({
 				phase: 'ready',
@@ -75,9 +71,7 @@ export default function Dashboard() {
 		);
 	}
 	if (load.phase === 'error') {
-		return (
-			<p className="py-16 text-center text-[13px] text-fail">Can't reach the API - is it running?</p>
-		);
+		return <p className="py-16 text-center text-[13px] text-fail">Can't reach the API - is it running?</p>;
 	}
 
 	const { skills, submissions, reports } = load;
@@ -131,18 +125,10 @@ export default function Dashboard() {
 	);
 }
 
-function SubmissionCard({
-	submission,
-	onChange,
-}: {
-	submission: PublicSubmission;
-	onChange: () => Promise<void>;
-}) {
+function SubmissionCard({ submission, onChange }: { submission: PublicSubmission; onChange: () => Promise<void> }) {
 	const { busy, error, run } = useAction(onChange);
 	const source =
-		submission.sourceType === 'github_url' && submission.githubUrl
-			? repoHandle(submission.githubUrl)
-			: 'zip upload';
+		submission.sourceType === 'github_url' && submission.githubUrl ? repoHandle(submission.githubUrl) : 'zip upload';
 	return (
 		<div className={CARD}>
 			<div className="flex items-center gap-[10px]">
@@ -174,10 +160,7 @@ function ReportCard({ report }: { report: MaintainerReport }) {
 		<div className={CARD}>
 			<div className="flex items-center gap-[10px]">
 				<div className="min-w-0 flex-1">
-					<a
-						href={`/skills/${report.skill.slug}`}
-						className="text-[14px] font-semibold hover:text-accent"
-					>
+					<a href={`/skills/${report.skill.slug}`} className="text-[14px] font-semibold hover:text-accent">
 						{report.skill.name}
 					</a>
 					<p className="mt-[3px] text-[12px] text-muted">
@@ -205,10 +188,7 @@ function SkillCard({ skill, onChange }: { skill: MaintainerSkill; onChange: () =
 		<div className={CARD}>
 			<div className="flex items-center gap-[10px]">
 				<div className="min-w-0 flex-1">
-					<a
-						href={`/skills/${skill.slug}`}
-						className="text-[14px] font-semibold hover:text-accent"
-					>
+					<a href={`/skills/${skill.slug}`} className="text-[14px] font-semibold hover:text-accent">
 						{skill.name}
 					</a>
 					<p className="mt-[3px] text-[12px] text-muted">
@@ -224,13 +204,7 @@ function SkillCard({ skill, onChange }: { skill: MaintainerSkill; onChange: () =
 	);
 }
 
-function SkillActions({
-	skill,
-	onChange,
-}: {
-	skill: MaintainerSkill;
-	onChange: () => Promise<void>;
-}) {
+function SkillActions({ skill, onChange }: { skill: MaintainerSkill; onChange: () => Promise<void> }) {
 	const { busy, error, run } = useAction(onChange);
 	const [arming, setArming] = useState(false);
 
@@ -257,8 +231,7 @@ function SkillActions({
 			{skill.status === 'published' && arming && (
 				<>
 					<span className="text-[12px] text-muted">
-						Withdraws the public listing - versions and passports are kept, and you can relist
-						anytime.
+						Withdraws the public listing - versions and passports are kept, and you can relist anytime.
 					</span>
 					<button
 						type="button"

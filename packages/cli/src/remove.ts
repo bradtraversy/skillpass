@@ -66,10 +66,7 @@ export function runRemove(slug: string, opts: RemoveOptions = {}): CommandResult
 				removeReceipt(area.dir, name);
 			}
 			return {
-				lines: [
-					`Removed pack ${slug} (${members.length} skills) from ${area.dir}`,
-					`  ${members.sort().join(', ')}`,
-				],
+				lines: [`Removed pack ${slug} (${members.length} skills) from ${area.dir}`, `  ${members.sort().join(', ')}`],
 				exitCode: 0,
 			};
 		}
@@ -85,9 +82,7 @@ export function runRemove(slug: string, opts: RemoveOptions = {}): CommandResult
 	} else if (opts.dir) {
 		dir = resolve(cwd, opts.dir);
 	} else {
-		const found = candidateDirs(slug, cwd, opts.home).filter((candidate) =>
-			existsSync(candidate),
-		);
+		const found = candidateDirs(slug, cwd, opts.home).filter((candidate) => existsSync(candidate));
 		if (found.length === 0) {
 			return { lines: [`error: ${slug} is not installed in any known location`], exitCode: 2 };
 		}

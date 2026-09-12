@@ -46,9 +46,7 @@ export default function Finding({ finding, open = false }: { finding: ReportFind
 						<span className="block text-[10.5px] uppercase tracking-[0.08em] text-faint">
 							the flagged line, quoted from {location}
 						</span>
-						{finding.location.snippet && (
-							<span className="mt-[6px] block text-text">{finding.location.snippet}</span>
-						)}
+						{finding.location.snippet && <span className="mt-[6px] block text-text">{finding.location.snippet}</span>}
 					</span>
 				)}
 			</div>

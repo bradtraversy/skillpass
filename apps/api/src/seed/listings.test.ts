@@ -25,9 +25,7 @@ describe('seedListingSchema', () => {
 	});
 
 	it('rejects a non-URL githubUrl', () => {
-		expect(
-			seedListingSchema.safeParse({ githubUrl: 'not-a-url', attributedTo: 'anthropics' }).success,
-		).toBe(false);
+		expect(seedListingSchema.safeParse({ githubUrl: 'not-a-url', attributedTo: 'anthropics' }).success).toBe(false);
 	});
 
 	it('rejects a non-string attributedTo', () => {

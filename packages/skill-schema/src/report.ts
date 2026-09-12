@@ -29,8 +29,7 @@ export const validationReportSchema = z
 		createdAt: z.iso.datetime(),
 	})
 	.superRefine((report, ctx) => {
-		const expected =
-			report.failures.length > 0 ? 'failed' : report.warnings.length > 0 ? 'warning' : 'passed';
+		const expected = report.failures.length > 0 ? 'failed' : report.warnings.length > 0 ? 'warning' : 'passed';
 		if (report.status !== expected) {
 			ctx.addIssue({
 				code: 'custom',

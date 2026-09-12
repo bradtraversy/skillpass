@@ -55,17 +55,15 @@ describe('repoHandle', () => {
 
 	it('falls back to the raw input for a non-GitHub or malformed URL', () => {
 		expect(repoHandle('not a url')).toBe('not a url');
-		expect(repoHandle('https://gitlab.com/aria-dev/pr-review-bot')).toBe(
-			'https://gitlab.com/aria-dev/pr-review-bot',
-		);
+		expect(repoHandle('https://gitlab.com/aria-dev/pr-review-bot')).toBe('https://gitlab.com/aria-dev/pr-review-bot');
 	});
 });
 
 describe('firstSentence', () => {
 	it('drops the trigger clause after the first sentence', () => {
-		expect(
-			firstSentence('Finds similar bugs across codebases. Use when hunting bug variants.'),
-		).toBe('Finds similar bugs across codebases.');
+		expect(firstSentence('Finds similar bugs across codebases. Use when hunting bug variants.')).toBe(
+			'Finds similar bugs across codebases.',
+		);
 	});
 
 	it('returns a single sentence unchanged', () => {
@@ -75,9 +73,7 @@ describe('firstSentence', () => {
 	});
 
 	it('returns the whole text when there is no terminator', () => {
-		expect(firstSentence('Mutation-driven test vector generation')).toBe(
-			'Mutation-driven test vector generation',
-		);
+		expect(firstSentence('Mutation-driven test vector generation')).toBe('Mutation-driven test vector generation');
 	});
 
 	it('does not split on a dot inside a version or path', () => {

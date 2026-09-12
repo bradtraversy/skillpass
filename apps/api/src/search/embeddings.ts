@@ -53,9 +53,7 @@ function stripHtml(text: string): string {
 		.trim();
 }
 
-export type EmbedResult =
-	| { success: true; data: number[][] }
-	| { success: false; error: string };
+export type EmbedResult = { success: true; data: number[][] } | { success: false; error: string };
 
 interface VoyageResponse {
 	data: { index: number; embedding: number[] }[];
@@ -63,11 +61,7 @@ interface VoyageResponse {
 
 // Batched: N texts in, N vectors out in input order, chunked to the provider
 // cap so a full backfill is a couple of requests rather than one per skill.
-export async function embedTexts(
-	env: Env,
-	texts: string[],
-	inputType: EmbedInputType,
-): Promise<EmbedResult> {
+export async function embedTexts(env: Env, texts: string[], inputType: EmbedInputType): Promise<EmbedResult> {
 	if (!env.VOYAGE_API_KEY) return { success: false, error: 'VOYAGE_API_KEY not configured' };
 	if (texts.length === 0) return { success: true, data: [] };
 

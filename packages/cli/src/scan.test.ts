@@ -3,8 +3,7 @@ import { validationReportSchema } from 'skill-schema';
 import { describe, expect, it } from 'vitest';
 import { runScan } from './scan';
 
-const fixture = (name: string) =>
-	fileURLToPath(new URL(`../../validator/fixtures/${name}`, import.meta.url));
+const fixture = (name: string) => fileURLToPath(new URL(`../../validator/fixtures/${name}`, import.meta.url));
 
 describe('runScan', () => {
 	it('passes a clean skill with exit 0 and a readable report', async () => {

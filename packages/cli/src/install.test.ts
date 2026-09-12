@@ -2,14 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import {
-	confirmRisk,
-	createOutput,
-	isOccupied,
-	memberFiles,
-	planMembers,
-	receiptFor,
-} from './install';
+import { confirmRisk, createOutput, isOccupied, memberFiles, planMembers, receiptFor } from './install';
 
 describe('createOutput', () => {
 	it('buffers lines and reports them as not streamed', () => {

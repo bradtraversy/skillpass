@@ -37,9 +37,7 @@ describe('classifyIntegrations', () => {
 	});
 
 	it('returns a deduplicated in-vocabulary list', async () => {
-		mockCreate.mockResolvedValue(
-			textResponse({ integrations: ['obsidian', 'github', 'obsidian'] }),
-		);
+		mockCreate.mockResolvedValue(textResponse({ integrations: ['obsidian', 'github', 'obsidian'] }));
 		expect(await classifyIntegrations(envWithKey, listing)).toEqual(['obsidian', 'github']);
 	});
 

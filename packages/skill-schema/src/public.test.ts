@@ -78,23 +78,19 @@ describe('publicSkillSummarySchema', () => {
 	});
 
 	it('rejects an unknown target', () => {
-		expect(
-			publicSkillSummarySchema.safeParse({ ...summary, targets: ['notepad'] }).success,
-		).toBe(false);
+		expect(publicSkillSummarySchema.safeParse({ ...summary, targets: ['notepad'] }).success).toBe(false);
 	});
 
 	it('parses with a category, a null category, and none at all', () => {
-		expect(
-			publicSkillSummarySchema.parse({ ...summary, category: 'security-review' }).category,
-		).toBe('security-review');
+		expect(publicSkillSummarySchema.parse({ ...summary, category: 'security-review' }).category).toBe(
+			'security-review',
+		);
 		expect(publicSkillSummarySchema.parse({ ...summary, category: null }).category).toBeNull();
 		expect(publicSkillSummarySchema.parse(summary).category).toBeUndefined();
 	});
 
 	it('rejects an out-of-taxonomy category', () => {
-		expect(
-			publicSkillSummarySchema.safeParse({ ...summary, category: 'hacking' }).success,
-		).toBe(false);
+		expect(publicSkillSummarySchema.safeParse({ ...summary, category: 'hacking' }).success).toBe(false);
 	});
 
 	it('parses display copy present, null, and absent', () => {
@@ -113,24 +109,19 @@ describe('publicSkillSummarySchema', () => {
 	});
 
 	it('parses integrations as a list, empty, null, and absent', () => {
-		expect(
-			publicSkillSummarySchema.parse({ ...summary, integrations: ['obsidian', 'github'] })
-				.integrations,
-		).toEqual(['obsidian', 'github']);
-		expect(publicSkillSummarySchema.parse({ ...summary, integrations: [] }).integrations).toEqual(
-			[],
-		);
-		expect(
-			publicSkillSummarySchema.parse({ ...summary, integrations: null }).integrations,
-		).toBeNull();
+		expect(publicSkillSummarySchema.parse({ ...summary, integrations: ['obsidian', 'github'] }).integrations).toEqual([
+			'obsidian',
+			'github',
+		]);
+		expect(publicSkillSummarySchema.parse({ ...summary, integrations: [] }).integrations).toEqual([]);
+		expect(publicSkillSummarySchema.parse({ ...summary, integrations: null }).integrations).toBeNull();
 		expect(publicSkillSummarySchema.parse(summary).integrations).toBeUndefined();
 	});
 
 	it('rejects a list containing an unknown integration', () => {
-		expect(
-			publicSkillSummarySchema.safeParse({ ...summary, integrations: ['obsidian', 'vscode'] })
-				.success,
-		).toBe(false);
+		expect(publicSkillSummarySchema.safeParse({ ...summary, integrations: ['obsidian', 'vscode'] }).success).toBe(
+			false,
+		);
 	});
 });
 

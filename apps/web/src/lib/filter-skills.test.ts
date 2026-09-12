@@ -114,9 +114,7 @@ describe('filterSkills', () => {
 			summary({ slug: 'fuzzer', category: 'fuzzing' }),
 			summary({ slug: 'reviewer', category: 'security-review' }),
 		];
-		expect(filterSkills(skills, { ...base, category: 'fuzzing' }).map((s) => s.slug)).toEqual([
-			'fuzzer',
-		]);
+		expect(filterSkills(skills, { ...base, category: 'fuzzing' }).map((s) => s.slug)).toEqual(['fuzzer']);
 		expect(filterSkills(skills, base)).toHaveLength(2);
 	});
 
@@ -138,9 +136,27 @@ describe('filterSkills', () => {
 describe('filterSkills tabs', () => {
 	// Input mirrors the API's curated directory order: ranked featured first
 	// (a then c), non-featured after, regardless of publish date.
-	const a = summary({ slug: 'a', name: 'Alpha', featured: true, verified: false, publishedAt: '2026-01-01T00:00:00.000Z' });
-	const c = summary({ slug: 'c', name: 'Charlie', featured: true, verified: true, publishedAt: '2026-02-01T00:00:00.000Z' });
-	const b = summary({ slug: 'b', name: 'Bravo', featured: false, verified: true, publishedAt: '2026-03-01T00:00:00.000Z' });
+	const a = summary({
+		slug: 'a',
+		name: 'Alpha',
+		featured: true,
+		verified: false,
+		publishedAt: '2026-01-01T00:00:00.000Z',
+	});
+	const c = summary({
+		slug: 'c',
+		name: 'Charlie',
+		featured: true,
+		verified: true,
+		publishedAt: '2026-02-01T00:00:00.000Z',
+	});
+	const b = summary({
+		slug: 'b',
+		name: 'Bravo',
+		featured: false,
+		verified: true,
+		publishedAt: '2026-03-01T00:00:00.000Z',
+	});
 	const skills = [a, c, b];
 
 	it('featured: only featured skills, preserving curated input order', () => {
@@ -211,9 +227,7 @@ describe('integration filter', () => {
 	];
 
 	it('matches skills whose list contains the selected integration', () => {
-		expect(filterSkills(skills, { ...base, integration: 'github' }).map((s) => s.slug)).toEqual([
-			'pr-bot',
-		]);
+		expect(filterSkills(skills, { ...base, integration: 'github' }).map((s) => s.slug)).toEqual(['pr-bot']);
 	});
 
 	it('passes everything through on all', () => {
@@ -232,9 +246,7 @@ describe('integration filter', () => {
 			summary({ slug: 'wrong-integration', category: 'knowledge-notes', integrations: [] }),
 		];
 		expect(
-			filterSkills(mixed, { ...base, category: 'knowledge-notes', integration: 'obsidian' }).map(
-				(s) => s.slug,
-			),
+			filterSkills(mixed, { ...base, category: 'knowledge-notes', integration: 'obsidian' }).map((s) => s.slug),
 		).toEqual(['match']);
 	});
 });

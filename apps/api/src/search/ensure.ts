@@ -52,6 +52,6 @@ export async function ensureEmbedding(env: Env, db: Db, slug: string): Promise<v
 			model: EMBEDDING_MODEL,
 		});
 	} catch (err) {
-		console.error(`ensureEmbedding: embedding for ${slug} failed: ${err}`);
+		console.error(`ensureEmbedding: embedding for ${slug} failed: ${String(err)}`);
 	}
 }

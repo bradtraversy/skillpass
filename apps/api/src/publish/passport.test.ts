@@ -117,8 +117,6 @@ describe('buildPassport', () => {
 
 	it('throws when the built passport fails the schema self-check', () => {
 		const doc = reportDoc({ sourceHash: '' });
-		expect(() => buildPassport(reportRow(doc), submissionRow(), MANIFEST, { now: NOW })).toThrow(
-			/self-check/,
-		);
+		expect(() => buildPassport(reportRow(doc), submissionRow(), MANIFEST, { now: NOW })).toThrow(/self-check/);
 	});
 });

@@ -21,10 +21,7 @@ export function createValidationQueue(env: Env) {
 
 export type ValidationQueue = Pick<ReturnType<typeof createValidationQueue>, 'add'>;
 
-export async function enqueueValidation(
-	queue: ValidationQueue,
-	submissionId: number,
-): Promise<Result<string | null>> {
+export async function enqueueValidation(queue: ValidationQueue, submissionId: number): Promise<Result<string | null>> {
 	try {
 		const job = await queue.add(
 			'validate',

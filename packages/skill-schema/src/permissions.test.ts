@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	PERMISSION_KEYS,
-	PERMISSIONS,
-	permissionGroup,
-	permissionKeySchema,
-	riskWeightOf,
-} from './permissions';
+import { PERMISSION_KEYS, PERMISSIONS, permissionGroup, permissionKeySchema, riskWeightOf } from './permissions';
 
 describe('permission taxonomy', () => {
 	it('has unique keys', () => {

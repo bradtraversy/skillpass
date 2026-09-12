@@ -20,11 +20,7 @@ export async function findOpenReportBySkillAndReporter(
 		.select()
 		.from(abuseReports)
 		.where(
-			and(
-				eq(abuseReports.skillId, skillId),
-				eq(abuseReports.reporterId, reporterId),
-				eq(abuseReports.status, 'open'),
-			),
+			and(eq(abuseReports.skillId, skillId), eq(abuseReports.reporterId, reporterId), eq(abuseReports.status, 'open')),
 		);
 	return row;
 }
@@ -58,10 +54,7 @@ export interface MaintainerReportRecord {
 	skill: { slug: string; name: string };
 }
 
-export async function listReportsAgainstMaintainer(
-	db: Db,
-	maintainerId: number,
-): Promise<MaintainerReportRecord[]> {
+export async function listReportsAgainstMaintainer(db: Db, maintainerId: number): Promise<MaintainerReportRecord[]> {
 	return db
 		.select({ report: abuseReports, skill: { slug: skills.slug, name: skills.name } })
 		.from(abuseReports)
@@ -98,10 +91,7 @@ export interface AdminAbuseReportDetail extends AdminAbuseReportRecord {
 	skill: { slug: string; name: string; maintainerId: number };
 }
 
-export async function findAdminReportById(
-	db: Db,
-	id: number,
-): Promise<AdminAbuseReportDetail | undefined> {
+export async function findAdminReportById(db: Db, id: number): Promise<AdminAbuseReportDetail | undefined> {
 	const [row] = await db
 		.select({
 			report: abuseReports,
@@ -115,10 +105,6 @@ export async function findAdminReportById(
 	return row;
 }
 
-export async function setAbuseReportStatus(
-	db: Db,
-	id: number,
-	status: AbuseReportRow['status'],
-): Promise<void> {
+export async function setAbuseReportStatus(db: Db, id: number, status: AbuseReportRow['status']): Promise<void> {
 	await db.update(abuseReports).set({ status }).where(eq(abuseReports.id, id));
 }

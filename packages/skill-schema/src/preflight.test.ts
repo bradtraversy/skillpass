@@ -3,9 +3,10 @@ import { diffPermissions, publicPreflightSchema, type PublicPreflight } from './
 
 describe('diffPermissions', () => {
 	it('reports added and removed keys', () => {
-		expect(
-			diffPermissions(['network.fetch', 'shell.execute'], ['network.fetch', 'env.read']),
-		).toEqual({ added: ['shell.execute'], removed: ['env.read'] });
+		expect(diffPermissions(['network.fetch', 'shell.execute'], ['network.fetch', 'env.read'])).toEqual({
+			added: ['shell.execute'],
+			removed: ['env.read'],
+		});
 	});
 
 	it('is empty when the sets match', () => {
@@ -81,9 +82,7 @@ describe('publicPreflightSchema', () => {
 		const widened = { ...preflight, diff: { ...preflight.diff, snapshotKey: 'x' } };
 		const parsed = publicPreflightSchema.safeParse(widened);
 		expect(parsed.success).toBe(true);
-		expect(parsed.success && parsed.data.diff !== null && 'snapshotKey' in parsed.data.diff).toBe(
-			false,
-		);
+		expect(parsed.success && parsed.data.diff !== null && 'snapshotKey' in parsed.data.diff).toBe(false);
 	});
 
 	it('rejects an unknown permission key', () => {

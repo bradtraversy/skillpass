@@ -10,10 +10,7 @@ export interface CommandResult {
 }
 
 // Exit codes are contract: 0 passed/warning, 1 failed, 2 unreadable package.
-export async function runScan(
-	path: string,
-	opts: { json?: boolean; style?: Styler } = {},
-): Promise<CommandResult> {
+export async function runScan(path: string, opts: { json?: boolean; style?: Styler } = {}): Promise<CommandResult> {
 	let report;
 	try {
 		report = await validatePackage(path);

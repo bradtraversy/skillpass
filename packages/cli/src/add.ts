@@ -1,14 +1,5 @@
 import { strFromU8, unzipSync } from 'fflate';
-import {
-	existsSync,
-	mkdirSync,
-	readdirSync,
-	renameSync,
-	rmdirSync,
-	rmSync,
-	statSync,
-	writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import type { PublicPreflight, PublicSkillDetail, SkillEntry, Target } from 'skill-schema';
 import { loadPackageFromFiles, type PackageFile } from 'validator';
@@ -28,13 +19,7 @@ import { recordReceipt } from './receipts';
 import { renderPreflightReport } from './render';
 import type { CommandResult } from './scan';
 import type { Styler } from './style';
-import {
-	knownAreas,
-	MAPPED_TARGETS,
-	mappableDeclaredTargets,
-	resolveTargetArea,
-	resolveTargetDir,
-} from './targets';
+import { knownAreas, MAPPED_TARGETS, mappableDeclaredTargets, resolveTargetArea, resolveTargetDir } from './targets';
 
 export interface AddOptions {
 	yes?: boolean;
@@ -98,11 +83,7 @@ export async function downloadVerified(
 			filter: (info) => {
 				fileCount += 1;
 				totalBytes += info.originalSize;
-				if (
-					fileCount > MAX_FILES ||
-					info.originalSize > MAX_FILE_BYTES ||
-					totalBytes > MAX_TOTAL_BYTES
-				) {
+				if (fileCount > MAX_FILES || info.originalSize > MAX_FILE_BYTES || totalBytes > MAX_TOTAL_BYTES) {
 					throw new OversizedDownloadError();
 				}
 				return true;
@@ -261,10 +242,7 @@ async function choosePackLocation(
 	}
 	const mappable = mappableDeclaredTargets(detail.targets);
 	if (mappable.length > 0) {
-		ctx.push(
-			'',
-			`tip: --target ${mappable[0]} installs the ${memberCount} skills into the tool's skills folder`,
-		);
+		ctx.push('', `tip: --target ${mappable[0]} installs the ${memberCount} skills into the tool's skills folder`);
 	}
 	return { dir: ctx.slug };
 }

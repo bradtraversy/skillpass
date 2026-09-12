@@ -12,11 +12,7 @@ export const REPUTATION_WEIGHTS: Record<ReputationInputType, number> = {
 	report_actioned: -25,
 };
 
-export async function awardReputation(
-	db: Db,
-	userId: number,
-	type: ReputationInputType,
-): Promise<void> {
+export async function awardReputation(db: Db, userId: number, type: ReputationInputType): Promise<void> {
 	const weight = REPUTATION_WEIGHTS[type];
 	await db.insert(reputationInputs).values({ userId, type, weight });
 	await db

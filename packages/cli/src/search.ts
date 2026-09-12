@@ -1,9 +1,4 @@
-import {
-	CATEGORY_SLUGS,
-	TARGETS,
-	publicSkillListSchema,
-	type PublicSkillSummary,
-} from 'skill-schema';
+import { CATEGORY_SLUGS, TARGETS, publicSkillListSchema, type PublicSkillSummary } from 'skill-schema';
 import { getParsed, resolveApiUrl } from './api';
 import { riskColor } from './render';
 import type { CommandResult } from './scan';
@@ -103,8 +98,7 @@ function narrowRows(skill: PublicSkillSummary, width: number, st: Styler): strin
 
 function renderRows(matches: PublicSkillSummary[], width: number | undefined, st: Styler): string[] {
 	const w = columnWidths(matches);
-	const fits =
-		width === undefined || matches.every((skill) => row(skill, w, PLAIN).length <= width);
+	const fits = width === undefined || matches.every((skill) => row(skill, w, PLAIN).length <= width);
 	if (fits) {
 		return matches.map((skill) => row(skill, w, st).trimEnd());
 	}
@@ -124,9 +118,7 @@ export async function runSearch(opts: SearchOptions = {}): Promise<CommandResult
 	}
 	if (opts.category && !(CATEGORY_SLUGS as readonly string[]).includes(opts.category)) {
 		return {
-			lines: [
-				`error: unknown category "${opts.category}" (known categories: ${CATEGORY_SLUGS.join(', ')})`,
-			],
+			lines: [`error: unknown category "${opts.category}" (known categories: ${CATEGORY_SLUGS.join(', ')})`],
 			exitCode: 2,
 		};
 	}
@@ -158,9 +150,7 @@ export async function runSearch(opts: SearchOptions = {}): Promise<CommandResult
 		lines: [
 			...renderRows(matches, opts.width, st),
 			'',
-			st.dim(
-				`${matches.length} of ${fetched.data.length} skills - skillpass report <slug> shows the passport`,
-			),
+			st.dim(`${matches.length} of ${fetched.data.length} skills - skillpass report <slug> shows the passport`),
 		],
 		exitCode: 0,
 	};

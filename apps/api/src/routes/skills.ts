@@ -127,10 +127,7 @@ async function fileAbuseReport(c: ReportCtx, db: Db): Promise<Response> {
 	const reporter = c.get('user');
 	const existing = await findOpenReportBySkillAndReporter(db, record.skill.id, reporter.id);
 	if (existing) {
-		return c.json(
-			{ success: false, error: 'you already have an open report for this skill' },
-			409,
-		);
+		return c.json({ success: false, error: 'you already have an open report for this skill' }, 409);
 	}
 	const report = await createAbuseReport(db, {
 		skillId: record.skill.id,
@@ -153,11 +150,7 @@ export function skillRoutes(env: Env, db: Db) {
 	// Owner-scoped status flips: unlist withdraws a published listing (versions,
 	// passports, and snapshots stay immutable; the slug stays reserved), relist
 	// restores it. Someone else's slug is a 404, never a 403 - no existence leak.
-	const transitionHandler = (
-		from: 'published' | 'private',
-		to: 'published' | 'private',
-		refusal: string,
-	) => {
+	const transitionHandler = (from: 'published' | 'private', to: 'published' | 'private', refusal: string) => {
 		return async (c: Context<{ Variables: AuthVariables }>) => {
 			const skill = await findSkillBySlug(db, c.req.param('slug') ?? '');
 			if (!skill || skill.maintainerId !== c.get('user').id) {
@@ -234,10 +227,7 @@ export function skillRoutes(env: Env, db: Db) {
 			console.error(
 				`download: snapshot failed integrity verification for ${record.skill.slug}@${pinned.version.version}`,
 			);
-			return c.json(
-				{ success: false, error: 'the snapshot failed integrity verification; download refused' },
-				502,
-			);
+			return c.json({ success: false, error: 'the snapshot failed integrity verification; download refused' }, 502);
 		}
 		const zip = zipSync(Object.fromEntries(snapshot.files.map((f) => [f.path, strToU8(f.content)])));
 		const userId = await readSessionUserId(c, env);
@@ -245,7 +235,7 @@ export function skillRoutes(env: Env, db: Db) {
 			await recordDownload(db, { skillVersionId: pinned.version.id, userId, source });
 		} catch (err) {
 			// Attribution must never block a verified download.
-			console.error(`download: event insert failed for version ${pinned.version.id}: ${err}`);
+			console.error(`download: event insert failed for version ${pinned.version.id}: ${String(err)}`);
 		}
 		return c.body(zip, 200, {
 			'Content-Type': 'application/zip',
@@ -274,11 +264,7 @@ export function skillRoutes(env: Env, db: Db) {
 		const review = (await findAiReviewByHash(db, pinned.version.sourceHash))?.review ?? null;
 		return c.json({
 			success: true,
-			data: publicSkillDetail(
-				{ ...record, version: pinned.version, passport: pinned.passport },
-				versions,
-				review,
-			),
+			data: publicSkillDetail({ ...record, version: pinned.version, passport: pinned.passport }, versions, review),
 		});
 	});
 

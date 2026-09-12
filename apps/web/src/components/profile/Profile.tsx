@@ -4,12 +4,8 @@ import { getProfile } from '../../lib/api';
 import Row from '../skill/Row';
 import { SECTION_HEADING } from '../../lib/classes';
 
-
 type LoadState =
-	| { phase: 'loading' }
-	| { phase: 'notfound' }
-	| { phase: 'error' }
-	| { phase: 'ready'; profile: PublicProfile };
+	{ phase: 'loading' } | { phase: 'notfound' } | { phase: 'error' } | { phase: 'ready'; profile: PublicProfile };
 
 export default function Profile({ username }: { username: string }) {
 	const [load, setLoad] = useState<LoadState>({ phase: 'loading' });
@@ -35,16 +31,10 @@ export default function Profile({ username }: { username: string }) {
 		return <p className="py-16 text-center text-[13px] text-muted">Loading profile...</p>;
 	}
 	if (load.phase === 'notfound') {
-		return (
-			<p className="py-16 text-center text-[13px] text-muted">
-				No maintainer named {username} here.
-			</p>
-		);
+		return <p className="py-16 text-center text-[13px] text-muted">No maintainer named {username} here.</p>;
 	}
 	if (load.phase === 'error') {
-		return (
-			<p className="py-16 text-center text-[13px] text-fail">Can't reach the API - is it running?</p>
-		);
+		return <p className="py-16 text-center text-[13px] text-fail">Can't reach the API - is it running?</p>;
 	}
 
 	const { profile } = load;
@@ -62,8 +52,7 @@ export default function Profile({ username }: { username: string }) {
 					<div className="mt-[3px] text-[13px] text-muted">@{profile.username}</div>
 					<div className="mt-[7px] flex items-center gap-[14px] text-[12.5px] text-faint">
 						<span>
-							<b className="font-mono text-[13px] font-semibold text-text">{profile.reputation}</b>{' '}
-							reputation
+							<b className="font-mono text-[13px] font-semibold text-text">{profile.reputation}</b> reputation
 						</span>
 						<span>joined {joined}</span>
 					</div>
@@ -71,9 +60,7 @@ export default function Profile({ username }: { username: string }) {
 			</header>
 
 			<section>
-				<h2 className={SECTION_HEADING}>
-					Published skills ({profile.skills.length})
-				</h2>
+				<h2 className={SECTION_HEADING}>Published skills ({profile.skills.length})</h2>
 				{profile.skills.length === 0 ? (
 					<p className="py-[14px] text-[13px] text-muted">Nothing published yet.</p>
 				) : (

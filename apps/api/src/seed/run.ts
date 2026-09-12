@@ -50,9 +50,7 @@ async function main() {
 			...(listing.name ? { name: listing.name } : {}),
 		});
 		counts[result.status]++;
-		console.log(
-			`  ${result.status.padEnd(9)} ${label}${result.reason ? ` - ${result.reason}` : ''}`,
-		);
+		console.log(`  ${result.status.padEnd(9)} ${label}${result.reason ? ` - ${result.reason}` : ''}`);
 
 		// Curation state (display name) applies to published and already-present
 		// listings alike, so re-runs converge on the manifest.
@@ -69,9 +67,7 @@ async function main() {
 		console.warn(`featured slugs with no published skill: ${missing.join(', ')}`);
 	}
 
-	console.log(
-		`\ndone: ${counts.published} published, ${counts.skipped} skipped, ${counts.failed} failed`,
-	);
+	console.log(`\ndone: ${counts.published} published, ${counts.skipped} skipped, ${counts.failed} failed`);
 }
 
 main().catch((err) => {

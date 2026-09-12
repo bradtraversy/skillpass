@@ -1,74 +1,74 @@
-@import "tailwindcss";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/geist-mono";
+@import 'tailwindcss';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
 
 /* Ported from prototypes/theme.css. Tailwind v4 CSS-first: these tokens both
    emit as CSS custom properties and generate utilities (bg-bg, text-accent,
    text-pass, rounded-lg, font-mono, ...). Color is reserved for the verdict. */
 @theme {
-  --font-sans: "Geist Variable", "Inter Variable", system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+	--font-sans: 'Geist Variable', 'Inter Variable', system-ui, -apple-system, sans-serif;
+	--font-mono: 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
 
-  /* base - cool graphite, faint blue cast to match the logo tile */
-  --color-bg: #0d0f16;
-  --color-bg-well: #090b10;
-  --color-surface: #131622;
-  --color-surface-2: #181c2a;
-  --color-hover: #1d2231;
-  --color-border: #242a3c;
-  --color-border-2: #303950;
+	/* base - cool graphite, faint blue cast to match the logo tile */
+	--color-bg: #0d0f16;
+	--color-bg-well: #090b10;
+	--color-surface: #131622;
+	--color-surface-2: #181c2a;
+	--color-hover: #1d2231;
+	--color-border: #242a3c;
+	--color-border-2: #303950;
 
-  --color-text: #e9eefa;
-  --color-muted: #96a0b4;
-  --color-faint: #5d6579;
+	--color-text: #e9eefa;
+	--color-muted: #96a0b4;
+	--color-faint: #5d6579;
 
-  /* brand accent - periwinkle blue from the logo glyph, used sparingly
+	/* brand accent - periwinkle blue from the logo glyph, used sparingly
      (links, active, focus, primary) */
-  --color-accent: #7fa8ff;
-  --color-accent-hover: #9dc0ff;
-  --color-accent-ink: #0a0f1d;
-  --color-accent-soft: rgba(127, 168, 255, 0.13);
-  --color-accent-line: rgba(127, 168, 255, 0.34);
+	--color-accent: #7fa8ff;
+	--color-accent-hover: #9dc0ff;
+	--color-accent-ink: #0a0f1d;
+	--color-accent-soft: rgba(127, 168, 255, 0.13);
+	--color-accent-line: rgba(127, 168, 255, 0.34);
 
-  /* verdict - the only other color on the page, always meaningful */
-  --color-pass: #46d3a0;
-  --color-pass-soft: rgba(70, 211, 160, 0.12);
-  --color-pass-line: rgba(70, 211, 160, 0.3);
-  --color-warn: #f2b43c;
-  --color-warn-soft: rgba(242, 180, 60, 0.12);
-  --color-warn-line: rgba(242, 180, 60, 0.3);
-  --color-fail: #f0656a;
-  --color-fail-soft: rgba(240, 101, 106, 0.12);
-  --color-fail-line: rgba(240, 101, 106, 0.32);
-  --color-unv: #8791a3;
-  --color-unv-soft: rgba(135, 145, 163, 0.12);
-  --color-unv-line: rgba(135, 145, 163, 0.28);
+	/* verdict - the only other color on the page, always meaningful */
+	--color-pass: #46d3a0;
+	--color-pass-soft: rgba(70, 211, 160, 0.12);
+	--color-pass-line: rgba(70, 211, 160, 0.3);
+	--color-warn: #f2b43c;
+	--color-warn-soft: rgba(242, 180, 60, 0.12);
+	--color-warn-line: rgba(242, 180, 60, 0.3);
+	--color-fail: #f0656a;
+	--color-fail-soft: rgba(240, 101, 106, 0.12);
+	--color-fail-line: rgba(240, 101, 106, 0.32);
+	--color-unv: #8791a3;
+	--color-unv-soft: rgba(135, 145, 163, 0.12);
+	--color-unv-line: rgba(135, 145, 163, 0.28);
 
-  /* risk ramp - low -> critical */
-  --color-risk-low: #46d3a0;
-  --color-risk-med: #f2b43c;
-  --color-risk-high: #f2823c;
-  --color-risk-crit: #f0656a;
+	/* risk ramp - low -> critical */
+	--color-risk-low: #46d3a0;
+	--color-risk-med: #f2b43c;
+	--color-risk-high: #f2823c;
+	--color-risk-crit: #f0656a;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 16px;
 
-  /* page content width - drives the max-w-page container utility */
-  --container-page: 1080px;
+	/* page content width - drives the max-w-page container utility */
+	--container-page: 1080px;
 }
 
 /* effect values that don't map onto a Tailwind utility scale */
 :root {
-  --ring: rgba(127, 168, 255, 0.45);
-  --shadow: 0 12px 44px -20px rgba(0, 0, 0, 0.85);
+	--ring: rgba(127, 168, 255, 0.45);
+	--shadow: 0 12px 44px -20px rgba(0, 0, 0, 0.85);
 }
 
 @layer base {
-  body {
-    background: var(--color-bg);
-    color: var(--color-text);
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
-  }
+	body {
+		background: var(--color-bg);
+		color: var(--color-text);
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+	}
 }

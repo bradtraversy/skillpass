@@ -9,10 +9,7 @@ export function embeddingContentHash(model: string, input: string): string {
 	return createHash('sha256').update(`${model}\n${input}`).digest('hex');
 }
 
-export async function findEmbeddingBySkill(
-	db: Db,
-	skillId: number,
-): Promise<SkillEmbeddingRow | undefined> {
+export async function findEmbeddingBySkill(db: Db, skillId: number): Promise<SkillEmbeddingRow | undefined> {
 	const [row] = await db.select().from(skillEmbeddings).where(eq(skillEmbeddings.skillId, skillId));
 	return row;
 }

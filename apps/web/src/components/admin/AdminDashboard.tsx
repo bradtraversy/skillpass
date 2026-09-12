@@ -59,16 +59,10 @@ export default function AdminDashboard() {
 		);
 	}
 	if (load.phase === 'notauth') {
-		return (
-			<p className="py-16 text-center text-[13px] text-muted">
-				You do not have admin access.
-			</p>
-		);
+		return <p className="py-16 text-center text-[13px] text-muted">You do not have admin access.</p>;
 	}
 	if (load.phase === 'error') {
-		return (
-			<p className="py-16 text-center text-[13px] text-fail">Can't reach the API - is it running?</p>
-		);
+		return <p className="py-16 text-center text-[13px] text-fail">Can't reach the API - is it running?</p>;
 	}
 
 	const { queue } = load;
@@ -152,13 +146,7 @@ function CurationSection() {
 	);
 }
 
-function CurationCard({
-	skill,
-	onChange,
-}: {
-	skill: PublicSkillSummary;
-	onChange: () => Promise<void>;
-}) {
+function CurationCard({ skill, onChange }: { skill: PublicSkillSummary; onChange: () => Promise<void> }) {
 	const { busy, error, run } = useAction(onChange);
 	return (
 		<div className={CARD}>
@@ -209,9 +197,7 @@ function ToggleButton({
 			onClick={onClick}
 			aria-pressed={on}
 			className={`${BTN_BASE} border ${
-				on
-					? 'border-pass-line bg-pass-soft text-pass'
-					: 'border-border text-muted hover:text-text'
+				on ? 'border-pass-line bg-pass-soft text-pass' : 'border-border text-muted hover:text-text'
 			}`}
 		>
 			{on ? `✓ ${label}` : label}
@@ -276,10 +262,7 @@ function SubmissionCard({ submission }: { submission: AdminSubmission }) {
 				<span className="text-[12px] text-faint">{timeAgo(submission.createdAt)}</span>
 			</div>
 			{submission.githubUrl && (
-				<a
-					href={submission.githubUrl}
-					className="mt-[4px] block truncate text-[12px] text-accent hover:underline"
-				>
+				<a href={submission.githubUrl} className="mt-[4px] block truncate text-[12px] text-accent hover:underline">
 					{submission.githubUrl}
 				</a>
 			)}

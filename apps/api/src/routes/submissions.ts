@@ -7,12 +7,7 @@ import { requireAuth, type AuthVariables } from '../auth/middleware';
 import type { Db } from '../db/client';
 import type { SubmissionRow, UserRow } from '../db/schema';
 import { findVersionBySubmission } from '../db/skills';
-import {
-	createSubmission,
-	findSubmissionForUser,
-	listSubmissionsForUser,
-	publicSubmission,
-} from '../db/submissions';
+import { createSubmission, findSubmissionForUser, listSubmissionsForUser, publicSubmission } from '../db/submissions';
 import {
 	createValidationJob,
 	findValidationJobForSubmission,
@@ -30,14 +25,7 @@ import { fetchSnapshot } from '../github/snapshot';
 import { packageNameFor, parseGithubUrl } from '../github/url';
 import { MAX_ZIP_BYTES, type DetectedPackage, type PublicValidation } from 'skill-schema';
 import { MIN_PACK_SKILLS, publishFieldsFrom, publishSubmission, type PublishOutcome } from '../publish/publish';
-import {
-	getSnapshotDocument,
-	putBytes,
-	putJson,
-	snapshotDocument,
-	snapshotKey,
-	uploadKey,
-} from '../storage/r2';
+import { getSnapshotDocument, putBytes, putJson, snapshotDocument, snapshotKey, uploadKey } from '../storage/r2';
 import { extractZip } from '../uploads/zip';
 import { createRateLimiter, rateLimitMiddleware } from './rate-limit';
 
@@ -83,8 +71,7 @@ function detectPackage(pkg: LoadedPackage): DetectedPackage {
 	const skills = pkg.manifest.state === 'ok' ? (pkg.manifest.data.skills ?? []) : [];
 	return {
 		skillMd: pkg.files.some((f) => f.path === 'SKILL.md'),
-		manifest:
-			pkg.manifest.state === 'ok' ? (pkg.manifest.inferred ? 'inferred' : 'ok') : pkg.manifest.state,
+		manifest: pkg.manifest.state === 'ok' ? (pkg.manifest.inferred ? 'inferred' : 'ok') : pkg.manifest.state,
 		name: pkg.manifest.state === 'ok' ? pkg.manifest.data.name : null,
 		skillCount: skills.length >= MIN_PACK_SKILLS ? skills.length : null,
 	};
@@ -103,12 +90,7 @@ function nameFromFilename(filename: string): string {
 // A validation failure must never fail the submission: the draft still returns
 // 201. Inline mode runs the validator in-process; queue mode enqueues to the
 // worker and the job row records any Redis outage.
-async function startValidation(
-	env: Env,
-	db: Db,
-	queue: ValidationQueue | null,
-	submissionId: number,
-) {
+async function startValidation(env: Env, db: Db, queue: ValidationQueue | null, submissionId: number) {
 	try {
 		const job = await createValidationJob(db, submissionId);
 		if (env.VALIDATION_MODE === 'inline' || !queue) {
@@ -119,11 +101,7 @@ async function startValidation(
 			void processValidationJob(env, db, submissionId).catch(async (err) => {
 				console.error('inline validation failed', err);
 				try {
-					await handleValidationFailure(
-						db,
-						submissionId,
-						err instanceof Error ? err.message : String(err),
-					);
+					await handleValidationFailure(db, submissionId, err instanceof Error ? err.message : String(err));
 				} catch (dbErr) {
 					console.error('could not record inline validation failure', dbErr);
 				}
@@ -170,10 +148,7 @@ async function createFromGithub(c: Ctx, { env, db, queue }: Deps): Promise<Respo
 
 	const permitted = await verifySubmitPermission(env, c.get('user'), parsed.data);
 	if (!permitted.success) {
-		return c.json(
-			{ success: false, error: permitted.error },
-			SOURCE_ERROR_STATUS[permitted.code],
-		);
+		return c.json({ success: false, error: permitted.error }, SOURCE_ERROR_STATUS[permitted.code]);
 	}
 
 	const pinned = await resolveCommit(env, parsed.data);
@@ -202,10 +177,7 @@ async function createFromGithub(c: Ctx, { env, db, queue }: Deps): Promise<Respo
 		snapshotKey: key,
 	});
 	await startValidation(env, db, queue, row.id);
-	return c.json(
-		{ success: true, data: { ...publicSubmission(row), detected: detectPackage(pkg) } },
-		201,
-	);
+	return c.json({ success: true, data: { ...publicSubmission(row), detected: detectPackage(pkg) } }, 201);
 }
 // Zip uploads have no repo owner to verify; they are honor-system under the
 // ToS ("own or have permission"), with abuse reports as the backstop.
@@ -221,10 +193,7 @@ async function createFromZip(c: Ctx, { env, db, queue }: Deps): Promise<Response
 		return c.json({ success: false, error: 'expected a multipart body with a "file" zip' }, 400);
 	}
 	if (file.size > MAX_ZIP_BYTES) {
-		return c.json(
-			{ success: false, error: `zip exceeds ${MAX_ZIP_BYTES / 1024 / 1024} MB` },
-			413,
-		);
+		return c.json({ success: false, error: `zip exceeds ${MAX_ZIP_BYTES / 1024 / 1024} MB` }, 413);
 	}
 
 	const bytes = new Uint8Array(await file.arrayBuffer());
@@ -253,10 +222,7 @@ async function createFromZip(c: Ctx, { env, db, queue }: Deps): Promise<Response
 		snapshotKey: key,
 	});
 	await startValidation(env, db, queue, row.id);
-	return c.json(
-		{ success: true, data: { ...publicSubmission(row), detected: detectPackage(pkg) } },
-		201,
-	);
+	return c.json({ success: true, data: { ...publicSubmission(row), detected: detectPackage(pkg) } }, 201);
 }
 // A unique-constraint failure means a concurrent publish raced this one; the
 // constraint name decides the message. Null for any other error.
@@ -297,36 +263,26 @@ async function publish(c: Ctx, { env, db }: Deps): Promise<Response> {
 	// means an earlier publish crashed mid-sequence.
 	const existingVersion = await findVersionBySubmission(db, id);
 	if (existingVersion) {
-		console.error(
-			`publish: submission ${id} has version ${existingVersion.id} but status "${submission.status}"`,
-		);
+		console.error(`publish: submission ${id} has version ${existingVersion.id} but status "${submission.status}"`);
 		return c.json({ success: false, error: ALREADY_PUBLISHED }, 409);
 	}
 
 	// Defense in depth alongside the submission status check.
 	const report = await findValidationReportForSubmission(db, id);
 	if (!report || report.status === 'failed') {
-		return c.json(
-			{ success: false, error: 'no publishable validation report on record; re-run validation' },
-			409,
-		);
+		return c.json({ success: false, error: 'no publishable validation report on record; re-run validation' }, 409);
 	}
 
 	const snapshot = await getSnapshotDocument(env, submission.snapshotKey);
 	if (!snapshot.success) {
 		console.error(`publish: snapshot fetch failed for submission ${id}: ${snapshot.error}`);
-		return c.json(
-			{ success: false, error: 'could not fetch the validated snapshot; try again' },
-			502,
-		);
+		return c.json({ success: false, error: 'could not fetch the validated snapshot; try again' }, 502);
 	}
 
 	const pkg = loadPackageFromFiles(snapshot.data.files, sourceNameFor(submission) ?? `submission-${id}`);
 	if (pkg.manifest.state !== 'ok') {
 		// Passed validation implies a valid manifest; this is stored-state corruption.
-		console.error(
-			`publish: submission ${id} passed validation but its manifest is ${pkg.manifest.state}`,
-		);
+		console.error(`publish: submission ${id} passed validation but its manifest is ${pkg.manifest.state}`);
 		return c.json({ success: false, error: 'stored snapshot is inconsistent; contact support' }, 500);
 	}
 
@@ -357,7 +313,10 @@ export function submissionRoutes(env: Env, db: Db, queue: ValidationQueue | null
 	routes.use('*', requireAuth(env, db));
 
 	// Each submission costs a GitHub fetch, an R2 write, and a validation run.
-	const perUser = rateLimitMiddleware(createRateLimiter(20, 60 * 60_000), (c) => `user:${c.get('user').id}`);
+	const perUser = rateLimitMiddleware<{ Variables: AuthVariables }>(
+		createRateLimiter(20, 60 * 60_000),
+		(c) => `user:${c.get('user').id}`,
+	);
 	routes.post('/', perUser, (c) => createFromGithub(c, deps));
 
 	routes.post('/zip', perUser, (c) => createFromZip(c, deps));

@@ -93,7 +93,10 @@ describe('extractZip', () => {
 
 describe('binary entries', () => {
 	it('leaves a binary file out of the extracted package', () => {
-		const zip = zipSync({ 'SKILL.md': strToU8('# demo'), 'logo.png': new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01]) });
+		const zip = zipSync({
+			'SKILL.md': strToU8('# demo'),
+			'logo.png': new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01]),
+		});
 		const result = extractZip(zip);
 		expect(result.success && result.data.map((f) => f.path)).toEqual(['SKILL.md']);
 	});

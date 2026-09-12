@@ -25,7 +25,11 @@ vi.mock('validator');
 
 const env = {} as never;
 const db = {} as never;
-const input = { githubUrl: 'https://github.com/anthropics/skills/tree/main/skills/pdf', ownerUserId: 7, attributedTo: 'anthropics' };
+const input = {
+	githubUrl: 'https://github.com/anthropics/skills/tree/main/skills/pdf',
+	ownerUserId: 7,
+	attributedTo: 'anthropics',
+};
 
 // A passed pipeline: real slugForSkill runs on this name -> slug "pdf-tools".
 function happyPath() {
@@ -73,10 +77,7 @@ describe('curateSkill', () => {
 	it('a name override drives both the slug and the published name', async () => {
 		const result = await curateSkill(env, db, { ...input, name: 'knowledge-work-sales' });
 		expect(result).toEqual({ slug: 'knowledge-work-sales', status: 'published' });
-		expect(publishSubmission).toHaveBeenCalledWith(
-			db,
-			expect.objectContaining({ name: 'knowledge-work-sales' }),
-		);
+		expect(publishSubmission).toHaveBeenCalledWith(db, expect.objectContaining({ name: 'knowledge-work-sales' }));
 	});
 
 	it('skips when the slug already exists, without submitting or publishing', async () => {
@@ -119,7 +120,9 @@ describe('curateSkill', () => {
 
 describe('applyFeaturedRanks', () => {
 	it('features every roster slug at its list position', async () => {
-		vi.mocked(findSkillBySlug).mockImplementation(async (_db, slug) => ({ id: FEATURED_SLUGS.indexOf(slug) + 100 }) as never);
+		vi.mocked(findSkillBySlug).mockImplementation(
+			async (_db, slug) => ({ id: FEATURED_SLUGS.indexOf(slug) + 100 }) as never,
+		);
 		const missing = await applyFeaturedRanks(db);
 		expect(missing).toEqual([]);
 		expect(setSkillCuration).toHaveBeenCalledTimes(FEATURED_SLUGS.length);

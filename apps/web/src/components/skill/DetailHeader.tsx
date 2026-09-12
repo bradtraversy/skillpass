@@ -16,9 +16,7 @@ export default function DetailHeader({ detail }: { detail: PublicSkillDetail }) 
 			<div className="min-w-0">
 				<div className="flex flex-wrap items-baseline gap-x-3">
 					<h1 className="text-[27px] font-[640] tracking-[-0.02em]">{title}</h1>
-					{detail.displayName && (
-						<span className="font-mono text-[13px] text-faint">{detail.slug}</span>
-					)}
+					{detail.displayName && <span className="font-mono text-[13px] text-faint">{detail.slug}</span>}
 				</div>
 				<p className="mt-[5px] text-[15px] text-muted">{detail.summary}</p>
 				<div className="mt-3 flex flex-wrap items-center gap-3 text-[12.5px] text-muted">

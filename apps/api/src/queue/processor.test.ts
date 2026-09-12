@@ -73,9 +73,7 @@ const CLEAN_FILES = [
 	{ path: 'SKILL.md', content: '# clean-skill\n\nSummarize the changelog for the user.\n' },
 ];
 
-const NO_MANIFEST_FILES = [
-	{ path: 'SKILL.md', content: '# mystery\n\nDo something helpful.\n' },
-];
+const NO_MANIFEST_FILES = [{ path: 'SKILL.md', content: '# mystery\n\nDo something helpful.\n' }];
 
 const SECRET_FILES = [
 	...CLEAN_FILES.slice(0, 1),
@@ -134,10 +132,7 @@ describe('processValidationJob', () => {
 			now: () => NOW,
 		});
 
-		expect(vi.mocked(upsertValidationReport)).toHaveBeenCalledWith(
-			db,
-			expect.objectContaining({ status: 'passed' }),
-		);
+		expect(vi.mocked(upsertValidationReport)).toHaveBeenCalledWith(db, expect.objectContaining({ status: 'passed' }));
 		expect(vi.mocked(setSubmissionStatus)).toHaveBeenLastCalledWith(db, 1, 'passed');
 		expect(doneProgress().find((s) => s.key === 'structure')?.state).toBe('ok');
 	});
@@ -149,10 +144,7 @@ describe('processValidationJob', () => {
 			now: () => NOW,
 		});
 
-		expect(vi.mocked(upsertValidationReport)).toHaveBeenCalledWith(
-			db,
-			expect.objectContaining({ status: 'failed' }),
-		);
+		expect(vi.mocked(upsertValidationReport)).toHaveBeenCalledWith(db, expect.objectContaining({ status: 'failed' }));
 		expect(vi.mocked(setSubmissionStatus)).toHaveBeenLastCalledWith(db, 1, 'failed');
 		expect(doneProgress().find((s) => s.key === 'content')?.state).toBe('fail');
 		expect(vi.mocked(markValidationJobDone)).toHaveBeenCalled();
@@ -166,11 +158,7 @@ describe('processValidationJob', () => {
 
 		await processValidationJob(env, db, 1, { fetchSnapshotDocument });
 
-		expect(vi.mocked(markValidationJobError)).toHaveBeenCalledWith(
-			db,
-			55,
-			'source snapshot is missing from storage',
-		);
+		expect(vi.mocked(markValidationJobError)).toHaveBeenCalledWith(db, 55, 'source snapshot is missing from storage');
 		expect(vi.mocked(setSubmissionStatus)).toHaveBeenLastCalledWith(db, 1, 'draft');
 		expect(vi.mocked(upsertValidationReport)).not.toHaveBeenCalled();
 		expect(vi.mocked(markValidationJobDone)).not.toHaveBeenCalled();
@@ -178,12 +166,10 @@ describe('processValidationJob', () => {
 
 	it('throws on an R2 outage so BullMQ retries, leaving the job un-terminal', async () => {
 		mockRows();
-		const fetchSnapshotDocument = vi
-			.fn()
-			.mockResolvedValue({
-				success: false,
-				error: 'r2 get errored: offline',
-			}) as unknown as typeof getSnapshotDocument;
+		const fetchSnapshotDocument = vi.fn().mockResolvedValue({
+			success: false,
+			error: 'r2 get errored: offline',
+		}) as unknown as typeof getSnapshotDocument;
 
 		await expect(processValidationJob(env, db, 1, { fetchSnapshotDocument })).rejects.toThrow(
 			'r2 get errored: offline',

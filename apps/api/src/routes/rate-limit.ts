@@ -1,4 +1,4 @@
-import type { Context, Next } from 'hono';
+import type { Context, Env, Next } from 'hono';
 
 // Fixed-window in-memory limiter. Honest for a single API instance (today's
 // Render footprint); swap for a shared store before scaling out.
@@ -25,11 +25,7 @@ export function createRateLimiter(maxPerWindow: number, windowMs: number): RateL
 	};
 }
 
-function prune(
-	windows: Map<string, { start: number; count: number }>,
-	now: number,
-	windowMs: number,
-): void {
+function prune(windows: Map<string, { start: number; count: number }>, now: number, windowMs: number): void {
 	for (const [key, window] of windows) {
 		if (now - window.start >= windowMs) windows.delete(key);
 	}
@@ -51,11 +47,11 @@ export function clientKey(header: (name: string) => string | undefined): string 
 
 // Buckets by client address unless the caller supplies a key (a user id for
 // authenticated routes, where the address is the wrong unit).
-export function rateLimitMiddleware(
+export function rateLimitMiddleware<E extends Env = Env>(
 	limiter: RateLimiter,
-	keyOf: (c: Context) => string = (c) => clientKey((name) => c.req.header(name)),
+	keyOf: (c: Context<E>) => string = (c) => clientKey((name) => c.req.header(name)),
 ) {
-	return async (c: Context, next: Next) => {
+	return async (c: Context<E>, next: Next) => {
 		if (!limiter.allow(keyOf(c))) {
 			return c.json({ success: false, error: 'Too many requests, slow down.' }, 429);
 		}

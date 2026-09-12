@@ -38,9 +38,7 @@ export default function SourceView({ slug, version }: { slug: string; version: s
 				>
 					{state === 'loading' ? 'Loading source...' : 'View validated source'}
 				</button>
-				{state === 'error' && (
-					<p className="mt-2 text-[12.5px] text-fail">Could not load the source - try again.</p>
-				)}
+				{state === 'error' && <p className="mt-2 text-[12.5px] text-fail">Could not load the source - try again.</p>}
 			</div>
 		);
 	}
@@ -60,9 +58,7 @@ export default function SourceView({ slug, version }: { slug: string; version: s
 						>
 							<FileIcon className="flex-none text-faint" />
 							<span className="font-mono text-text">{file.path}</span>
-							<span className="ml-auto text-[12px] text-faint">
-								{formatBytes(file.content.length)}
-							</span>
+							<span className="ml-auto text-[12px] text-faint">{formatBytes(file.content.length)}</span>
 							<svg
 								className={`flex-none text-faint transition-transform ${openPath === file.path ? 'rotate-90' : ''}`}
 								width="14"

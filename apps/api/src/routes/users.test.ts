@@ -102,9 +102,7 @@ describe('GET /users/:username', () => {
 
 	it('returns a profile that parses with the locked contract, skills included', async () => {
 		vi.mocked(findByUsername).mockResolvedValue(maintainer);
-		vi.mocked(listPublishedSkillsByMaintainer).mockResolvedValue([
-			{ skill, version, passport, maintainer },
-		]);
+		vi.mocked(listPublishedSkillsByMaintainer).mockResolvedValue([{ skill, version, passport, maintainer }]);
 		const res = await app.request('/users/bradtraversy');
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { data: unknown };
@@ -128,9 +126,7 @@ describe('GET /users/:username', () => {
 
 	it('leaks no internal fields', async () => {
 		vi.mocked(findByUsername).mockResolvedValue(maintainer);
-		vi.mocked(listPublishedSkillsByMaintainer).mockResolvedValue([
-			{ skill, version, passport, maintainer },
-		]);
+		vi.mocked(listPublishedSkillsByMaintainer).mockResolvedValue([{ skill, version, passport, maintainer }]);
 		const res = await app.request('/users/bradtraversy');
 		const text = JSON.stringify(await res.json());
 		expect(text).not.toContain('githubId');

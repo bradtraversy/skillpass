@@ -5,12 +5,7 @@ import { resolveCommit } from './pin';
 
 const env = loadEnv(RAW_TEST_ENV);
 
-function mockFetch(response: {
-	status?: number;
-	json?: unknown;
-	reject?: Error;
-	headers?: Record<string, string>;
-}) {
+function mockFetch(response: { status?: number; json?: unknown; reject?: Error; headers?: Record<string, string> }) {
 	const fn = vi.fn().mockImplementation(() => {
 		if (response.reject) return Promise.reject(response.reject);
 		const status = response.status ?? 200;

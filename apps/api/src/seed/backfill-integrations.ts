@@ -5,7 +5,6 @@ import { classifyIntegrations } from '../review/classify-integrations';
 import { runBackfill } from './runner';
 
 runBackfill(import.meta.url, async (env, db) => {
-
 	if (!env.ANTHROPIC_API_KEY) {
 		console.log('ANTHROPIC_API_KEY is not set; nothing to classify.');
 		return;
@@ -19,9 +18,7 @@ runBackfill(import.meta.url, async (env, db) => {
 			.where(and(eq(skills.status, 'published'), isNull(skills.integrations))),
 	]);
 
-	console.log(
-		`${rows.length} published skills to classify (${published.length - rows.length} already classified)\n`,
-	);
+	console.log(`${rows.length} published skills to classify (${published.length - rows.length} already classified)\n`);
 
 	const distribution = new Map<string, number>();
 	let none = 0;

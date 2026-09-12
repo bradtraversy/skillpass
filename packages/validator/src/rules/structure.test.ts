@@ -27,9 +27,7 @@ describe('structureRule', () => {
 
 	it('warns when a manifest is genuinely missing (no SKILL.md to infer from)', () => {
 		const findings = structureRule(pkg());
-		expect(findings).toContainEqual(
-			expect.objectContaining({ severity: 'warning', code: 'missing-manifest' }),
-		);
+		expect(findings).toContainEqual(expect.objectContaining({ severity: 'warning', code: 'missing-manifest' }));
 	});
 
 	it('fails on the broken-manifest fixture', () => {
@@ -39,17 +37,13 @@ describe('structureRule', () => {
 	});
 
 	it('fails a schema-invalid manifest, not just broken JSON', () => {
-		const findings = structureRule(
-			pkg({ manifest: { state: 'invalid', error: 'targets: must not be empty' } }),
-		);
+		const findings = structureRule(pkg({ manifest: { state: 'invalid', error: 'targets: must not be empty' } }));
 		expect(findings[0]).toMatchObject({ severity: 'failure', code: 'invalid-manifest' });
 		expect(findings[0].message).toContain('targets');
 	});
 
 	it('fails an entry that does not exist', () => {
-		const findings = structureRule(
-			pkg({ entries: [{ skillName: 'fake', path: 'missing/SKILL.md', exists: false }] }),
-		);
+		const findings = structureRule(pkg({ entries: [{ skillName: 'fake', path: 'missing/SKILL.md', exists: false }] }));
 		expect(findings).toContainEqual(
 			expect.objectContaining({
 				severity: 'failure',
@@ -60,19 +54,13 @@ describe('structureRule', () => {
 	});
 
 	it('fails an entry whose file is empty', () => {
-		const findings = structureRule(
-			pkg({ files: [{ path: 'SKILL.md', content: '  \n' }] }),
-		);
-		expect(findings).toContainEqual(
-			expect.objectContaining({ severity: 'failure', code: 'missing-skill-file' }),
-		);
+		const findings = structureRule(pkg({ files: [{ path: 'SKILL.md', content: '  \n' }] }));
+		expect(findings).toContainEqual(expect.objectContaining({ severity: 'failure', code: 'missing-skill-file' }));
 	});
 
 	it('reports only empty-package for an empty directory', () => {
 		const findings = structureRule(pkg({ files: [], entries: [] }));
-		expect(findings).toEqual([
-			expect.objectContaining({ severity: 'failure', code: 'empty-package' }),
-		]);
+		expect(findings).toEqual([expect.objectContaining({ severity: 'failure', code: 'empty-package' })]);
 	});
 });
 

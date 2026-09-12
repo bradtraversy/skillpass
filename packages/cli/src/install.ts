@@ -28,10 +28,7 @@ export function isOccupied(path: string): boolean {
 	return existsSync(path) && (!statSync(path).isDirectory() || readdirSync(path).length > 0);
 }
 
-export function receiptFor(
-	preflight: Pick<PublicPreflight, 'version' | 'sourceHash'>,
-	packSlug?: string,
-): Receipt {
+export function receiptFor(preflight: Pick<PublicPreflight, 'version' | 'sourceHash'>, packSlug?: string): Receipt {
 	return {
 		version: preflight.version,
 		sourceHash: preflight.sourceHash,

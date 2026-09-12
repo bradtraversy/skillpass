@@ -36,7 +36,7 @@ export const USAGE = [
 	'',
 	'Flags:',
 	'  --json    print machine-readable JSON instead of the readable report',
-	'  --target  install into a tool\'s skills folder: claude-code (.claude/skills),',
+	"  --target  install into a tool's skills folder: claude-code (.claude/skills),",
 	'            codex (.agents/skills)',
 	'  --global  with --target claude-code, install to ~/.claude/skills instead',
 	'  --dir     install target directory (default ./<slug>)',

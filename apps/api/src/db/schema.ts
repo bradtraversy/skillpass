@@ -12,7 +12,6 @@ import {
 } from 'drizzle-orm/pg-core';
 import {
 	ABUSE_REPORT_STATUSES,
-	PROGRESS_STEP_STATES,
 	RISK_LEVELS,
 	SKILL_STATUSES,
 	SOURCE_TYPES,

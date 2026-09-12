@@ -4,14 +4,7 @@ import { z } from 'zod';
 // Submission lifecycle enums. Distinct from SkillVersion's SourceType
 // ('github' | 'zip') - a submission records how it arrived, per the data model.
 export const SUBMISSION_SOURCE_TYPES = ['github_url', 'zip'] as const;
-export const SUBMISSION_STATUSES = [
-	'draft',
-	'validating',
-	'passed',
-	'warning',
-	'failed',
-	'published',
-] as const;
+export const SUBMISSION_STATUSES = ['draft', 'validating', 'passed', 'warning', 'failed', 'published'] as const;
 
 export const submissionSourceTypeSchema = z.enum(SUBMISSION_SOURCE_TYPES);
 export const submissionStatusSchema = z.enum(SUBMISSION_STATUSES);

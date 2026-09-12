@@ -10,17 +10,10 @@ import { runBackfill } from './runner';
 // mid-sentence at a wrap.
 export function isBrokenSummary(summary: string | null | undefined): boolean {
 	const s = (summary ?? '').trim();
-	return (
-		s.length < 3 ||
-		/^[|>][+-]?$/.test(s) ||
-		/^>\s/.test(s) ||
-		/<\/?[a-zA-Z][^>]*>/.test(s) ||
-		/[,;:]$/.test(s)
-	);
+	return s.length < 3 || /^[|>][+-]?$/.test(s) || /^>\s/.test(s) || /<\/?[a-zA-Z][^>]*>/.test(s) || /[,;:]$/.test(s);
 }
 
 runBackfill(import.meta.url, async (env, db) => {
-
 	const rows = await db
 		.select({ id: skills.id, slug: skills.slug, summary: skills.summary, snapshotKey: skillVersions.snapshotKey })
 		.from(skills)

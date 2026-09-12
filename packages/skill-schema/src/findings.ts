@@ -43,8 +43,7 @@ export const FINDING_COPY: Record<string, FindingCopy> = {
 	},
 	'missing-manifest': {
 		label: 'No manifest',
-		description:
-			'No skill.json was found, so the listing details were inferred from SKILL.md content.',
+		description: 'No skill.json was found, so the listing details were inferred from SKILL.md content.',
 	},
 	'missing-skill-file': {
 		label: 'Missing SKILL.md',

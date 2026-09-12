@@ -21,7 +21,7 @@ async function makeTarGz(entries: TarEntry[]): Promise<Buffer> {
 	}
 	p.finalize();
 	const chunks: Buffer[] = [];
-	for await (const c of p) chunks.push(c as Buffer);
+	for await (const c of p) chunks.push(c);
 	return gzipSync(Buffer.concat(chunks));
 }
 
@@ -75,9 +75,7 @@ describe('extractTarball', () => {
 		const first = await extractTarball(asBody(tar));
 		const second = await extractTarball(asBody(tar));
 		if (!first.success || !second.success) throw new Error('expected success');
-		expect(loadPackageFromFiles(first.data).sourceHash).toBe(
-			loadPackageFromFiles(second.data).sourceHash,
-		);
+		expect(loadPackageFromFiles(first.data).sourceHash).toBe(loadPackageFromFiles(second.data).sourceHash);
 	});
 
 	it('rejects a path-traversal entry', async () => {
@@ -87,9 +85,7 @@ describe('extractTarball', () => {
 	});
 
 	it('rejects a file over the per-file cap', async () => {
-		const tar = await makeTarGz([
-			{ name: 'repo-abc/big.md', content: 'a'.repeat(MAX_FILE_BYTES + 1) },
-		]);
+		const tar = await makeTarGz([{ name: 'repo-abc/big.md', content: 'a'.repeat(MAX_FILE_BYTES + 1) }]);
 		const result = await extractTarball(asBody(tar));
 		expect(result).toMatchObject({ success: false, code: 'too-large' });
 	});

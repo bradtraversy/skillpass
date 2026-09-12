@@ -33,11 +33,7 @@ export async function identifyByHash(
 	} catch {
 		return undefined;
 	}
-	const detail = await getParsed(
-		fetchImpl,
-		`${apiUrl}/skills/${encodeURIComponent(slug)}`,
-		publicSkillDetailSchema,
-	);
+	const detail = await getParsed(fetchImpl, `${apiUrl}/skills/${encodeURIComponent(slug)}`, publicSkillDetailSchema);
 	if (!detail.ok) {
 		return undefined;
 	}
@@ -89,9 +85,7 @@ export async function runOutdated(opts: OutdatedOptions = {}): Promise<CommandRe
 				}
 				seenPacks.add(receipt.pack.slug);
 				tracked += 1;
-				const members = Object.values(receipts).filter(
-					(r) => r.pack?.slug === receipt.pack?.slug,
-				).length;
+				const members = Object.values(receipts).filter((r) => r.pack?.slug === receipt.pack?.slug).length;
 				const latest = latestBySlug.get(receipt.pack.slug)?.version;
 				if (latest === undefined) {
 					rows.push(`  ${receipt.pack.slug}  ${receipt.pack.version}  not in the directory`);
@@ -99,9 +93,7 @@ export async function runOutdated(opts: OutdatedOptions = {}): Promise<CommandRe
 					rows.push(`  ${receipt.pack.slug}  ${receipt.pack.version}  current (pack, ${members} skills)`);
 				} else {
 					outdatedCount += 1;
-					rows.push(
-						`  ${receipt.pack.slug}  ${receipt.pack.version} -> ${latest}  (pack, ${members} skills)`,
-					);
+					rows.push(`  ${receipt.pack.slug}  ${receipt.pack.version} -> ${latest}  (pack, ${members} skills)`);
 				}
 				continue;
 			}
@@ -155,9 +147,7 @@ export async function runOutdated(opts: OutdatedOptions = {}): Promise<CommandRe
 	}
 	lines.push(
 		'',
-		outdatedCount === 0
-			? 'Everything is current.'
-			: `${outdatedCount} update(s) available - skillpass update <slug>`,
+		outdatedCount === 0 ? 'Everything is current.' : `${outdatedCount} update(s) available - skillpass update <slug>`,
 	);
 	return { lines, exitCode: outdatedCount === 0 ? 0 : 1 };
 }

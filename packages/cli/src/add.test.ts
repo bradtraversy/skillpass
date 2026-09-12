@@ -1,12 +1,5 @@
 import { strToU8, zipSync } from 'fflate';
-import {
-	existsSync,
-	mkdirSync,
-	mkdtempSync,
-	readdirSync,
-	readFileSync,
-	writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -74,16 +67,14 @@ const preflight: PublicPreflight = {
 	blockedReason: null,
 };
 
-function stubFetch(
-	overrides: { detail?: PublicSkillDetail; preflight?: PublicPreflight; zip?: Uint8Array } = {},
-) {
+function stubFetch(overrides: { detail?: PublicSkillDetail; preflight?: PublicPreflight; zip?: Uint8Array } = {}) {
 	const d = overrides.detail ?? detail;
 	const pf = overrides.preflight ?? preflight;
 	return vi.fn(async (input: RequestInfo | URL) => {
 		const url = String(input);
 		if (url.includes('/download')) {
 			const body = overrides.zip ?? ZIP;
-			return new Response(body.slice().buffer as ArrayBuffer, { status: 200 });
+			return new Response(body.slice().buffer, { status: 200 });
 		}
 		if (url.endsWith('/preflight')) {
 			return new Response(JSON.stringify({ success: true, data: pf }), { status: 200 });
@@ -189,9 +180,7 @@ describe('runAdd', () => {
 	});
 
 	it('rejects a zip with too many files without installing', async () => {
-		const bomb = zipSync(
-			Object.fromEntries(Array.from({ length: 501 }, (_, i) => [`f${i}.md`, strToU8('x')])),
-		);
+		const bomb = zipSync(Object.fromEntries(Array.from({ length: 501 }, (_, i) => [`f${i}.md`, strToU8('x')])));
 		const dir = tempTarget();
 		const result = await runAdd('smoke-clean', { dir, fetchImpl: stubFetch({ zip: bomb }) });
 		expect(result.exitCode).toBe(2);
@@ -287,9 +276,7 @@ describe('runAdd', () => {
 			fetchImpl: stubFetch(),
 		});
 		expect(result.exitCode).toBe(0);
-		expect(readFileSync(join(cwd, '.claude', 'skills', 'smoke-clean', 'SKILL.md'), 'utf8')).toBe(
-			'# smoke-clean\n',
-		);
+		expect(readFileSync(join(cwd, '.claude', 'skills', 'smoke-clean', 'SKILL.md'), 'utf8')).toBe('# smoke-clean\n');
 		const receipts = readReceipts(join(cwd, '.claude', 'skills'));
 		expect(receipts['smoke-clean']).toMatchObject({ version: '1.0.0', sourceHash: REAL_HASH });
 		expect(receipts['smoke-clean'].pack).toBeUndefined();
@@ -314,9 +301,7 @@ describe('runAdd', () => {
 		const result = await runAdd('smoke-clean', { target: 'codex', cwd, fetchImpl: stubFetch() });
 		expect(result.exitCode).toBe(0);
 		expect(result.lines.join('\n')).toContain('does not declare codex');
-		expect(readFileSync(join(cwd, '.agents', 'skills', 'smoke-clean', 'SKILL.md'), 'utf8')).toBe(
-			'# smoke-clean\n',
-		);
+		expect(readFileSync(join(cwd, '.agents', 'skills', 'smoke-clean', 'SKILL.md'), 'utf8')).toBe('# smoke-clean\n');
 	});
 
 	it('rejects --target together with --dir', async () => {
@@ -403,15 +388,9 @@ describe('runAdd', () => {
 			fetchImpl: packStub(),
 		});
 		expect(result.exitCode).toBe(0);
-		expect(readFileSync(join(cwd, '.claude', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe(
-			'# adopt claude\n',
-		);
-		expect(readFileSync(join(cwd, '.claude', 'skills', 'adopt', 'reference.md'), 'utf8')).toBe(
-			'adopt notes\n',
-		);
-		expect(readFileSync(join(cwd, '.claude', 'skills', 'niche', 'SKILL.md'), 'utf8')).toBe(
-			'# niche claude\n',
-		);
+		expect(readFileSync(join(cwd, '.claude', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe('# adopt claude\n');
+		expect(readFileSync(join(cwd, '.claude', 'skills', 'adopt', 'reference.md'), 'utf8')).toBe('adopt notes\n');
+		expect(readFileSync(join(cwd, '.claude', 'skills', 'niche', 'SKILL.md'), 'utf8')).toBe('# niche claude\n');
 		expect(existsSync(join(cwd, '.claude', 'skills', 'README.md'))).toBe(false);
 		expect(result.lines.join('\n')).toContain('Installed 3 skills to');
 	});
@@ -420,9 +399,7 @@ describe('runAdd', () => {
 		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
 		const result = await runAdd('blueprint-pack', { target: 'codex', cwd, fetchImpl: packStub() });
 		expect(result.exitCode).toBe(0);
-		expect(readFileSync(join(cwd, '.agents', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe(
-			'# adopt codex\n',
-		);
+		expect(readFileSync(join(cwd, '.agents', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe('# adopt codex\n');
 		expect(existsSync(join(cwd, '.agents', 'skills', 'niche'))).toBe(false);
 		const text = result.lines.join('\n');
 		expect(text).toContain('note: niche does not support codex; skipped');
@@ -466,9 +443,7 @@ describe('runAdd', () => {
 		expect(result.exitCode).toBe(0);
 		expect(result.lines.join('\n')).toContain('raw pack source');
 		expect(readFileSync(join(dir, 'README.md'), 'utf8')).toBe('pack readme\n');
-		expect(readFileSync(join(dir, '.agents', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe(
-			'# adopt codex\n',
-		);
+		expect(readFileSync(join(dir, '.agents', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe('# adopt codex\n');
 	});
 
 	it('fans out from the interactive pack picker', async () => {
@@ -531,9 +506,7 @@ describe('installChoices', () => {
 
 	it('still offers all mapped tools when nothing is declared as mappable', () => {
 		const choices = installChoices(['cursor'], 'smoke-clean');
-		expect(choices.every((c) => c.dir === 'smoke-clean' || c.label.includes('not declared'))).toBe(
-			true,
-		);
+		expect(choices.every((c) => c.dir === 'smoke-clean' || c.label.includes('not declared'))).toBe(true);
 		expect(choices.at(-1)).toEqual({
 			label: 'current directory (./smoke-clean)',
 			dir: 'smoke-clean',

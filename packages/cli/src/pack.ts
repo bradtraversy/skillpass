@@ -20,8 +20,7 @@ export function resolvePackMembers(members: SkillEntry[], target: string): Resol
 	const skipped: string[] = [];
 	for (const member of members) {
 		const variant = member.variants?.[target as Target];
-		const supportsTarget =
-			member.targets === undefined || (member.targets as string[]).includes(target);
+		const supportsTarget = member.targets === undefined || (member.targets as string[]).includes(target);
 		const path = variant ?? (supportsTarget ? member.entry : undefined);
 		if (path === undefined) {
 			skipped.push(member.name);

@@ -84,13 +84,7 @@ const SUPERPOWERS_SKILLS = [
 	'writing-skills',
 ];
 
-const OBSIDIAN_SKILLS = [
-	'defuddle',
-	'json-canvas',
-	'obsidian-bases',
-	'obsidian-cli',
-	'obsidian-markdown',
-];
+const OBSIDIAN_SKILLS = ['defuddle', 'json-canvas', 'obsidian-bases', 'obsidian-cli', 'obsidian-markdown'];
 
 const TRAILOFBITS_PATHS = [
 	'plugins/agentic-actions-auditor/skills/agentic-actions-auditor',
@@ -182,12 +176,7 @@ const PONYTAIL_SKILLS = [
 	'ponytail-help',
 ];
 
-const VERCEL_SKILLS = [
-	'react-best-practices',
-	'web-design-guidelines',
-	'deploy-to-vercel',
-	'vercel-optimize',
-];
+const VERCEL_SKILLS = ['react-best-practices', 'web-design-guidelines', 'deploy-to-vercel', 'vercel-optimize'];
 
 const GOOGLE_WORKSPACE_SKILLS = [
 	'gws-gmail',
@@ -202,13 +191,7 @@ const GOOGLE_WORKSPACE_SKILLS = [
 
 const SUPABASE_SKILLS = ['supabase', 'supabase-postgres-best-practices'];
 
-const CLOUDFLARE_SKILLS = [
-	'cloudflare',
-	'workers-best-practices',
-	'wrangler',
-	'durable-objects',
-	'web-perf',
-];
+const CLOUDFLARE_SKILLS = ['cloudflare', 'workers-best-practices', 'wrangler', 'durable-objects', 'web-perf'];
 
 const EXPO_SKILLS = ['expo-router', 'expo-project-structure', 'expo-data-fetching', 'expo-upgrade'];
 
@@ -227,14 +210,7 @@ const MARKETING_SKILLS = [
 	'emails',
 ];
 
-const AWS_SKILLS = [
-	'aws-cdk',
-	'aws-serverless',
-	'aws-iam',
-	'aws-database',
-	'aws-deployment',
-	'amazon-bedrock',
-];
+const AWS_SKILLS = ['aws-cdk', 'aws-serverless', 'aws-iam', 'aws-database', 'aws-deployment', 'amazon-bedrock'];
 
 // Wave 8 (curated 2026-08-03): the official Anthropic knowledge-work plugins,
 // one cohesive per-role workflow pack per plugin subpath - skills designed to
@@ -282,13 +258,7 @@ const FLUTTER_SKILLS = [
 	'flutter-implement-json-serialization',
 ];
 
-const SENTRY_SKILLS = [
-	'security-review',
-	'find-bugs',
-	'skill-scanner',
-	'prompt-optimizer',
-	'code-simplifier',
-];
+const SENTRY_SKILLS = ['security-review', 'find-bugs', 'skill-scanner', 'prompt-optimizer', 'code-simplifier'];
 
 const HUGGINGFACE_SKILLS = [
 	'huggingface-datasets',
@@ -298,13 +268,7 @@ const HUGGINGFACE_SKILLS = [
 	'huggingface-llm-trainer',
 ];
 
-const OPENAI_SKILLS = [
-	'chatgpt-apps',
-	'playwright',
-	'figma-implement-design',
-	'security-threat-model',
-	'cli-creator',
-];
+const OPENAI_SKILLS = ['chatgpt-apps', 'playwright', 'figma-implement-design', 'security-threat-model', 'cli-creator'];
 
 const AZURE_SKILLS = [
 	'azure-app-service',
@@ -336,8 +300,7 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 	},
 	...skillsUnder('DietrichGebert/ponytail', PONYTAIL_SKILLS, 'DietrichGebert'),
 	{
-		githubUrl:
-			'https://github.com/OthmanAdi/planning-with-files/tree/master/skills/planning-with-files',
+		githubUrl: 'https://github.com/OthmanAdi/planning-with-files/tree/master/skills/planning-with-files',
 		attributedTo: 'OthmanAdi',
 	},
 	// op7418/guizang-ppt-skill was considered but its root skill bundles a >1MB
@@ -360,18 +323,15 @@ export const SEED_LISTINGS: SeedListing[] = seedManifestSchema.parse([
 		attributedTo: 'mattpocock',
 	})),
 	{
-		githubUrl:
-			'https://github.com/multica-ai/andrej-karpathy-skills/tree/main/skills/karpathy-guidelines',
+		githubUrl: 'https://github.com/multica-ai/andrej-karpathy-skills/tree/main/skills/karpathy-guidelines',
 		attributedTo: 'multica-ai',
 	},
 	{
-		githubUrl:
-			'https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/ui-ux-pro-max',
+		githubUrl: 'https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/ui-ux-pro-max',
 		attributedTo: 'nextlevelbuilder',
 	},
 	{
-		githubUrl:
-			'https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/design-system',
+		githubUrl: 'https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/design-system',
 		attributedTo: 'nextlevelbuilder',
 	},
 	{

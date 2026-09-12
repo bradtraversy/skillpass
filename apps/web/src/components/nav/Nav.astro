@@ -6,8 +6,7 @@ import AccountMenu from './AccountMenu';
 const path = Astro.url.pathname.replace(/\/$/, '');
 const cliActive = path === '/docs/cli';
 const docsActive = path.startsWith('/docs') && !cliActive;
-const link = (active: boolean) =>
-	`text-[13.5px] ${active ? 'text-text' : 'text-muted hover:text-text'}`;
+const link = (active: boolean) => `text-[13.5px] ${active ? 'text-text' : 'text-muted hover:text-text'}`;
 ---
 
 <header class="border-b border-border">
@@ -17,8 +16,12 @@ const link = (active: boolean) =>
 			SkillPass
 		</a>
 		<nav class="ml-auto flex items-center gap-[22px] font-medium text-muted">
-			<a href="/docs" class={link(docsActive)}>Docs</a>
-			<a href="/docs/cli" class={link(cliActive)}>CLI</a>
+			<a href="/docs" class={link(docsActive)}>
+				Docs
+			</a>
+			<a href="/docs/cli" class={link(cliActive)}>
+				CLI
+			</a>
 			<a
 				href="/submit"
 				class="inline-flex items-center gap-[7px] rounded-sm border border-border-2 px-3.5 py-2 text-[13px] font-semibold text-text hover:bg-hover"

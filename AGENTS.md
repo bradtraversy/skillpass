@@ -258,8 +258,12 @@ proxy into `apps/web`.
 - Preview production build: `pnpm preview`
 - Astro CLI passthrough: `pnpm astro <cmd>` (e.g. `pnpm astro add react`)
 - Test (Vitest, run once): `pnpm test`
-- Verify: `pnpm verify` (typecheck, then tests, then build; the one command the
-  pre-push hook and GitHub Actions run)
+- Lint: `pnpm lint` (ESLint flat config at the root: typescript-eslint with
+  type-aware rules, react-hooks, astro)
+- Format: `pnpm format` to write, `pnpm format:check` to verify (Prettier: tabs,
+  single quotes, 120 columns, astro plugin)
+- Verify: `pnpm verify` (lint, format check, typecheck, tests, then build; the one
+  command the pre-push hook and GitHub Actions run)
 - Test (watch): `pnpm test:watch`
 - Skills CLI: `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
   `pnpm cli add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]` /
@@ -283,5 +287,6 @@ build plus a screenshot.
 **Types are a gate too.** `pnpm build` runs `astro check` before `astro build`, so
 a type error fails the build locally and on any deploy that runs the build command
 (e.g. Vercel). Keep the `Skill` contract and component props type-clean; run
-`pnpm typecheck` for a fast types-only pass without the full build. No lint command
-is configured yet.
+`pnpm typecheck` for a fast types-only pass without the full build. Lint and
+formatting are gates too: `pnpm lint` and `pnpm format:check` run inside
+`pnpm verify`, so run `pnpm format` before presenting a diff.

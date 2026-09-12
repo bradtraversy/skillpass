@@ -33,11 +33,7 @@ function toReportFindings(findings: RuleFinding[]): ReportFinding[] {
 		.map(({ severity: _severity, ...finding }) => finding);
 }
 
-export function buildReport(
-	pkg: LoadedPackage,
-	findings: RuleFinding[],
-	opts: { now?: Date } = {},
-): ValidationReport {
+export function buildReport(pkg: LoadedPackage, findings: RuleFinding[], opts: { now?: Date } = {}): ValidationReport {
 	const declared = pkg.manifest.state === 'ok' ? pkg.manifest.data.permissions : [];
 	const detected = [...detectPermissions(pkg.files)].sort();
 
@@ -67,10 +63,7 @@ export function buildReport(
 	return validationReportSchema.parse(report);
 }
 
-export async function validateLoadedPackage(
-	pkg: LoadedPackage,
-	opts: { now?: Date } = {},
-): Promise<ValidationReport> {
+export async function validateLoadedPackage(pkg: LoadedPackage, opts: { now?: Date } = {}): Promise<ValidationReport> {
 	return buildReport(
 		pkg,
 		RULES.flatMap((rule) => rule.run(pkg)),
@@ -78,9 +71,6 @@ export async function validateLoadedPackage(
 	);
 }
 
-export async function validatePackage(
-	dir: string,
-	opts: { now?: Date } = {},
-): Promise<ValidationReport> {
+export async function validatePackage(dir: string, opts: { now?: Date } = {}): Promise<ValidationReport> {
 	return validateLoadedPackage(loadPackage(dir), opts);
 }

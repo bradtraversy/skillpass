@@ -19,7 +19,17 @@ const LINK_BTN =
 
 function ExternalIcon() {
 	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+		<svg
+			width="14"
+			height="14"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden="true"
+		>
 			<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 			<path d="M15 3h6v6M10 14 21 3" />
 		</svg>
@@ -48,11 +58,32 @@ function CopyBox({ command }: { command: string }) {
 				className="grid cursor-pointer place-items-center text-faint hover:text-text"
 			>
 				{copied ? (
-					<svg className="text-pass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+					<svg
+						className="text-pass"
+						width="15"
+						height="15"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						aria-hidden="true"
+					>
 						<path d="M20 6 9 17l-5-5" />
 					</svg>
 				) : (
-					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+					<svg
+						width="15"
+						height="15"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						aria-hidden="true"
+					>
 						<rect x="9" y="9" width="13" height="13" rx="2" />
 						<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
 					</svg>
@@ -82,9 +113,7 @@ export default function InstallBar({ slug, version, distribution, install, homep
 						Needs the CLI: <code className="font-mono text-muted">npm install -g skillpass</code>
 					</p>
 				</div>
-				{preflightOpen && (
-					<PreflightPanel slug={slug} version={version} onClose={() => setPreflightOpen(false)} />
-				)}
+				{preflightOpen && <PreflightPanel slug={slug} version={version} onClose={() => setPreflightOpen(false)} />}
 			</>
 		);
 	}
@@ -111,9 +140,7 @@ export default function InstallBar({ slug, version, distribution, install, homep
 	// A system / framework: obtained from its repo (and docs). No download.
 	return (
 		<div className="flex items-center gap-3 rounded-md border border-border bg-surface p-[14px]">
-			<span className="flex-1 text-[13px] text-muted">
-				A full workflow system - get it from its repository.
-			</span>
+			<span className="flex-1 text-[13px] text-muted">A full workflow system - get it from its repository.</span>
 			{homepage && (
 				<a href={homepage} target="_blank" rel="noreferrer" className={LINK_BTN}>
 					<ExternalIcon />

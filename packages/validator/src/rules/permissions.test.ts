@@ -21,8 +21,7 @@ function pkgWith(content: string, permissions: PermissionKey[] = []): LoadedPack
 	};
 }
 
-const detectedKeys = (content: string) =>
-	detectPermissions(pkgWith(content).files);
+const detectedKeys = (content: string) => detectPermissions(pkgWith(content).files);
 
 describe('permission signals', () => {
 	it.each([

@@ -54,8 +54,7 @@ describe('parsePassport rejects', () => {
 describe('parsePassport rejects', () => {
 	it('an unknown permission key in the summary', () => {
 		expect(
-			parsePassport(passport({ permissionsSummary: { declared: ['filesystem.chmod'], detected: [] } }))
-				.success,
+			parsePassport(passport({ permissionsSummary: { declared: ['filesystem.chmod'], detected: [] } })).success,
 		).toBe(false);
 	});
 
@@ -67,7 +66,6 @@ describe('parsePassport rejects', () => {
 	it('a non-ISO generatedAt', () => {
 		expect(parsePassport(passport({ generatedAt: 'yesterday' })).success).toBe(false);
 	});
-
 });
 
 describe('parsePassport strips', () => {

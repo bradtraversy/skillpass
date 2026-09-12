@@ -1,15 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadEnv } from '../env';
 import { RAW_TEST_ENV } from '../testing/env';
-import {
-	getJson,
-	getSnapshotDocument,
-	putBytes,
-	putJson,
-	R2_MISSING,
-	snapshotKey,
-	uploadKey,
-} from './r2';
+import { getJson, getSnapshotDocument, putBytes, putJson, R2_MISSING, snapshotKey, uploadKey } from './r2';
 
 const env = loadEnv(RAW_TEST_ENV);
 
@@ -122,10 +114,7 @@ describe('getSnapshotDocument', () => {
 	const doc = { version: 1, files: [{ path: 'SKILL.md', content: '# hi\n' }] };
 
 	it('returns a schema-validated snapshot document', async () => {
-		vi.stubGlobal(
-			'fetch',
-			vi.fn().mockResolvedValue(new Response(JSON.stringify(doc), { status: 200 })),
-		);
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(doc), { status: 200 })));
 		const result = await getSnapshotDocument(env, 'snapshots/abc.json');
 		expect(result).toEqual({ success: true, data: doc });
 	});
@@ -133,11 +122,7 @@ describe('getSnapshotDocument', () => {
 	it('maps a shape mismatch to an error result', async () => {
 		vi.stubGlobal(
 			'fetch',
-			vi
-				.fn()
-				.mockResolvedValue(
-					new Response(JSON.stringify({ version: 2, files: 'nope' }), { status: 200 }),
-				),
+			vi.fn().mockResolvedValue(new Response(JSON.stringify({ version: 2, files: 'nope' }), { status: 200 })),
 		);
 		const result = await getSnapshotDocument(env, 'snapshots/abc.json');
 		expect(result).toEqual({ success: false, error: 'snapshot document has an unexpected shape' });

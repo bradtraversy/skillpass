@@ -1,13 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 import type { AdminSubmission, PublicSubmission } from 'skill-schema';
 import type { Db } from './client';
-import {
-	submissions,
-	users,
-	validationReports,
-	type SubmissionRow,
-	type ValidationReportRow,
-} from './schema';
+import { submissions, users, validationReports, type SubmissionRow, type ValidationReportRow } from './schema';
 
 export type NewSubmission = typeof submissions.$inferInsert;
 
@@ -35,11 +29,7 @@ export async function findSubmissionById(db: Db, id: number): Promise<Submission
 	return row;
 }
 
-export async function setSubmissionStatus(
-	db: Db,
-	id: number,
-	status: SubmissionRow['status'],
-): Promise<void> {
+export async function setSubmissionStatus(db: Db, id: number, status: SubmissionRow['status']): Promise<void> {
 	await db.update(submissions).set({ status }).where(eq(submissions.id, id));
 }
 
@@ -53,11 +43,7 @@ export async function listSubmissionsForUser(db: Db, userId: number): Promise<Su
 		.orderBy(desc(submissions.createdAt), desc(submissions.id));
 }
 
-export async function findSubmissionForUser(
-	db: Db,
-	userId: number,
-	id: number,
-): Promise<SubmissionRow | undefined> {
+export async function findSubmissionForUser(db: Db, userId: number, id: number): Promise<SubmissionRow | undefined> {
 	const [row] = await db
 		.select()
 		.from(submissions)

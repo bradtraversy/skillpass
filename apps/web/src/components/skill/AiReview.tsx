@@ -38,14 +38,12 @@ export default function AiReview({ review }: { review: AiReviewData | null }) {
 			</div>
 
 			<div className="p-[18px]">
-				<div className="mb-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint">
-					What this skill does
-				</div>
+				<div className="mb-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint">What this skill does</div>
 				<p className="text-[14px] leading-[1.6] text-text">{review.summary}</p>
 				<p className="mt-[12px] text-[13px] leading-[1.6] text-muted">{review.reasoning}</p>
 				<p className="mt-[15px] border-t border-dashed border-border-2 pt-[11px] text-[11.5px] leading-[1.5] text-faint">
-					AI-generated from the skill's source, not a guarantee. It's a starting point - read the
-					source yourself before installing.
+					AI-generated from the skill's source, not a guarantee. It's a starting point - read the source yourself before
+					installing.
 				</p>
 			</div>
 		</section>

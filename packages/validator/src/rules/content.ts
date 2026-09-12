@@ -112,10 +112,9 @@ const MALWARE_PATTERNS: readonly PatternRow[] = [
 	},
 ];
 
-const SECRET_STORE =
-	/(?<![\w.])\.(?:env|aws|ssh|npmrc|netrc)\b|\bid_rsa\b|\bkeychain\b|\bcredentials?\s+files?\b/.source;
-const SECRET_NOUN = /\b(?:passwords?|credentials?|secrets?|api[\s-]?keys?|tokens?|private\s+keys?)\b/
+const SECRET_STORE = /(?<![\w.])\.(?:env|aws|ssh|npmrc|netrc)\b|\bid_rsa\b|\bkeychain\b|\bcredentials?\s+files?\b/
 	.source;
+const SECRET_NOUN = /\b(?:passwords?|credentials?|secrets?|api[\s-]?keys?|tokens?|private\s+keys?)\b/.source;
 
 const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
 	{
@@ -159,8 +158,7 @@ const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
 // on the passport as "what to look out for" - a regex can't judge intent, so it
 // flags for human review rather than blocking. Feature 18 (LLM review) promotes
 // advisories to blocks with real judgment.
-const advisory = (rows: readonly PatternRow[]): PatternRow[] =>
-	rows.map((row) => ({ ...row, severity: 'warning' }));
+const advisory = (rows: readonly PatternRow[]): PatternRow[] => rows.map((row) => ({ ...row, severity: 'warning' }));
 
 const ALL_ROWS = [
 	...SECRET_PATTERNS,
@@ -185,8 +183,7 @@ const REDACTIONS = ALL_ROWS.filter((row) => row.redact).map(
 	(row) => new RegExp(row.pattern.source, `${row.pattern.flags}g`),
 );
 
-const redactLine = (line: string): string =>
-	REDACTIONS.reduce((l, re) => l.replace(re, '[redacted]'), line);
+const redactLine = (line: string): string => REDACTIONS.reduce((l, re) => l.replace(re, '[redacted]'), line);
 
 export const contentRule: Rule = (pkg) => {
 	const findings: RuleFinding[] = [];

@@ -101,7 +101,7 @@ const definitions: Record<PermissionKey, Omit<PermissionDefinition, 'key'>> = {
 	},
 	'connector.gmail.send': {
 		label: 'Send email',
-		description: 'Send messages on the user\'s behalf.',
+		description: "Send messages on the user's behalf.",
 		riskWeight: 8,
 	},
 	'connector.calendar.read': {

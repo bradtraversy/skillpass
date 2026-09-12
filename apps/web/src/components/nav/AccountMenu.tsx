@@ -2,10 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PublicUser } from 'skill-schema';
 import { getMe, logout, signInUrl } from '../../lib/api';
 
-type AuthState =
-	| { state: 'checking' }
-	| { state: 'signed-out' }
-	| { state: 'signed-in'; user: PublicUser };
+type AuthState = { state: 'checking' } | { state: 'signed-out' } | { state: 'signed-in'; user: PublicUser };
 
 export default function AccountMenu() {
 	const [auth, setAuth] = useState<AuthState>({ state: 'checking' });
@@ -13,9 +10,7 @@ export default function AccountMenu() {
 	const menuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		getMe().then((res) =>
-			setAuth(res.success ? { state: 'signed-in', user: res.data } : { state: 'signed-out' }),
-		);
+		void getMe().then((res) => setAuth(res.success ? { state: 'signed-in', user: res.data } : { state: 'signed-out' }));
 	}, []);
 
 	useEffect(() => {

@@ -69,9 +69,7 @@ describe('parseReport rejects', () => {
 	});
 
 	it('warning status with failures', () => {
-		expect(
-			parseReport(report({ status: 'warning', failures: [finding('secret-pattern')] })).success,
-		).toBe(false);
+		expect(parseReport(report({ status: 'warning', failures: [finding('secret-pattern')] })).success).toBe(false);
 	});
 
 	it('an unknown detected permission', () => {

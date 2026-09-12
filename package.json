@@ -1,39 +1,50 @@
 {
-  "name": "skillpass-monorepo",
-  "version": "1.0.0",
-  "description": "SkillPass: a validation-first directory of AI agent skills",
-  "scripts": {
-    "dev": "CHOKIDAR_USEPOLLING=1 pnpm -C apps/web dev",
-    "dev:native": "pnpm -C apps/web dev",
-    "dev:api": "pnpm -C apps/api dev",
-    "dev:worker": "pnpm -C apps/api dev:worker",
-    "dev:status": "pnpm -C apps/web astro dev status",
-    "dev:stop": "pnpm -C apps/web astro dev stop",
-    "dev:logs": "pnpm -C apps/web astro dev logs",
-    "build": "pnpm -C apps/web build",
-    "verify": "pnpm typecheck && pnpm test && pnpm build",
-    "preview": "pnpm -C apps/web preview",
-    "astro": "pnpm -C apps/web astro",
-    "typecheck": "pnpm -r typecheck",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "cli": "pnpm -C packages/cli --silent build && node packages/cli/bin/skillpass.js",
-    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "11.9.0",
-      "onFail": "download"
-    }
-  },
-  "type": "module",
-  "packageManager": "pnpm@11.9.0",
-  "private": true,
-  "devDependencies": {
-    "vitest": "^4.1.9"
-  }
+	"name": "skillpass-monorepo",
+	"version": "1.0.0",
+	"description": "SkillPass: a validation-first directory of AI agent skills",
+	"scripts": {
+		"dev": "CHOKIDAR_USEPOLLING=1 pnpm -C apps/web dev",
+		"dev:native": "pnpm -C apps/web dev",
+		"dev:api": "pnpm -C apps/api dev",
+		"dev:worker": "pnpm -C apps/api dev:worker",
+		"dev:status": "pnpm -C apps/web astro dev status",
+		"dev:stop": "pnpm -C apps/web astro dev stop",
+		"dev:logs": "pnpm -C apps/web astro dev logs",
+		"build": "pnpm -C apps/web build",
+		"lint": "eslint .",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build",
+		"preview": "pnpm -C apps/web preview",
+		"astro": "pnpm -C apps/web astro",
+		"typecheck": "pnpm -r typecheck",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"cli": "pnpm -C packages/cli --silent build && node packages/cli/bin/skillpass.js",
+		"prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "MIT",
+	"devEngines": {
+		"packageManager": {
+			"name": "pnpm",
+			"version": "11.9.0",
+			"onFail": "download"
+		}
+	},
+	"type": "module",
+	"packageManager": "pnpm@11.9.0",
+	"private": true,
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.10.0",
+		"eslint-plugin-astro": "^3.1.0",
+		"eslint-plugin-react-hooks": "^7.1.1",
+		"globals": "^17.12.0",
+		"prettier": "^3.9.6",
+		"prettier-plugin-astro": "^1.0.0",
+		"typescript-eslint": "^8.70.0",
+		"vitest": "^4.1.9"
+	}
 }

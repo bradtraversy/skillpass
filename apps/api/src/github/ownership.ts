@@ -7,11 +7,7 @@ import type { RepoTarget } from './url';
 // Admins curate third-party listings; everyone else submits repos they own or
 // org repos where their membership is public. Private org membership is not
 // checkable without a user OAuth token, which we deliberately never store.
-export async function verifySubmitPermission(
-	env: Env,
-	user: UserRow,
-	target: RepoTarget,
-): Promise<SourceResult<null>> {
+export async function verifySubmitPermission(env: Env, user: UserRow, target: RepoTarget): Promise<SourceResult<null>> {
 	if (user.role === 'admin') {
 		return { success: true, data: null };
 	}
@@ -39,10 +35,7 @@ export async function verifySubmitPermission(
 			'you can only submit repositories you own, or org repositories where your membership is public',
 		);
 	}
-	if (
-		res.status === 429 ||
-		(res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0')
-	) {
+	if (res.status === 429 || (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0')) {
 		return sourceError('rate-limited', 'github rate limit hit; try again shortly');
 	}
 	return sourceError('upstream', `github membership check failed (${res.status})`);

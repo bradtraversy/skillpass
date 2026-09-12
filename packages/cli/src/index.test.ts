@@ -68,9 +68,7 @@ describe('parseCliArgs', () => {
 
 	it('marks a flag with a missing value invalid', () => {
 		expect(parseCliArgs(['add', 'smoke-clean', '--target']).invalid).toBe('--target needs a value');
-		expect(parseCliArgs(['add', 'smoke-clean', '--dir', '--yes']).invalid).toBe(
-			'--dir needs a value',
-		);
+		expect(parseCliArgs(['add', 'smoke-clean', '--dir', '--yes']).invalid).toBe('--dir needs a value');
 	});
 
 	it('parses --category with a value and --packs', () => {

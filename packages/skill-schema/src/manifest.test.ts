@@ -104,9 +104,7 @@ describe('parseManifest rejects', () => {
 	});
 
 	it('an unknown permission key', () => {
-		expect(parseManifest(singleSkill({ permissions: ['filesystem.format.disk'] })).success).toBe(
-			false,
-		);
+		expect(parseManifest(singleSkill({ permissions: ['filesystem.format.disk'] })).success).toBe(false);
 	});
 
 	it('an unknown distribution type', () => {

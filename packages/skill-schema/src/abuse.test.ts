@@ -18,9 +18,7 @@ describe('abuseReportInputSchema', () => {
 	});
 
 	it('rejects extra keys', () => {
-		expect(
-			abuseReportInputSchema.safeParse({ reason: 'long enough reason here', skillId: 1 }).success,
-		).toBe(false);
+		expect(abuseReportInputSchema.safeParse({ reason: 'long enough reason here', skillId: 1 }).success).toBe(false);
 	});
 });
 

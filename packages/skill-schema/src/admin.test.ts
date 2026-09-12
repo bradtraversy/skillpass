@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	adminQueueSchema,
-	parseResolveReportInput,
-	resolveReportInputSchema,
-} from './admin';
+import { adminQueueSchema, parseResolveReportInput, resolveReportInputSchema } from './admin';
 
 describe('resolveReportInputSchema', () => {
 	it('accepts the two terminal statuses', () => {
@@ -51,9 +47,7 @@ describe('adminQueueSchema', () => {
 					},
 				},
 			],
-			flaggedSkills: [
-				{ slug: 'flagged-one', name: 'Flagged One', maintainer: { username: 'owner' } },
-			],
+			flaggedSkills: [{ slug: 'flagged-one', name: 'Flagged One', maintainer: { username: 'owner' } }],
 		};
 		expect(adminQueueSchema.parse(queue)).toEqual(queue);
 	});

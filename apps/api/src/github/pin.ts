@@ -37,10 +37,7 @@ export async function resolveCommit(env: Env, target: RepoTarget): Promise<Sourc
 	}
 	// A 403 is only rate limiting when the quota is actually exhausted; other
 	// 403s (SAML-gated org, blocked token) fall through to the upstream message.
-	if (
-		res.status === 429 ||
-		(res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0')
-	) {
+	if (res.status === 429 || (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0')) {
 		return sourceError('rate-limited', 'github rate limit hit; try again shortly');
 	}
 	if (!res.ok) {

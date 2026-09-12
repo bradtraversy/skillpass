@@ -255,10 +255,7 @@ describe('publishSubmission', () => {
 		});
 
 		expect(outcome.success).toBe(true);
-		expect(createSkillVersion).toHaveBeenCalledWith(
-			db,
-			expect.objectContaining({ packSkills: members }),
-		);
+		expect(createSkillVersion).toHaveBeenCalledWith(db, expect.objectContaining({ packSkills: members }));
 	});
 
 	it('creates the skill verified when the input is verified (admin-curated add)', async () => {

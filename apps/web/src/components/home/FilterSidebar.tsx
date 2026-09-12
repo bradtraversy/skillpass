@@ -1,4 +1,4 @@
-import { CATEGORIES, INTEGRATIONS, type CategorySlug, type PublicSkillSummary, type Target } from 'skill-schema';
+import { CATEGORIES, INTEGRATIONS, type PublicSkillSummary, type Target } from 'skill-schema';
 import { CATEGORY_SWATCHES } from '../../lib/category-tints';
 import { facetCounts } from '../../lib/facets';
 import type { CategoryFilter, IntegrationFilter, TypeFilter } from '../../lib/filter-skills';
@@ -31,10 +31,10 @@ export default function FilterSidebar({
 	const rows: { value: CategoryFilter; label: string; count: number; swatch: string }[] = [
 		{ value: 'all', label: 'All skills', count: skills.length, swatch: 'bg-accent' },
 		...CATEGORIES.filter((c) => counts.has(c.slug)).map((c) => ({
-			value: c.slug as CategoryFilter,
+			value: c.slug,
 			label: c.label,
 			count: counts.get(c.slug) ?? 0,
-			swatch: CATEGORY_SWATCHES[c.slug as CategorySlug],
+			swatch: CATEGORY_SWATCHES[c.slug],
 		})),
 		...(counts.has('uncategorized')
 			? [
@@ -57,7 +57,7 @@ export default function FilterSidebar({
 	const integrationRows: { value: IntegrationFilter; label: string; count: number }[] = [
 		{ value: 'all', label: 'All skills', count: skills.length },
 		...INTEGRATIONS.filter((i) => integrationCounts.has(i.slug)).map((i) => ({
-			value: i.slug as IntegrationFilter,
+			value: i.slug,
 			label: i.label,
 			count: integrationCounts.get(i.slug) ?? 0,
 		})),

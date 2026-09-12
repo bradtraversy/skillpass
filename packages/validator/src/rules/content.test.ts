@@ -202,9 +202,7 @@ describe('snippet redaction', () => {
 	});
 
 	it('redacts every secret on a line, not just the first', () => {
-		const [finding] = findingsFor(
-			'ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaa and ghp_bbbbbbbbbbbbbbbbbbbbbbbbbbbb',
-		);
+		const [finding] = findingsFor('ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaa and ghp_bbbbbbbbbbbbbbbbbbbbbbbbbbbb');
 		expect(finding.location?.snippet).toBe('[redacted] and [redacted]');
 	});
 
@@ -228,9 +226,7 @@ describe('fixtures and locations', () => {
 
 	it('flags the prompt-injection fixture as an advisory warning', () => {
 		const findings = contentRule(loadPackage(fixture('prompt-injection')));
-		expect(findings).toContainEqual(
-			expect.objectContaining({ severity: 'warning', code: 'prompt-injection' }),
-		);
+		expect(findings).toContainEqual(expect.objectContaining({ severity: 'warning', code: 'prompt-injection' }));
 	});
 
 	it('reports nothing for clean fixtures', () => {

@@ -1,4 +1,3 @@
-import { strToU8, zipSync } from 'fflate';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

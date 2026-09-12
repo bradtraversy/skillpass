@@ -11,9 +11,7 @@ export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: 
 			href={`/skills/${skill.slug}`}
 			className="grid cursor-pointer grid-cols-[30px_34px_1fr_auto] items-center gap-4 rounded-md border-b border-border px-3 py-[15px] hover:bg-surface"
 		>
-			<span className="text-right font-mono text-[13px] text-faint">
-				{String(rank).padStart(2, '0')}
-			</span>
+			<span className="text-right font-mono text-[13px] text-faint">{String(rank).padStart(2, '0')}</span>
 
 			<span
 				className={`grid size-[34px] place-items-center rounded-[9px] border font-mono text-[13px] font-semibold ${
@@ -56,9 +54,7 @@ export default function Row({ skill, rank }: { skill: PublicSkillSummary; rank: 
 					<span className="text-faint">{timeAgo(skill.publishedAt)}</span>
 				</div>
 				{categoryLabel && (
-					<div className="mt-[3px] font-mono text-[10px] uppercase tracking-[0.08em] text-faint">
-						{categoryLabel}
-					</div>
+					<div className="mt-[3px] font-mono text-[10px] uppercase tracking-[0.08em] text-faint">{categoryLabel}</div>
 				)}
 				<div className="mt-[2px] text-faint">by {skill.attributedTo ?? skill.maintainer}</div>
 			</div>

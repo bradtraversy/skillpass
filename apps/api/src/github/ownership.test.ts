@@ -59,9 +59,7 @@ describe('verifySubmitPermission', () => {
 			repo: 'skills',
 		});
 		expect(result).toEqual({ success: true, data: null });
-		expect(fn.mock.calls[0][0]).toBe(
-			'https://api.github.com/orgs/traversy-media/public_members/BradTraversy',
-		);
+		expect(fn.mock.calls[0][0]).toBe('https://api.github.com/orgs/traversy-media/public_members/BradTraversy');
 	});
 
 	it("forbids someone else's repo (org 404)", async () => {

@@ -69,9 +69,7 @@ export default function SearchBox({
 					</button>
 				))}
 			</div>
-			<kbd className="rounded-[5px] border border-border-2 px-[6px] py-[2px] font-mono text-[11px] text-muted">
-				/
-			</kbd>
+			<kbd className="rounded-[5px] border border-border-2 px-[6px] py-[2px] font-mono text-[11px] text-muted">/</kbd>
 		</div>
 	);
 }

@@ -66,11 +66,7 @@ function buildUserContent(pkg: LoadedPackage, report: ValidationReport): string 
 
 // Returns null (never throws) when the key is absent, the call fails, or the
 // model refuses, so publishing (18b) never blocks on the reviewer.
-export async function reviewSkill(
-	env: Env,
-	pkg: LoadedPackage,
-	report: ValidationReport,
-): Promise<AiReview | null> {
+export async function reviewSkill(env: Env, pkg: LoadedPackage, report: ValidationReport): Promise<AiReview | null> {
 	const raw = (await askStructured(env, {
 		system: SYSTEM_PROMPT,
 		user: buildUserContent(pkg, report),

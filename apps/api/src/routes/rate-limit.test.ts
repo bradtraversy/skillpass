@@ -57,7 +57,10 @@ describe('clientKey', () => {
 describe('rateLimitMiddleware', () => {
 	it('buckets by the supplied key instead of the client address', async () => {
 		const app = new Hono();
-		app.use('*', rateLimitMiddleware(createRateLimiter(1, 60_000), (c) => c.req.header('x-user') ?? 'anon'));
+		app.use(
+			'*',
+			rateLimitMiddleware(createRateLimiter(1, 60_000), (c) => c.req.header('x-user') ?? 'anon'),
+		);
 		app.get('/', (c) => c.text('ok'));
 		expect((await app.request('/', { headers: { 'x-user': 'a' } })).status).toBe(200);
 		expect((await app.request('/', { headers: { 'x-user': 'a' } })).status).toBe(429);

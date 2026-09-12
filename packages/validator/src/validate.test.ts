@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, sep } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { parseReport } from 'skill-schema';
 import { loadPackage, loadPackageFromFiles, type PackageFile } from './load';
 import { buildReport, RULES, validateLoadedPackage, validatePackage } from './validate';
@@ -56,9 +56,7 @@ describe('in-memory validation', () => {
 	it('stepwise RULES + buildReport produces the same report as validateLoadedPackage', async () => {
 		const pkg = loadPackage(fixture('undeclared-network'));
 		const findings = RULES.flatMap((rule) => rule.run(pkg));
-		expect(buildReport(pkg, findings, { now: NOW })).toEqual(
-			await validateLoadedPackage(pkg, { now: NOW }),
-		);
+		expect(buildReport(pkg, findings, { now: NOW })).toEqual(await validateLoadedPackage(pkg, { now: NOW }));
 	});
 
 	it('passes an inferred adapter-dir pack end to end', async () => {

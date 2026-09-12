@@ -1,19 +1,8 @@
 import { existsSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-	publicPreflightSchema,
-	type PublicPreflight,
-	type PublicSkillDetail,
-} from 'skill-schema';
+import { publicPreflightSchema, type PublicPreflight, type PublicSkillDetail } from 'skill-schema';
 import { downloadVerified, writeTree } from './add';
-import {
-	confirmRisk,
-	createOutput,
-	GLOBAL_NEEDS_TARGET,
-	isOccupied,
-	planMembers,
-	receiptFor,
-} from './install';
+import { confirmRisk, createOutput, GLOBAL_NEEDS_TARGET, isOccupied, planMembers, receiptFor } from './install';
 import { resolvePackMembers } from './pack';
 import { fetchPreflight, getParsed, parseSkillRef, resolveApiUrl } from './api';
 import { identifyByHash } from './outdated';
@@ -43,12 +32,7 @@ interface Located {
 	packSlug?: string;
 }
 
-async function locate(
-	slug: string,
-	opts: UpdateOptions,
-	fetchImpl: typeof fetch,
-	apiUrl: string,
-): Promise<Located[]> {
+async function locate(slug: string, opts: UpdateOptions, fetchImpl: typeof fetch, apiUrl: string): Promise<Located[]> {
 	const cwd = opts.cwd ?? process.cwd();
 	let areas = knownAreas(cwd, opts.home);
 	if (opts.target) {
@@ -142,9 +126,7 @@ export async function runUpdate(ref: string, opts: UpdateOptions = {}): Promise<
 	const hits = await locate(slug, opts, fetchImpl, apiUrl);
 	const memberHit = hits.find((h) => h.packSlug !== undefined && h.packSlug !== slug);
 	if (memberHit?.packSlug !== undefined) {
-		push(
-			`error: ${slug} is part of the ${memberHit.packSlug} pack; run skillpass update ${memberHit.packSlug}`,
-		);
+		push(`error: ${slug} is part of the ${memberHit.packSlug} pack; run skillpass update ${memberHit.packSlug}`);
 		return done(2);
 	}
 	if (hits.length === 0) {
@@ -228,9 +210,7 @@ async function changesVsInstalled(
 		publicPreflightSchema,
 	);
 	if (!before.ok) {
-		return [
-			`Changes vs installed v${installed.installedVersion}: unavailable (that version is no longer published)`,
-		];
+		return [`Changes vs installed v${installed.installedVersion}: unavailable (that version is no longer published)`];
 	}
 	const { added, removed } = permissionChanges(before.data.permissions, target.permissions);
 	if (added.length === 0 && removed.length === 0) {

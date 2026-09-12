@@ -9,29 +9,18 @@ import PermissionRow from './PermissionRow';
 import Stamp from './Stamp';
 import { CheckIcon, CloseIcon, DownloadIcon } from '../ui/icons';
 
-
 const SECTION = 'mb-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint';
 
-
-type LoadState =
-	| { phase: 'loading' }
-	| { phase: 'error' }
-	| { phase: 'ready'; preflight: PublicPreflight };
+type LoadState = { phase: 'loading' } | { phase: 'error' } | { phase: 'ready'; preflight: PublicPreflight };
 
 function DiffLine({ preflight }: { preflight: PublicPreflight }) {
 	const { diff } = preflight;
 	if (!diff) {
-		return (
-			<p className="text-[12.5px] text-muted">First published version - nothing to compare.</p>
-		);
+		return <p className="text-[12.5px] text-muted">First published version - nothing to compare.</p>;
 	}
 	const { added, removed } = changedPermissions(diff);
 	if (added.length === 0 && removed.length === 0) {
-		return (
-			<p className="text-[12.5px] text-muted">
-				No permission changes since v{diff.previousVersion}.
-			</p>
-		);
+		return <p className="text-[12.5px] text-muted">No permission changes since v{diff.previousVersion}.</p>;
 	}
 	return (
 		<div className="space-y-[3px] text-[12.5px]">
@@ -112,9 +101,7 @@ export default function PreflightPanel({
 						</span>
 					</div>
 
-					<div className="truncate font-mono text-[11.5px] text-faint">
-						{load.preflight.sourceHash}
-					</div>
+					<div className="truncate font-mono text-[11.5px] text-faint">{load.preflight.sourceHash}</div>
 
 					<div>
 						<div className={SECTION}>Permissions this skill uses</div>
@@ -134,9 +121,7 @@ export default function PreflightPanel({
 					</div>
 
 					{load.preflight.blocked ? (
-						<p
-							className={`rounded-sm border px-[12px] py-[9px] text-[12.5px] ${VERDICT_TINT.failed.all}`}
-						>
+						<p className={`rounded-sm border px-[12px] py-[9px] text-[12.5px] ${VERDICT_TINT.failed.all}`}>
 							{load.preflight.blockedReason ?? 'This version is blocked.'}
 						</p>
 					) : (

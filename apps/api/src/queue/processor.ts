@@ -29,11 +29,7 @@ function initialProgress(): ProgressStep[] {
 	].map((step) => ({ ...step, state: 'pending' as const }));
 }
 
-function setStep(
-	progress: ProgressStep[],
-	key: string,
-	state: ProgressStepState,
-): ProgressStep[] {
+function setStep(progress: ProgressStep[], key: string, state: ProgressStepState): ProgressStep[] {
 	return progress.map((step) => (step.key === key ? { ...step, state } : step));
 }
 
@@ -113,11 +109,7 @@ export async function processValidationJob(
 
 // Terminal failure (BullMQ retries exhausted): record the error and put the
 // submission back to draft so it can be retried.
-export async function handleValidationFailure(
-	db: Db,
-	submissionId: number,
-	message: string,
-): Promise<void> {
+export async function handleValidationFailure(db: Db, submissionId: number, message: string): Promise<void> {
 	const job = await findValidationJobForSubmission(db, submissionId);
 	if (job) {
 		await markValidationJobError(db, job.id, message);

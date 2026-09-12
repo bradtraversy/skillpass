@@ -17,11 +17,7 @@ export function buildAuthorizeUrl(clientId: string, state: string): string {
 // GitHub answers 200 even for bad codes, with { error } instead of a token.
 const tokenResponseSchema = z.looseObject({ access_token: z.string().min(1).optional() });
 
-export async function exchangeCode(
-	code: string,
-	clientId: string,
-	clientSecret: string,
-): Promise<Result<string>> {
+export async function exchangeCode(code: string, clientId: string, clientSecret: string): Promise<Result<string>> {
 	try {
 		const res = await fetch(TOKEN_URL, {
 			method: 'POST',
