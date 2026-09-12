@@ -39,6 +39,15 @@ export async function findVersionBySubmission(db: Db, submissionId: number): Pro
 
 // Latest by insert order, not skills.latestVersionId, so a publish that crashed
 // before setLatestVersion still bumps from the newest inserted version.
+export async function findSkillVersion(db: Db, skillId: number, version: string): Promise<SkillVersionRow | undefined> {
+	const [row] = await db
+		.select()
+		.from(skillVersions)
+		.where(and(eq(skillVersions.skillId, skillId), eq(skillVersions.version, version)))
+		.limit(1);
+	return row;
+}
+
 export async function findLatestVersionForSkill(db: Db, skillId: number): Promise<SkillVersionRow | undefined> {
 	const [row] = await db
 		.select()

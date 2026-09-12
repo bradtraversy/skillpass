@@ -88,6 +88,23 @@ describe('loadPackageFromFiles', () => {
 	const skillMd = (name: string, description = `Does ${name} things.`) =>
 		`---\nname: ${name}\ndescription: ${description}\n---\n\n# ${name}\n`;
 
+	const declaredVersion = (frontmatter: string) => {
+		const pkg = loadPackageFromFiles([{ path: 'SKILL.md', content: `---\nname: x\n${frontmatter}\n---\n# x\n` }], 'x');
+		return pkg.manifest.state === 'ok' ? pkg.manifest.data.version : pkg.manifest.state;
+	};
+
+	it('reads a declared version from frontmatter, nested under metadata or top level', () => {
+		expect(declaredVersion('metadata:\n  author: me\n  version: "1.4.0"')).toBe('1.4.0');
+		expect(declaredVersion("version: '2.1.0'\nmetadata:\n  version: 1.4.0")).toBe('2.1.0');
+		expect(declaredVersion('version: 3.0.0-beta.1')).toBe('3.0.0-beta.1');
+	});
+
+	it('ignores a declared version that is not semver', () => {
+		expect(declaredVersion('metadata:\n  version: v1.4')).toBeUndefined();
+		expect(declaredVersion('metadata:\n  author: me')).toBeUndefined();
+		expect(declaredVersion('other:\n  version: 1.4.0')).toBeUndefined();
+	});
+
 	it('infers a pack from paired adapter dirs with codex variants', () => {
 		const pkg = loadPackageFromFiles(
 			[

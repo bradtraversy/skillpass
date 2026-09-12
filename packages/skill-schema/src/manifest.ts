@@ -4,7 +4,7 @@ import { permissionKeySchema } from './permissions';
 import { parseWith, type ParseResult } from './result';
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+export const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 const slugSchema = z.string().regex(SLUG_RE, 'must be a kebab-case slug');
 

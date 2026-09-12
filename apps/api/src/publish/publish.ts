@@ -15,6 +15,7 @@ import {
 	createSkillVersion,
 	findLatestVersionForSkill,
 	findSkillBySlug,
+	findSkillVersion,
 	setLatestVersion,
 } from '../db/skills';
 import { setSubmissionStatus } from '../db/submissions';
@@ -36,6 +37,8 @@ export interface PublishInput {
 	homepage?: string;
 	install?: string;
 	manifestInferred?: boolean;
+	// A version the manifest declares; absent -> the major-bump counter.
+	version?: string;
 	// The manifest's skills[] when the package is a multi-skill pack; the callers
 	// pass null for single skills (including one-entry skills[] manifests).
 	packSkills?: SkillEntry[] | null;
@@ -63,7 +66,15 @@ export function publishFieldsFrom(
 	inferred = false,
 ): Pick<
 	PublishInput,
-	'name' | 'summary' | 'targets' | 'distribution' | 'homepage' | 'install' | 'manifestInferred' | 'packSkills'
+	| 'name'
+	| 'summary'
+	| 'targets'
+	| 'distribution'
+	| 'homepage'
+	| 'install'
+	| 'manifestInferred'
+	| 'version'
+	| 'packSkills'
 > {
 	return {
 		name: manifest.name,
@@ -73,11 +84,13 @@ export function publishFieldsFrom(
 		homepage: manifest.homepage,
 		install: manifest.install,
 		manifestInferred: inferred,
+		version: manifest.version,
 		packSkills: packSkillsOf(manifest),
 	};
 }
 
-export type PublishOutcome = { success: true; data: PublishResult } | { success: false; error: 'slug_taken' };
+export type PublishOutcome =
+	{ success: true; data: PublishResult } | { success: false; error: 'slug_taken' | 'version_taken' };
 
 // No transactions on neon-http: writes are ordered so every prefix is
 // consistent, with the version insert (unique submissionId) as the commit
@@ -91,6 +104,9 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 	const existing = await findSkillBySlug(db, slug);
 	if (existing && existing.maintainerId !== submission.userId) {
 		return { success: false, error: 'slug_taken' };
+	}
+	if (existing && input.version && (await findSkillVersion(db, existing.id, input.version))) {
+		return { success: false, error: 'version_taken' };
 	}
 
 	const skill =
@@ -106,7 +122,7 @@ export async function publishSubmission(db: Db, input: PublishInput): Promise<Pu
 		}));
 
 	const latest = await findLatestVersionForSkill(db, skill.id);
-	const version = nextVersion(latest?.version ?? null);
+	const version = input.version ?? nextVersion(latest?.version ?? null);
 
 	const versionRow = await createSkillVersion(db, {
 		skillId: skill.id,

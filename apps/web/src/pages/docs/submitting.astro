@@ -72,6 +72,12 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 		between versions are diffed on the download pre-flight and in the CLI, so your users see exactly what a new version
 		starts asking for.
 	</p>
+	<p>
+		The version is the one you declare: <code>metadata.version</code> in the SKILL.md frontmatter (the agentskills.io
+		convention) or <code>version</code> in <code>skill.json</code>, as long as it is semver. A republish has to carry a
+		version you have not published before. Without a declaration, SkillPass numbers versions itself: 1.0.0, then 2.0.0,
+		and so on.
+	</p>
 
 	<h2>After you publish</h2>
 	<p>

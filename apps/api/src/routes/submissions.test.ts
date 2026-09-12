@@ -841,6 +841,18 @@ describe('POST /submissions/:id/publish', () => {
 		expect(vi.mocked(publishSubmission)).not.toHaveBeenCalled();
 	});
 
+	it('409s a declared version the skill already published, naming the fix', async () => {
+		mockPublishPath();
+		vi.mocked(publishSubmission).mockResolvedValue({ success: false, error: 'version_taken' });
+		const res = await publish(1, await sessionCookie(7, env.SESSION_SECRET));
+		expect(res.status).toBe(409);
+		expect(await res.json()).toEqual({
+			success: false,
+			error:
+				'that version is already published for this skill; bump the version declared in SKILL.md metadata or skill.json',
+		});
+	});
+
 	it('409s when the stored report failed, despite the submission status', async () => {
 		mockPublishPath();
 		vi.mocked(findValidationReportForSubmission).mockResolvedValue({
@@ -949,7 +961,8 @@ describe('POST /submissions/:id/publish', () => {
 		expect(res.status).toBe(409);
 		expect(await res.json()).toEqual({
 			success: false,
-			error: 'another publish for this skill was in flight; try again',
+			error:
+				'that version is already published for this skill; bump a declared version, or try again if you did not declare one',
 		});
 	});
 

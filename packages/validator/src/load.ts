@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { parseManifest, slugForSkill, type Manifest, type SkillEntry, type Target } from 'skill-schema';
+import { parseManifest, SEMVER_RE, slugForSkill, type Manifest, type SkillEntry, type Target } from 'skill-schema';
 import { detectPermissions } from './rules/permissions';
 
 export interface PackageFile {
@@ -109,8 +109,18 @@ const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---/;
 // name/description only; deliberately not a full YAML parser. Reads SKILL.md
 // frontmatter (including `>`/`|` block scalars, common for descriptions), then
 // falls back to the first prose paragraph for a description.
-function readSkillMeta(content: string): { name?: string; description?: string } {
-	const out: { name?: string; description?: string } = {};
+// A top-level `version:` wins; otherwise the agentskills.io convention nests it
+// under `metadata:`. Quotes are stripped; validity is the caller's call.
+function readDeclaredVersion(frontmatter: string): string | undefined {
+	const top = /^version:\s*["']?([^"'\s]+)["']?\s*$/m.exec(frontmatter);
+	if (top) return top[1];
+	const block = /^metadata:\s*\n((?:[ \t]+\S.*(?:\n|$))*)/m.exec(frontmatter);
+	const nested = block && /^[ \t]+version:\s*["']?([^"'\s]+)["']?\s*$/m.exec(block[1]);
+	return nested ? nested[1] : undefined;
+}
+
+function readSkillMeta(content: string): { name?: string; description?: string; version?: string } {
+	const out: { name?: string; description?: string; version?: string } = {};
 	const fm = FRONTMATTER_RE.exec(content);
 	const body = fm ? content.slice(fm[0].length) : content;
 	if (fm) {
@@ -139,6 +149,8 @@ function readSkillMeta(content: string): { name?: string; description?: string }
 				out[key] = parts.join(' ').replace(/^["']|["']$/g, '');
 			}
 		}
+		const version = readDeclaredVersion(fm[1]);
+		if (version) out.version = version;
 	}
 	if (!out.description) {
 		const prose = firstParagraph(body);
@@ -204,6 +216,7 @@ function inferManifest(files: PackageFile[], fallbackName: string): Manifest {
 	return {
 		schemaVersion: '0.1',
 		name,
+		...(meta.version && SEMVER_RE.test(meta.version) ? { version: meta.version } : {}),
 		description: meta.description ?? name,
 		targets: inferTargets(files),
 		permissions,

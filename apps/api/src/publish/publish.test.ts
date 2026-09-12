@@ -8,6 +8,7 @@ import {
 	createSkillVersion,
 	findLatestVersionForSkill,
 	findSkillBySlug,
+	findSkillVersion,
 	setLatestVersion,
 } from '../db/skills';
 import { setSubmissionStatus } from '../db/submissions';
@@ -18,6 +19,7 @@ import { publishFieldsFrom, publishSubmission } from './publish';
 
 vi.mock('../db/skills', () => ({
 	findSkillBySlug: vi.fn(),
+	findSkillVersion: vi.fn(),
 	findLatestVersionForSkill: vi.fn(),
 	createSkill: vi.fn(),
 	createSkillVersion: vi.fn(),
@@ -133,6 +135,48 @@ beforeEach(() => {
 });
 
 describe('publishSubmission', () => {
+	it('publishes under the declared version instead of the counter', async () => {
+		vi.mocked(findSkillBySlug).mockResolvedValue(skillRow);
+		vi.mocked(findSkillVersion).mockResolvedValue(undefined);
+		vi.mocked(findLatestVersionForSkill).mockResolvedValue(versionRow({ version: '1.0.0' }));
+		vi.mocked(createSkillVersion).mockResolvedValue(versionRow({ id: 12, version: '1.4.0' }));
+
+		const outcome = await publishSubmission(db, {
+			submission: githubSubmission,
+			report: reportRow,
+			name: 'Clean Skill',
+			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
+			version: '1.4.0',
+			attributedTo: null,
+			now: NOW,
+		});
+
+		expect(outcome).toEqual({ success: true, data: { slug: 'clean-skill', version: '1.4.0' } });
+		expect(findSkillVersion).toHaveBeenCalledWith(db, 3, '1.4.0');
+		expect(createSkillVersion).toHaveBeenCalledWith(db, expect.objectContaining({ skillId: 3, version: '1.4.0' }));
+	});
+
+	it('refuses a declared version this skill already published, before any write', async () => {
+		vi.mocked(findSkillBySlug).mockResolvedValue(skillRow);
+		vi.mocked(findSkillVersion).mockResolvedValue(versionRow({ version: '1.4.0' }));
+
+		const outcome = await publishSubmission(db, {
+			submission: githubSubmission,
+			report: reportRow,
+			name: 'Clean Skill',
+			summary: 'A tidy demo skill.',
+			targets: ['claude-code'],
+			version: '1.4.0',
+			attributedTo: null,
+			now: NOW,
+		});
+
+		expect(outcome).toEqual({ success: false, error: 'version_taken' });
+		expect(createSkill).not.toHaveBeenCalled();
+		expect(createSkillVersion).not.toHaveBeenCalled();
+	});
+
 	it('first publish creates skill, version 1.0.0, passport, then flips the submission', async () => {
 		vi.mocked(findSkillBySlug).mockResolvedValue(undefined);
 		vi.mocked(createSkill).mockResolvedValue(skillRow);

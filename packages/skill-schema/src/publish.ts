@@ -20,8 +20,8 @@ export function slugForSkill(name: string): string {
 	return slug || 'skill';
 }
 
-// First publish is 1.0.0; each re-publish bumps the major. A manifest-declared
-// version field can override this later.
+// The fallback when a manifest declares no version: first publish is 1.0.0 and
+// each re-publish bumps the major.
 export function nextVersion(current: string | null): string {
 	if (!current) {
 		return '1.0.0';

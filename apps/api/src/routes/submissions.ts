@@ -226,14 +226,21 @@ async function createFromZip(c: Ctx, { env, db, queue }: Deps): Promise<Response
 }
 // A unique-constraint failure means a concurrent publish raced this one; the
 // constraint name decides the message. Null for any other error.
+const PUBLISH_OUTCOME_ERRORS = {
+	slug_taken: 'that skill name is already taken',
+	version_taken:
+		'that version is already published for this skill; bump the version declared in SKILL.md metadata or skill.json',
+} as const;
+
 function publishConflict(err: unknown): string | null {
 	const pgErr = err as { code?: string; constraint?: string };
 	if (pgErr.code !== '23505') return null;
 	if (pgErr.constraint === 'skills_slug_unique') return 'that skill name is already taken';
-	// A version-number collision is a race with another publish of the same
-	// skill; unlike the other conflicts, a retry succeeds.
+	// A version-number collision is either a declared version that raced the
+	// pre-check or two counter-based publishes in flight; only the latter clears
+	// on retry.
 	if (pgErr.constraint === 'skill_versions_skill_id_version_unique') {
-		return 'another publish for this skill was in flight; try again';
+		return 'that version is already published for this skill; bump a declared version, or try again if you did not declare one';
 	}
 	return ALREADY_PUBLISHED;
 }
@@ -303,7 +310,7 @@ async function publish(c: Ctx, { env, db }: Deps): Promise<Response> {
 		return c.json({ success: false, error: conflict }, 409);
 	}
 	if (!outcome.success) {
-		return c.json({ success: false, error: 'that skill name is already taken' }, 409);
+		return c.json({ success: false, error: PUBLISH_OUTCOME_ERRORS[outcome.error] }, 409);
 	}
 	return c.json({ success: true, data: outcome.data }, 201);
 }
