@@ -6,6 +6,7 @@ interface PatternRow {
 	message: string;
 	redact?: boolean; // strip the matched text from the snippet (secrets)
 	severity?: 'warning' | 'failure'; // defaults to failure
+	mentionAware?: boolean; // skip matches that only describe or quote the pattern
 }
 
 const SECRET_PATTERNS: readonly PatternRow[] = [
@@ -135,10 +136,12 @@ const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
 	},
 	{
 		code: 'credential-harvesting',
-		// The ::/. lookbehinds skip code identifiers (`Box::leak(secret)`,
-		// `.leak(`) so security docs naming anti-patterns don't flag.
+		// The verb has to sit where an instruction puts it (line or sentence
+		// start, or after then/and/to/should/must): narrative like "timing leaks
+		// secret bits" has a noun subject and does not fire. The ::/. lookbehinds
+		// skip code identifiers (`Box::leak(secret)`, `.leak(`).
 		pattern: new RegExp(
-			String.raw`(?<!\b(?:never|not|don'?t|avoids?|prevents?|stops?)\s)(?<!::)(?<!\.)\b(?:exfiltrates?|steals?|harvests?|dumps?|leaks?)\b[^.\n]{0,60}?${SECRET_NOUN}`,
+			String.raw`(?:^[-*\d.)\s]*|[.:;!?]\s+|\b(?:then|and|or|to|should|must|now|please)\s+)(?<!\b(?:never|not|don'?t|avoids?|prevents?|stops?)\s)(?<!::)(?<!\.)(?:exfiltrate|steal|harvest|dump|leak)s?\b[^.\n]{0,60}?${SECRET_NOUN}`,
 			'i',
 		),
 		message: 'matches a credential-exfiltration phrase',
@@ -158,15 +161,41 @@ const CREDENTIAL_PATTERNS: readonly PatternRow[] = [
 // on the passport as "what to look out for" - a regex can't judge intent, so it
 // flags for human review rather than blocking. Feature 18 (LLM review) promotes
 // advisories to blocks with real judgment.
-const advisory = (rows: readonly PatternRow[]): PatternRow[] => rows.map((row) => ({ ...row, severity: 'warning' }));
+const advisory = (rows: readonly PatternRow[], mentionAware = false): PatternRow[] =>
+	rows.map((row) => ({ ...row, severity: 'warning', mentionAware }));
 
+// Security skills describe the attacks they hunt. For the two language-level
+// groups, a phrase inside quotes or backticks, or one that follows detection
+// language on its line, is a mention of the pattern, not an instruction to the
+// agent. Commands and secrets stay strict: quoting does not make them inert.
 const ALL_ROWS = [
 	...SECRET_PATTERNS,
-	...advisory(INJECTION_PATTERNS),
+	...advisory(INJECTION_PATTERNS, true),
 	...advisory(DANGEROUS_PATTERNS),
 	...advisory(MALWARE_PATTERNS),
-	...advisory(CREDENTIAL_PATTERNS),
+	...advisory(CREDENTIAL_PATTERNS, true),
 ];
+
+const MENTION_LEAD_RE =
+	/\b(?:flags?|flagged|detects?|detecting|look(?:ing)?\s+for|watch\s+for|check(?:ing)?\s+for|signs?\s+of|indicators?\s+of|evidence\s+of|red\s+flags?|examples?|e\.g\.|such\s+as|attempts?\s+to|designed\s+to|(?:code|scripts?|files?|comments?|text|instructions?)\s+that)\b/i;
+const TRANSMIT_VERB_RE = /\b(?:post|send|curl|transmit|exfiltrate)s?\b/i;
+
+// Where a lookahead-only pattern matched nothing visible, anchor on the verb it
+// was looking for so the lead-in check still reads what precedes it.
+function matchAnchor(line: string, match: RegExpExecArray): number {
+	if (match[0]) return match.index;
+	const verb = line.search(TRANSMIT_VERB_RE);
+	return verb < 0 ? line.length : verb;
+}
+
+function isMention(line: string, anchor: number, inFence: boolean): boolean {
+	if (inFence || line.trimStart().startsWith('|')) return true;
+	const before = line.slice(0, anchor);
+	const inside = (mark: string) => (before.split(mark).length - 1) % 2 === 1;
+	return inside('"') || inside('`') || MENTION_LEAD_RE.test(before);
+}
+
+const FENCE_RE = /^\s*(?:```|~~~)/;
 
 // Vendor-documented example credentials (AWS's canonical doc keys). Not secrets,
 // so quoting them - as security-education skills do - must not hard-fail a
@@ -188,9 +217,17 @@ const redactLine = (line: string): string => REDACTIONS.reduce((l, re) => l.repl
 export const contentRule: Rule = (pkg) => {
 	const findings: RuleFinding[] = [];
 	for (const file of pkg.files) {
+		let inFence = false;
 		file.content.split('\n').forEach((rawLine, i) => {
+			if (FENCE_RE.test(rawLine)) {
+				inFence = !inFence;
+				return;
+			}
 			const line = withoutPlaceholders(rawLine);
-			const hits = ALL_ROWS.filter((row) => row.pattern.test(line));
+			const hits = ALL_ROWS.filter((row) => {
+				const match = row.pattern.exec(line);
+				return match !== null && !(row.mentionAware && isMention(line, matchAnchor(line, match), inFence));
+			});
 			if (hits.length === 0) return;
 			const snippet = redactLine(line).trim();
 			for (const row of hits) {
