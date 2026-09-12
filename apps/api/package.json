@@ -22,19 +22,19 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "^0.115.0",
+		"@anthropic-ai/sdk": "^0.124.0",
 		"@hono/node-server": "^1.14.0",
 		"@neondatabase/serverless": "^1.1.0",
 		"aws4fetch": "^1.0.20",
 		"bullmq": "^5.79.2",
 		"drizzle-orm": "^0.45.2",
 		"fflate": "^0.8.3",
-		"hono": "^4.7.0",
+		"hono": "^4.13.7",
 		"skill-schema": "workspace:*",
-		"tar-stream": "^3.2.0",
-		"tsx": "^4.19.0",
+		"tar-stream": "^3.2.1",
+		"tsx": "^4.23.13",
 		"validator": "workspace:*",
-		"zod": "^4.0.0"
+		"zod": "^4.5.4"
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",
