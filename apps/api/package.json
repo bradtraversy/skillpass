@@ -19,6 +19,7 @@
 		"db:backfill-display-copy": "node --env-file-if-exists=.env --import tsx src/seed/backfill-display-copy.ts",
 		"db:backfill-integrations": "node --env-file-if-exists=.env --import tsx src/seed/backfill-integrations.ts",
 		"db:backfill-embeddings": "node --env-file-if-exists=.env --import tsx src/seed/backfill-embeddings.ts",
+		"db:backfill-versions": "node --env-file-if-exists=.env --import tsx src/seed/backfill-versions.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
