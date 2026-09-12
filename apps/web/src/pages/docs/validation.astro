@@ -20,6 +20,10 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 		rules for risky patterns: leaked credentials, prompt-injection markers, dangerous commands. An AI review then reads
 		the skill the way an agent would and writes a plain-English account of what it does.
 	</p>
+	<p>
+		Only text files are snapshotted. Images, archives, and other binaries are left out and flagged with a
+		<code>binary-dropped</code> warning, so an install never carries anything the validator could not read.
+	</p>
 
 	<h2>Statuses</h2>
 	<ul>
@@ -84,6 +88,11 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 		question regex cannot: <em>what does this skill actually do?</em> It produces a short summary and a judgment -
 		clear, caution, or concern. The review runs once per source hash and is cached on the immutable passport. Skill
 		content is treated as untrusted data throughout, so instructions inside a skill cannot steer its own review.
+	</p>
+	<p>
+		The same pass, under the same content-as-data rule, fills in the listing: it assigns the browse category and the
+		works-with integrations you can filter by, and writes the display name and tagline shown in the directory. Those
+		fields describe the listing; they never change the passport.
 	</p>
 
 	<h2>Immutability and diffs</h2>

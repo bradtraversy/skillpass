@@ -8,7 +8,7 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 >
 	<p>
 		Listing a skill takes a GitHub URL and a minute of validation. No manifest is required - the pipeline infers
-		everything from the layouts agent tools already use.
+		everything from the layouts agent tools already use. Each account can submit up to 20 times an hour.
 	</p>
 
 	<h2>The ownership rule</h2>
@@ -52,7 +52,9 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 			<strong>Pin</strong> - the URL resolves to an exact commit; a moving branch is never trusted.
 		</li>
 		<li>
-			<strong>Snapshot</strong> - the files are captured to storage with a source hash.
+			<strong>Snapshot</strong> - the files are captured to storage with a source hash. Text files only, up to 500
+			files, 1 MB per file, and 10 MB in total; anything that is not text is left out and flagged as
+			<code>binary-dropped</code>.
 		</li>
 		<li>
 			<strong>Validate</strong> - the snapshot is parsed and scanned; see
@@ -71,9 +73,22 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 		starts asking for.
 	</p>
 
+	<h2>After you publish</h2>
+	<p>
+		Your listing appears in the directory immediately; no rebuild is involved. The
+		<a href="/dashboard">dashboard</a> shows your skills with their status, your submissions and how their validation
+		went, and any reports filed against your skills. You can unlist a skill there and relist it later; its published
+		passports stay immutable either way. Your public profile at <code>/u/&lt;username&gt;</code> lists your published
+		skills and your reputation, which grows with each publish.
+	</p>
+	<p>
+		Anyone can flag a listing with "Report this skill" on its page. Reports go to the admin queue, and a report never
+		changes a passport.
+	</p>
+
 	<h2>Zip fallback</h2>
 	<p>
-		No public repo? Upload a zip. It goes through the identical snapshot-and-validate pipeline, with the same caps (500
-		files, 1 MB per file, 10 MB total).
+		No public repo? Upload a zip. It goes through the identical snapshot-and-validate pipeline, with the same caps and
+		rules as a repository.
 	</p>
 </DocsShell>

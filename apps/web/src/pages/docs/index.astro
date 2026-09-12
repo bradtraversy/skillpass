@@ -18,7 +18,8 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 		Every listed skill ships a <strong>Skill Passport</strong>: a public, immutable validation record generated for each
 		published version. It carries the validation status, a risk level, the permissions the skill declares versus the
 		ones the validator actually detected in its files, an AI-written plain-English review of what the skill does, and
-		the pinned source hash of the exact files that were reviewed.
+		the pinned source hash of the exact files that were reviewed. The skill page also renders those exact files in a
+		source view, so you can read what the agent will read.
 	</p>
 
 	<h2>The trust chain</h2>
@@ -41,6 +42,19 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 			the pinned source hash, so what you install is exactly what was reviewed.
 		</li>
 	</ol>
+
+	<h2>Browsing the directory</h2>
+	<p>
+		The homepage is the directory. Keyword search matches names, summaries, authors, tools, and pack members as you
+		type; press <code>/</code> anywhere on the page to focus it. Switch the toggle to <strong>AI</strong> for semantic
+		search: your question is embedded and matched against every listing, so a request in your own words finds skills
+		that never use those words. AI search runs when you submit and allows 20 queries a minute per client.
+	</p>
+	<p>
+		<strong>Featured</strong> is a curated shortlist; <strong>Latest</strong> is everything by publish date. The sidebar
+		filters by category, by the tools a skill targets, by the services it works with, and by type, so you can show only
+		multi-skill <strong>packs</strong>. A pack lists once and installs every member; its badge shows the count.
+	</p>
 
 	<h2>What SkillPass is not</h2>
 	<p>
