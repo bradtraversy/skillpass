@@ -493,6 +493,28 @@ describe('runAdd', () => {
 		expect(text).toContain('Installed 2 skills to');
 	});
 
+	it('names the failing folder and what landed elsewhere when a multi-area pack install fails', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const home = mkdtempSync(join(tmpdir(), 'skillpass-home-'));
+		const claude = join(cwd, '.claude', 'skills');
+		const agents = join(cwd, '.agents', 'skills');
+		mkdirSync(agents, { recursive: true });
+		writeFileSync(join(agents, `adopt.tmp-${process.pid}`), '');
+		const result = await runAdd('blueprint-pack', {
+			target: ['claude-code', 'cursor'],
+			cwd,
+			home,
+			fetchImpl: packStub(),
+		});
+		expect(result.exitCode).toBe(2);
+		const text = result.lines.join('\n');
+		expect(text).toContain(
+			`error: could not write adopt in ${agents}; installed before the failure: ${claude}: adopt, audit, niche`,
+		);
+		expect(Object.keys(readReceipts(claude)).sort()).toEqual(['adopt', 'audit', 'niche']);
+		expect(readReceipts(agents)).toEqual({});
+	});
+
 	it('receipts each pack member as it lands, so a later failure loses none of them', async () => {
 		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
 		const area = join(cwd, '.claude', 'skills');

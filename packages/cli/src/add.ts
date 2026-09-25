@@ -281,6 +281,10 @@ async function installPack(ctx: AddContext, members: SkillEntry[], targets: Area
 			push('', `note: ${name} does not support ${r.tool}; skipped`);
 		}
 	}
+	// What landed, per area when there is more than one, so a failure reports it all.
+	const landed: string[] = [];
+	const describe = (dir: string, names: string[]) =>
+		planned.length > 1 ? `${dir}: ${names.join(', ')}` : names.join(', ');
 	for (const r of planned) {
 		const written: string[] = [];
 		try {
@@ -291,12 +295,15 @@ async function installPack(ctx: AddContext, members: SkillEntry[], targets: Area
 				recordReceipt(r.area.dir, plan.name, receiptFor(preflight, slug));
 			}
 		} catch {
+			const before = [...landed, ...(written.length > 0 ? [describe(r.area.dir, written)] : [])];
+			const where = planned.length > 1 ? ` in ${r.area.dir}` : '';
 			push(
 				'',
-				`error: could not write ${r.plans[written.length].name}; installed before the failure: ${written.join(', ') || 'none'}`,
+				`error: could not write ${r.plans[written.length].name}${where}; installed before the failure: ${before.join('; ') || 'none'}`,
 			);
 			return done(2);
 		}
+		landed.push(describe(r.area.dir, written));
 		push('', `Installed ${written.length} skills to ${r.area.dir}`, `  ${written.join(', ')}`);
 	}
 	push('Source hash verified against the Skill Passport.');

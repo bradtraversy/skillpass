@@ -36,7 +36,7 @@ async function locate(slug: string, opts: UpdateOptions, fetchImpl: typeof fetch
 	const cwd = opts.cwd ?? process.cwd();
 	let areas = knownAreas(cwd, opts.home);
 	if (opts.target) {
-		areas = areas.filter((a) => a.tools.includes(opts.target as string) && a.global === (opts.global ?? false));
+		areas = areas.filter((a) => a.tools.includes(opts.target as string) && (opts.global ? a.global : a.project));
 	}
 	const hits: Located[] = [];
 	for (const area of areas) {

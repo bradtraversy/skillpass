@@ -141,6 +141,24 @@ describe('runRemove', () => {
 		expect(existsSync(dir)).toBe(false);
 	});
 
+	it('removes a --global pack when the project and user folders coincide', () => {
+		const home = temp('skillpass-rm-home-');
+		const area = join(home, '.agents', 'skills');
+		for (const name of ['adopt', 'audit']) {
+			installSkill(join(area, name));
+			recordReceipt(area, name, {
+				version: '1.0.0',
+				sourceHash: 'sha256:abc',
+				installedAt: '2026-08-02T12:00:00.000Z',
+				pack: { slug: 'blueprint-pack', version: '1.0.0' },
+			});
+		}
+		const result = runRemove('blueprint-pack', { target: 'cursor', global: true, cwd: home, home });
+		expect(result.exitCode).toBe(0);
+		expect(existsSync(join(area, 'adopt'))).toBe(false);
+		expect(existsSync(join(area, 'audit'))).toBe(false);
+	});
+
 	it('removes from the user area with --target --global', () => {
 		const { cwd, home } = ctx();
 		const dir = join(home, '.claude', 'skills', 'demo');

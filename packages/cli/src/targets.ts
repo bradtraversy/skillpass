@@ -31,11 +31,16 @@ const INSTALL_TOOLS: Record<string, InstallTool> = {
 
 export const INSTALL_TOOL_NAMES = Object.keys(INSTALL_TOOLS);
 
+// Own keys only, so `--target constructor` is unknown rather than Object's.
+function lookupTool(name: string): InstallTool | undefined {
+	return Object.hasOwn(INSTALL_TOOLS, name) ? INSTALL_TOOLS[name] : undefined;
+}
+
 // Declared targets that double as install tools.
-export const MAPPED_TARGETS = TARGETS.filter((t) => t in INSTALL_TOOLS);
+export const MAPPED_TARGETS = TARGETS.filter((t) => lookupTool(t) !== undefined);
 
 export function layoutTarget(tool: string): Layout | undefined {
-	return INSTALL_TOOLS[tool]?.layout;
+	return lookupTool(tool)?.layout;
 }
 
 // A skill declares support for a tool when it names the tool or the layout the
@@ -49,7 +54,7 @@ export type ResolvedTarget = { ok: true; dir: string } | { ok: false; message: s
 
 // The skills area itself (pack fan-outs install N members into it).
 export function resolveTargetArea(target: string, global = false, home?: string): ResolvedTarget {
-	const tool = INSTALL_TOOLS[target];
+	const tool = lookupTool(target);
 	if (!tool) {
 		if ((TARGETS as readonly string[]).includes(target)) {
 			return { ok: false, message: `${target} has no standard skills folder yet; use --dir to pick a location` };
@@ -73,6 +78,8 @@ export interface KnownArea {
 	// Every tool that reads this folder, in registry order.
 	tools: string[];
 	layout: Layout;
+	// A folder can serve both scopes when the CLI runs from the home directory.
+	project: boolean;
 	global: boolean;
 	label: string;
 	// Absolute path.
@@ -91,24 +98,32 @@ export function knownAreas(cwd: string, home?: string): KnownArea[] {
 		for (const scope of scopes) {
 			const existing = areas.get(scope.dir);
 			if (existing) {
-				existing.tools.push(name);
-				existing.label = areaLabel(scope.display, scope.global, existing.tools);
+				if (!existing.tools.includes(name)) existing.tools.push(name);
+				existing.project ||= !scope.global;
+				existing.global ||= scope.global;
+				existing.label = areaLabel(existing);
 				continue;
 			}
-			areas.set(scope.dir, {
+			const area: KnownArea = {
 				tools: [name],
 				layout: tool.layout,
+				project: !scope.global,
 				global: scope.global,
-				label: areaLabel(scope.display, scope.global, [name]),
+				label: '',
 				dir: scope.dir,
-			});
+			};
+			area.label = areaLabel(area, scope.display);
+			areas.set(scope.dir, area);
 		}
 	}
 	return [...areas.values()];
 }
 
-function areaLabel(display: string, global: boolean, tools: string[]): string {
-	return `${display} (${global ? 'user' : 'project'}) - ${tools.join(', ')}`;
+// The display path is fixed on first sight; later merges only widen scope and tools.
+function areaLabel(area: KnownArea, display?: string): string {
+	const shown = display ?? area.label.slice(0, area.label.indexOf(' ('));
+	const scopes = [...(area.project ? ['project'] : []), ...(area.global ? ['user'] : [])].join(', ');
+	return `${shown} (${scopes}) - ${area.tools.join(', ')}`;
 }
 
 export type ResolvedArea = { ok: true; area: KnownArea } | { ok: false; message: string };
