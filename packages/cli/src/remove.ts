@@ -40,7 +40,7 @@ export function runRemove(slug: string, opts: RemoveOptions = {}): CommandResult
 	if (!opts.dir) {
 		let areas = knownAreas(cwd, opts.home);
 		if (opts.target) {
-			areas = areas.filter((a) => a.tool === opts.target && a.global === (opts.global ?? false));
+			areas = areas.filter((a) => a.tools.includes(opts.target as string) && a.global === (opts.global ?? false));
 		}
 		const packHits = areas
 			.map((area) => ({

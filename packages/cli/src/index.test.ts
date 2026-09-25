@@ -56,9 +56,30 @@ describe('parseCliArgs', () => {
 			yes: false,
 			global: true,
 			packs: false,
-			target: 'claude-code',
+			targets: ['claude-code'],
 			seen: ['--target', '--global'],
 		});
+	});
+
+	it('collects repeated --target values in order without duplicates', () => {
+		const parsed = parseCliArgs([
+			'add',
+			'x',
+			'--target',
+			'claude-code',
+			'--target',
+			'cursor',
+			'--target',
+			'claude-code',
+		]);
+		expect(parsed.targets).toEqual(['claude-code', 'cursor']);
+		expect(parsed.seen).toEqual(['--target', '--target', '--target']);
+	});
+
+	it('lets only add take more than one --target', async () => {
+		const result = await run(['remove', 'x', '--target', 'claude-code', '--target', 'cursor']);
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toBe('error: remove takes one --target');
 	});
 
 	it('marks an unknown flag invalid instead of swallowing it', () => {

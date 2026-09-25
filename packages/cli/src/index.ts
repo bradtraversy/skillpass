@@ -25,7 +25,7 @@ export const USAGE = [
 	'                                             find skills in the directory',
 	'  skillpass scan <path> [--json]              run the validator on a local skill package',
 	'  skillpass report <slug>[@version] [--json]  fetch the hosted passport pre-flight',
-	'  skillpass add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]',
+	'  skillpass add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]',
 	'                                             install a skill through the pre-flight gate',
 	'  skillpass remove <slug> [--target <tool> [--global] | --dir <path>]',
 	'                                             remove an installed skill',
@@ -36,9 +36,12 @@ export const USAGE = [
 	'',
 	'Flags:',
 	'  --json    print machine-readable JSON instead of the readable report',
-	"  --target  install into a tool's skills folder: claude-code (.claude/skills),",
-	'            codex (.agents/skills)',
-	'  --global  with --target claude-code, install to ~/.claude/skills instead',
+	"  --target  a tool's skills folder: claude-code, cline, or agents (the shared",
+	'            .agents/skills read by codex, cursor, windsurf, github-copilot,',
+	'            gemini-cli, and opencode; those names work too). add takes it more',
+	'            than once to install into several tools',
+	"  --global  with --target, use the tool's user-level folder (~/.claude/skills,",
+	'            ~/.agents/skills, ~/.cline/skills)',
 	'  --dir     install target directory (default ./<slug>)',
 	'  --yes     skip the confirmation prompt for medium+ risk skills',
 	'  --category  search filter: a directory category slug',
@@ -61,7 +64,8 @@ export interface ParsedArgs {
 	global: boolean;
 	packs: boolean;
 	dir?: string;
-	target?: string;
+	// Every --target value in order, duplicates dropped; only add takes more than one.
+	targets?: string[];
 	category?: string;
 	// Canonical names of every flag encountered, for per-command validation.
 	seen: string[];
@@ -115,7 +119,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 				if (arg === '--dir') {
 					parsed.dir = value;
 				} else if (arg === '--target') {
-					parsed.target = value;
+					parsed.targets = [...new Set([...(parsed.targets ?? []), value])];
 				} else {
 					parsed.category = value;
 				}
@@ -168,10 +172,14 @@ export async function run(argv: string[]): Promise<CommandResult> {
 	if (disallowed) {
 		return { lines: [`error: ${args.command} does not take ${disallowed}`, '', USAGE], exitCode: 2 };
 	}
+	const target = args.targets?.[0];
+	if (args.command !== 'add' && (args.targets?.length ?? 0) > 1) {
+		return { lines: [`error: ${args.command} takes one --target`, '', USAGE], exitCode: 2 };
+	}
 	if (args.command === 'search') {
 		return runSearch({
 			query: args.positional.join(' '),
-			target: args.target,
+			target,
 			category: args.category,
 			packs: args.packs,
 			json: args.json,
@@ -191,7 +199,7 @@ export async function run(argv: string[]): Promise<CommandResult> {
 		if (!slug) {
 			return { lines: ['error: remove needs a skill slug', '', USAGE], exitCode: 2 };
 		}
-		return runRemove(slug, { target: args.target, dir: args.dir, global: args.global });
+		return runRemove(slug, { target, dir: args.dir, global: args.global });
 	}
 	if (args.command === 'list') {
 		if (args.positional.length > 0) {
@@ -207,7 +215,7 @@ export async function run(argv: string[]): Promise<CommandResult> {
 		const tty = Boolean(process.stdin.isTTY);
 		return runUpdate(ref, {
 			yes: args.yes,
-			target: args.target,
+			target,
 			global: args.global,
 			style: styler(Boolean(process.stdout.isTTY)),
 			confirmImpl: tty ? confirmViaTty : undefined,
@@ -236,7 +244,7 @@ export async function run(argv: string[]): Promise<CommandResult> {
 		return runAdd(ref, {
 			yes: args.yes,
 			dir: args.dir,
-			target: args.target,
+			target: args.targets,
 			global: args.global,
 			style: styler(Boolean(process.stdout.isTTY)),
 			confirmImpl: tty ? confirmViaTty : undefined,

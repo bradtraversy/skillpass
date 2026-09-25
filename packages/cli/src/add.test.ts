@@ -2,7 +2,6 @@ import { strToU8, zipSync } from 'fflate';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import type { PublicPreflight, PublicSkillDetail } from 'skill-schema';
 import { loadPackageFromFiles } from 'validator';
 import { describe, expect, it, vi } from 'vitest';
@@ -304,6 +303,94 @@ describe('runAdd', () => {
 		expect(readFileSync(join(cwd, '.agents', 'skills', 'smoke-clean', 'SKILL.md'), 'utf8')).toBe('# smoke-clean\n');
 	});
 
+	it('installs into the shared folder for a tool that reads it, without a false warning', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-target-'));
+		const home = mkdtempSync(join(tmpdir(), 'skillpass-home-'));
+		const codexDetail = { ...detail, targets: ['codex'] as PublicSkillDetail['targets'] };
+		const result = await runAdd('smoke-clean', {
+			target: 'cursor',
+			cwd,
+			home,
+			fetchImpl: stubFetch({ detail: codexDetail }),
+		});
+		expect(result.exitCode).toBe(0);
+		expect(result.lines.join('\n')).not.toContain('does not declare');
+		expect(readFileSync(join(cwd, '.agents', 'skills', 'smoke-clean', 'SKILL.md'), 'utf8')).toBe('# smoke-clean\n');
+		expect(readReceipts(join(cwd, '.agents', 'skills'))['smoke-clean']?.version).toBe('1.0.0');
+	});
+
+	it('installs --global into the shared user folder for opencode', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-target-'));
+		const home = mkdtempSync(join(tmpdir(), 'skillpass-home-'));
+		const result = await runAdd('smoke-clean', { target: 'opencode', global: true, cwd, home, fetchImpl: stubFetch() });
+		expect(result.exitCode).toBe(0);
+		expect(existsSync(join(home, '.agents', 'skills', 'smoke-clean', 'SKILL.md'))).toBe(true);
+		expect(existsSync(join(cwd, '.agents'))).toBe(false);
+	});
+
+	it('fans a pack out with the agents variants for gemini-cli', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-pack-'));
+		const result = await runAdd('blueprint-pack', { target: 'gemini-cli', cwd, fetchImpl: packStub() });
+		expect(result.exitCode).toBe(0);
+		expect(readFileSync(join(cwd, '.agents', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe('# adopt codex\n');
+		expect(existsSync(join(cwd, '.agents', 'skills', 'niche'))).toBe(false);
+		expect(result.lines.join('\n')).toContain('note: niche does not support gemini-cli; skipped');
+	});
+
+	it('installs into several tools with one pre-flight and one download', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-multi-'));
+		const home = mkdtempSync(join(tmpdir(), 'skillpass-home-'));
+		const fetchImpl = stubFetch();
+		const result = await runAdd('smoke-clean', { target: ['claude-code', 'codex'], cwd, home, fetchImpl });
+		expect(result.exitCode).toBe(0);
+		expect(existsSync(join(cwd, '.claude', 'skills', 'smoke-clean', 'SKILL.md'))).toBe(true);
+		expect(existsSync(join(cwd, '.agents', 'skills', 'smoke-clean', 'SKILL.md'))).toBe(true);
+		expect(readReceipts(join(cwd, '.claude', 'skills'))['smoke-clean']?.version).toBe('1.0.0');
+		expect(readReceipts(join(cwd, '.agents', 'skills'))['smoke-clean']?.version).toBe('1.0.0');
+		const calls = (fetchImpl as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((c) => String(c[0]));
+		expect(calls.filter((url) => url.includes('/download'))).toHaveLength(1);
+		expect(calls.filter((url) => url.endsWith('/preflight'))).toHaveLength(1);
+	});
+
+	it('installs once when two targets share a folder, and says so', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-multi-'));
+		const home = mkdtempSync(join(tmpdir(), 'skillpass-home-'));
+		const result = await runAdd('smoke-clean', { target: ['codex', 'cursor'], cwd, home, fetchImpl: stubFetch() });
+		expect(result.exitCode).toBe(0);
+		const text = result.lines.join('\n');
+		expect(text).toContain('cursor and codex share');
+		expect(text.match(/Installed \d+ file\(s\)/g)).toHaveLength(1);
+	});
+
+	it('aborts before any write when one of several destinations is occupied', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-multi-'));
+		const home = mkdtempSync(join(tmpdir(), 'skillpass-home-'));
+		const occupied = join(cwd, '.agents', 'skills', 'smoke-clean');
+		mkdirSync(occupied, { recursive: true });
+		writeFileSync(join(occupied, 'SKILL.md'), '# mine\n');
+		const result = await runAdd('smoke-clean', { target: ['claude-code', 'codex'], cwd, home, fetchImpl: stubFetch() });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines.join('\n')).toContain('not empty');
+		expect(existsSync(join(cwd, '.claude', 'skills', 'smoke-clean'))).toBe(false);
+		expect(readFileSync(join(occupied, 'SKILL.md'), 'utf8')).toBe('# mine\n');
+	});
+
+	it('fans a pack into two tools in one pass', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-multi-'));
+		const home = mkdtempSync(join(tmpdir(), 'skillpass-home-'));
+		const result = await runAdd('blueprint-pack', {
+			target: ['claude-code', 'cursor'],
+			cwd,
+			home,
+			fetchImpl: packStub(),
+		});
+		expect(result.exitCode).toBe(0);
+		expect(readFileSync(join(cwd, '.claude', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe('# adopt claude\n');
+		expect(readFileSync(join(cwd, '.agents', 'skills', 'adopt', 'SKILL.md'), 'utf8')).toBe('# adopt codex\n');
+		expect(existsSync(join(cwd, '.claude', 'skills', 'niche'))).toBe(true);
+		expect(existsSync(join(cwd, '.agents', 'skills', 'niche'))).toBe(false);
+	});
+
 	it('rejects --target together with --dir', async () => {
 		const result = await runAdd('smoke-clean', {
 			target: 'claude-code',
@@ -323,7 +410,7 @@ describe('runAdd', () => {
 	});
 
 	it('exits 2 for a tool without an install area, naming --dir', async () => {
-		const result = await runAdd('smoke-clean', { target: 'cursor', fetchImpl: stubFetch() });
+		const result = await runAdd('smoke-clean', { target: 'aider', fetchImpl: stubFetch() });
 		expect(result.exitCode).toBe(2);
 		expect(result.lines.join('\n')).toContain('use --dir');
 	});
@@ -347,7 +434,7 @@ describe('runAdd', () => {
 
 	it('re-prompts on an invalid picker answer instead of defaulting', async () => {
 		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-ask-'));
-		const choices = installChoices(['claude-code'], 'smoke-clean');
+		const choices = installChoices(['claude-code'], 'smoke-clean', cwd);
 		const answers = ['99', 'abc', String(choices.length)];
 		const promptImpl = vi.fn(async () => answers.shift() ?? '');
 		const result = await runAdd('smoke-clean', { cwd, promptImpl, fetchImpl: stubFetch() });
@@ -370,7 +457,7 @@ describe('runAdd', () => {
 
 	it('installs to the current directory when that choice is picked', async () => {
 		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-ask-'));
-		const choices = installChoices(['claude-code'], 'smoke-clean');
+		const choices = installChoices(['claude-code'], 'smoke-clean', cwd);
 		const result = await runAdd('smoke-clean', {
 			cwd,
 			promptImpl: async () => String(choices.length),
@@ -481,31 +568,38 @@ describe('runAdd', () => {
 });
 
 describe('installChoices', () => {
-	it('offers declared tools first, then undeclared mapped tools, then current directory', () => {
-		const choices = installChoices(['claude-code'], 'smoke-clean');
+	const cwd = join('/work');
+	const home = join('/home', 'someone');
+
+	it('offers areas a declared tool reads first, then the rest, then current directory', () => {
+		const choices = installChoices(['claude-code'], 'smoke-clean', cwd, home);
 		expect(choices.map((c) => c.dir)).toEqual([
-			join('.claude', 'skills', 'smoke-clean'),
-			join(homedir(), '.claude', 'skills', 'smoke-clean'),
-			join('.agents', 'skills', 'smoke-clean'),
+			join(cwd, '.claude', 'skills', 'smoke-clean'),
+			join(home, '.claude', 'skills', 'smoke-clean'),
+			join(cwd, '.agents', 'skills', 'smoke-clean'),
+			join(home, '.agents', 'skills', 'smoke-clean'),
+			join(cwd, '.cline', 'skills', 'smoke-clean'),
+			join(home, '.cline', 'skills', 'smoke-clean'),
 			'smoke-clean',
 		]);
 	});
 
-	it('marks undeclared tools honestly', () => {
-		const choices = installChoices(['claude-code'], 'smoke-clean');
-		const codex = choices.find((c) => c.label.startsWith('codex'));
-		expect(codex?.label).toContain('not declared by this skill');
+	it('marks undeclared areas honestly', () => {
+		const choices = installChoices(['claude-code'], 'smoke-clean', cwd, home);
+		const shared = choices.find((c) => c.label.startsWith(join('.agents', 'skills')));
+		expect(shared?.label).toContain('not declared by this skill');
 		expect(choices[0].label).not.toContain('not declared');
 	});
 
-	it('puts declared codex ahead of undeclared claude-code', () => {
-		const choices = installChoices(['codex'], 'smoke-clean');
-		expect(choices[0].dir).toBe(join('.agents', 'skills', 'smoke-clean'));
+	it('puts the shared folder first for a codex skill and names every tool that reads it', () => {
+		const choices = installChoices(['codex'], 'smoke-clean', cwd, home);
+		expect(choices[0].dir).toBe(join(cwd, '.agents', 'skills', 'smoke-clean'));
+		expect(choices[0].label).toContain('cursor');
 		expect(choices[0].label).not.toContain('not declared');
 	});
 
-	it('still offers all mapped tools when nothing is declared as mappable', () => {
-		const choices = installChoices(['cursor'], 'smoke-clean');
+	it('still offers every area when nothing declared is an install tool', () => {
+		const choices = installChoices(['aider'], 'smoke-clean', cwd, home);
 		expect(choices.every((c) => c.dir === 'smoke-clean' || c.label.includes('not declared'))).toBe(true);
 		expect(choices.at(-1)).toEqual({
 			label: 'current directory (./smoke-clean)',
