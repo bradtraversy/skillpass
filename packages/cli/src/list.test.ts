@@ -18,10 +18,10 @@ describe('runList', () => {
 		const result = runList({ cwd, home });
 		expect(result.exitCode).toBe(0);
 		const text = result.lines.join('\n');
-		expect(text).toContain('.claude/skills (project) - claude-code\n  alpha');
+		expect(text).toContain(`${join('.claude', 'skills')} (project) - claude-code\n  alpha`);
 		expect(text).toContain(`${join(home, '.claude', 'skills')} (user) - claude-code\n  charlie`);
 		expect(text).toContain(
-			'.agents/skills (project) - agents, codex, cursor, windsurf, github-copilot, gemini-cli, opencode\n  bravo',
+			`${join('.agents', 'skills')} (project) - agents, codex, cursor, windsurf, github-copilot, gemini-cli, opencode\n  bravo`,
 		);
 	});
 
@@ -37,7 +37,7 @@ describe('runList', () => {
 			installedAt: '2026-08-02T12:00:00.000Z',
 		});
 		const result = runList({ cwd, home });
-		expect(result.lines).toEqual(['.claude/skills (project) - claude-code', '  alpha  1.2.0', '  beta']);
+		expect(result.lines).toEqual([`${join('.claude', 'skills')} (project) - claude-code`, '  alpha  1.2.0', '  beta']);
 	});
 
 	it('ignores loose files and sorts names within an area', () => {
@@ -49,7 +49,7 @@ describe('runList', () => {
 		writeFileSync(join(area, 'README.md'), 'not a skill');
 
 		const result = runList({ cwd, home });
-		expect(result.lines).toEqual(['.claude/skills (project) - claude-code', '  alpha', '  zulu']);
+		expect(result.lines).toEqual([`${join('.claude', 'skills')} (project) - claude-code`, '  alpha', '  zulu']);
 	});
 
 	it('ignores a dangling symlink instead of crashing', () => {
@@ -60,7 +60,7 @@ describe('runList', () => {
 		symlinkSync(join(area, 'missing'), join(area, 'ghost'));
 
 		const result = runList({ cwd, home });
-		expect(result.lines).toEqual(['.claude/skills (project) - claude-code', '  alpha']);
+		expect(result.lines).toEqual([`${join('.claude', 'skills')} (project) - claude-code`, '  alpha']);
 	});
 
 	it('reports a friendly empty state', () => {

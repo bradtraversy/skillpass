@@ -63,6 +63,16 @@ describe('resolveTargetDir', () => {
 	});
 });
 
+describe('inherited property names', () => {
+	it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty'])('treats %s as an unknown target', (name) => {
+		const result = resolveTargetDir(name, 'x');
+		expect(result.ok).toBe(false);
+		expect(result.ok === false && result.message).toContain('unknown target');
+		expect(layoutTarget(name)).toBeUndefined();
+		expect(declaresTool(['codex'], name)).toBe(false);
+	});
+});
+
 describe('layoutTarget and declaresTool', () => {
 	it('reads the claude layout for claude-code and the agents standard elsewhere', () => {
 		expect(layoutTarget('claude-code')).toBe('claude-code');
@@ -120,6 +130,21 @@ describe('knownAreas', () => {
 	it('labels a user-level area with its absolute path', () => {
 		const claude = areas.find((a) => a.dir === join(HOME, '.claude', 'skills'));
 		expect(claude?.label).toBe(`${join(HOME, '.claude', 'skills')} (user) - claude-code`);
+	});
+});
+
+describe('knownAreas from the home directory', () => {
+	const areas = knownAreas(HOME, HOME);
+
+	it('keeps one entry per folder that serves both scopes', () => {
+		expect(areas).toHaveLength(3);
+		for (const area of areas) {
+			expect(area.project).toBe(true);
+			expect(area.global).toBe(true);
+			expect(area.label).toContain('(project, user)');
+			expect(new Set(area.tools).size).toBe(area.tools.length);
+		}
+		expect(areas[1].tools).toHaveLength(7);
 	});
 });
 
