@@ -13,6 +13,7 @@ describe('parseCliArgs', () => {
 			yes: false,
 			global: false,
 			packs: false,
+			ai: false,
 			seen: ['--json'],
 		});
 	});
@@ -27,6 +28,7 @@ describe('parseCliArgs', () => {
 			yes: false,
 			global: false,
 			packs: false,
+			ai: false,
 			seen: [],
 		});
 	});
@@ -41,6 +43,7 @@ describe('parseCliArgs', () => {
 			yes: true,
 			global: false,
 			packs: false,
+			ai: false,
 			dir: './here',
 			seen: ['--dir', '--yes'],
 		});
@@ -56,6 +59,7 @@ describe('parseCliArgs', () => {
 			yes: false,
 			global: true,
 			packs: false,
+			ai: false,
 			targets: ['claude-code'],
 			seen: ['--target', '--global'],
 		});
@@ -98,6 +102,15 @@ describe('parseCliArgs', () => {
 		expect(parsed.packs).toBe(true);
 		expect(parsed.positional).toEqual(['commit']);
 		expect(parsed.seen).toEqual(['--category', '--packs']);
+	});
+
+	it('parses --ai for search and rejects it elsewhere', async () => {
+		const parsed = parseCliArgs(['search', 'turn a video into an article', '--ai']);
+		expect(parsed.ai).toBe(true);
+		expect(parsed.seen).toEqual(['--ai']);
+		const result = await run(['add', 'x', '--ai']);
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toBe('error: add does not take --ai');
 	});
 
 	it('marks --category with a missing value invalid', () => {

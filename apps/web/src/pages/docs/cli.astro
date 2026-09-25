@@ -18,10 +18,12 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 	<h2>Find: search</h2>
 	<pre><code>skillpass search pdf
 skillpass search --packs
-skillpass search --target codex --category security-review</code></pre>
+skillpass search --target codex --category security-review
+skillpass search --ai "turn a video into an article"</code></pre>
 	<p>
 		Searches the same fields as the website (names, summaries, authors, tools, pack members).
-		<code>--json</code> emits machine output; piped output is always plain and grep-friendly.
+		<code>--ai</code> searches by meaning through the directory's free AI search, in relevance order, with the same
+		filters. <code>--json</code> emits machine output; piped output is always plain and grep-friendly.
 	</p>
 
 	<h2>Inspect: report</h2>

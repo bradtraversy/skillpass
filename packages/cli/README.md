@@ -20,7 +20,7 @@ Requires Node 20 or newer. No runtime dependencies.
 ## Commands
 
 ```
-skillpass search [query] [--target <tool>] [--category <slug>] [--packs] [--json]
+skillpass search [query] [--ai] [--target <tool>] [--category <slug>] [--packs] [--json]
 skillpass scan <path> [--json]
 skillpass report <slug>[@version] [--json]
 skillpass add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]
@@ -37,6 +37,10 @@ skillpass --version | --help
 (names, summaries, authors, tools, pack members). Filter with
 `--target claude-code`, `--category security-review`, or `--packs` for
 multi-skill workflow packs.
+
+`skillpass search --ai "turn a video into an article"` searches by meaning
+instead of by keyword, through the directory's free AI search. Results come
+back in relevance order and the same filters apply.
 
 ### Inspect
 

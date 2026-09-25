@@ -21,7 +21,7 @@ export const USAGE = [
 	'skillpass - validate AI agent skills locally and inspect hosted passports',
 	'',
 	'Usage:',
-	'  skillpass search [query] [--target <tool>] [--category <slug>] [--packs] [--json]',
+	'  skillpass search [query] [--ai] [--target <tool>] [--category <slug>] [--packs] [--json]',
 	'                                             find skills in the directory',
 	'  skillpass scan <path> [--json]              run the validator on a local skill package',
 	'  skillpass report <slug>[@version] [--json]  fetch the hosted passport pre-flight',
@@ -44,6 +44,7 @@ export const USAGE = [
 	'            ~/.agents/skills, ~/.cline/skills)',
 	'  --dir     install target directory (default ./<slug>)',
 	'  --yes     skip the confirmation prompt for medium+ risk skills',
+	'  --ai      search by meaning: describe what you need (needs a query)',
 	'  --category  search filter: a directory category slug',
 	'  --packs   search filter: multi-skill packs only',
 	'  --version print the CLI version',
@@ -63,6 +64,7 @@ export interface ParsedArgs {
 	yes: boolean;
 	global: boolean;
 	packs: boolean;
+	ai: boolean;
 	dir?: string;
 	// Every --target value in order, duplicates dropped; only add takes more than one.
 	targets?: string[];
@@ -81,7 +83,7 @@ const COMMAND_FLAGS: Record<string, string[]> = {
 	list: [],
 	outdated: [],
 	update: ['--yes', '--target', '--global'],
-	search: ['--target', '--category', '--packs', '--json'],
+	search: ['--ai', '--target', '--category', '--packs', '--json'],
 };
 
 export function parseCliArgs(argv: string[]): ParsedArgs {
@@ -93,6 +95,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 		yes: false,
 		global: false,
 		packs: false,
+		ai: false,
 		seen: [],
 	};
 	for (let i = 0; i < argv.length; i++) {
@@ -108,6 +111,9 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 			parsed.seen.push(arg);
 		} else if (arg === '--packs') {
 			parsed.packs = true;
+			parsed.seen.push(arg);
+		} else if (arg === '--ai') {
+			parsed.ai = true;
 			parsed.seen.push(arg);
 		} else if (arg === '--dir' || arg === '--target' || arg === '--category') {
 			parsed.seen.push(arg);
@@ -182,6 +188,7 @@ export async function run(argv: string[]): Promise<CommandResult> {
 			target,
 			category: args.category,
 			packs: args.packs,
+			ai: args.ai,
 			json: args.json,
 			width: process.stdout.isTTY ? process.stdout.columns : undefined,
 			style: styler(Boolean(process.stdout.isTTY)),
