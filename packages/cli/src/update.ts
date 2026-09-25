@@ -36,7 +36,7 @@ async function locate(slug: string, opts: UpdateOptions, fetchImpl: typeof fetch
 	const cwd = opts.cwd ?? process.cwd();
 	let areas = knownAreas(cwd, opts.home);
 	if (opts.target) {
-		areas = areas.filter((a) => a.tool === opts.target && a.global === (opts.global ?? false));
+		areas = areas.filter((a) => a.tools.includes(opts.target as string) && a.global === (opts.global ?? false));
 	}
 	const hits: Located[] = [];
 	for (const area of areas) {
@@ -260,9 +260,10 @@ async function runPackUpdate(
 	if (!confirmed) return done(2);
 
 	const areaDir = installed.area.dir;
-	const { installs, skipped } = resolvePackMembers(detail.packMembers ?? [], installed.area.tool);
+	const tool = opts.target ?? installed.area.tools[0];
+	const { installs, skipped } = resolvePackMembers(detail.packMembers ?? [], installed.area.layout);
 	if (installs.length === 0) {
-		push('', `error: none of the new version's skills support ${installed.area.tool}`);
+		push('', `error: none of the new version's skills support ${tool}`);
 		return done(2);
 	}
 	const receipts = readReceipts(areaDir);
@@ -295,7 +296,7 @@ async function runPackUpdate(
 		return done(2);
 	}
 	for (const name of skipped) {
-		push('', `note: ${name} does not support ${installed.area.tool}; skipped`);
+		push('', `note: ${name} does not support ${tool}; skipped`);
 	}
 
 	const done1: string[] = [];

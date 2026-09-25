@@ -264,12 +264,14 @@ proxy into `apps/web`.
   command the pre-push hook and GitHub Actions run)
 - Test (watch): `pnpm test:watch`
 - Skills CLI: `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
-  `pnpm cli add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]` /
+  `pnpm cli add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]` /
   `pnpm cli remove <slug> [--target <tool> [--global] | --dir <path>]` /
   `pnpm cli update <slug>[@version]` / `pnpm cli outdated` /
   `pnpm cli list` / `pnpm cli --version`
-  (or `node packages/cli/bin/skillpass.js ...`); `--target claude-code` installs to
-  `.claude/skills/`, `--target codex` to `.agents/skills/`; `--json` for machine
+  (or `node packages/cli/bin/skillpass.js ...`); `--target` takes `claude-code`
+  (`.claude/skills/`), `cline` (`.cline/skills/`), or `agents` (the shared `.agents/skills/`,
+  also reached by `codex`, `cursor`, `windsurf`, `github-copilot`, `gemini-cli`, `opencode`);
+  `--global` uses the user-level folder; `add` takes `--target` more than once; `--json` for machine
   output. `search`, `report`, and `add` default to the production API
   (`https://api.skillpass.dev`); set `SKILLPASS_API=http://localhost:8787` to work
   against the local dev API

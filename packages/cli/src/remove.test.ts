@@ -132,6 +132,15 @@ describe('runRemove', () => {
 		expect(existsSync(join(cwd, '.claude', 'skills', 'adopt'))).toBe(true);
 	});
 
+	it('finds an install in the shared folder through any tool that reads it', () => {
+		const { cwd, home } = ctx();
+		const dir = join(cwd, '.agents', 'skills', 'demo');
+		installSkill(dir);
+		const result = runRemove('demo', { target: 'opencode', cwd, home });
+		expect(result.exitCode).toBe(0);
+		expect(existsSync(dir)).toBe(false);
+	});
+
 	it('removes from the user area with --target --global', () => {
 		const { cwd, home } = ctx();
 		const dir = join(home, '.claude', 'skills', 'demo');

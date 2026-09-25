@@ -40,10 +40,18 @@ skillpass report pdf&#64;1.0.0 --json</code></pre>
 	</p>
 
 	<h2>Install: add</h2>
-	<pre><code>skillpass add pdf --target claude-code            # .claude/skills/pdf (project)
-skillpass add pdf --target claude-code --global   # ~/.claude/skills/pdf
-skillpass add pdf --dir ./somewhere               # anywhere you point it
-skillpass add ai-blueprint --target codex          # a pack: every member installs</code></pre>
+	<pre><code>skillpass add pdf --target claude-code                  # .claude/skills/pdf (project)
+skillpass add pdf --target claude-code --global         # ~/.claude/skills/pdf
+skillpass add pdf --target cursor                       # .agents/skills/pdf, the shared folder
+skillpass add pdf --target claude-code --target agents  # both folders, one pre-flight
+skillpass add pdf --dir ./somewhere                     # anywhere you point it
+skillpass add ai-blueprint --target codex                # a pack: every member installs</code></pre>
+	<p>
+		<code>--target</code> takes <code>claude-code</code>, <code>cline</code>, or <code>agents</code>, the shared
+		<code>.agents/skills</code> folder that Codex, Cursor, Windsurf, GitHub Copilot, Gemini CLI, and OpenCode all read
+		(their names work too and land in the same place). <code>--global</code> switches to the tool's user-level folder.
+		Repeat <code>--target</code> to install into several tools at once.
+	</p>
 	<p>
 		The pre-flight report shows first; medium+ risk asks for confirmation; the download re-verifies against the pinned
 		hash; writes are atomic. With no flags in a terminal you get an interactive location picker. Installing a{' '}

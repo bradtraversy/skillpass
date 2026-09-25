@@ -23,7 +23,7 @@ Requires Node 20 or newer. No runtime dependencies.
 skillpass search [query] [--target <tool>] [--category <slug>] [--packs] [--json]
 skillpass scan <path> [--json]
 skillpass report <slug>[@version] [--json]
-skillpass add <slug>[@version] [--target <tool> [--global] | --dir <path>] [--yes]
+skillpass add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]
 skillpass remove <slug> [--target <tool> [--global] | --dir <path>]
 skillpass update <slug>[@version] [--target <tool> [--global]] [--yes]
 skillpass outdated
@@ -52,9 +52,15 @@ risk, then downloads the validated snapshot and re-verifies every byte against
 the pinned source hash before anything touches disk. Installs are atomic - a
 failed write leaves nothing behind.
 
-- `--target claude-code` installs to `.claude/skills/<slug>` (project) or
-  `~/.claude/skills/<slug>` with `--global`
-- `--target codex` installs to `.agents/skills/<slug>`
+- `--target <tool>` installs into the tool's skills folder, or its user-level
+  folder with `--global`:
+  - `claude-code`: `.claude/skills/` and `~/.claude/skills/`
+  - `agents`: the shared `.agents/skills/` and `~/.agents/skills/` that
+    `codex`, `cursor`, `windsurf`, `github-copilot`, `gemini-cli`, and
+    `opencode` all read; any of those names resolves to the same folders
+  - `cline`: `.cline/skills/` and `~/.cline/skills/`
+- Repeat `--target` to install into several tools in one pass with one
+  pre-flight; targets that share a folder install once
 - `--dir <path>` installs anywhere
 - No flags in a terminal: an interactive picker
 
