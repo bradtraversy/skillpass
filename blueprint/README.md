@@ -402,7 +402,8 @@ run, what to expect, and what would count as wrong. It reads the active feature
 spec when a feature is in progress, or the latest archived feature after
 `/complete`.
 
-`/check guide` is read-only. It does not run the app unless you explicitly ask for that.
+`/check guide` is read-only. It never runs the app or verification commands. When
+you want the agent to run the app and prove behavior, use `/check` instead.
 
 ## Deployment readiness
 
@@ -462,8 +463,7 @@ step in `current-feature.md`.
 │       ├── fix/               ($fix: document an ad-hoc fix)
 │       ├── tests/             ($tests: add unit testing)
 │       ├── implement/         ($implement: build the current spec)
-│       ├── check/             ($check: prove the done-whens)
-│       ├── try/               ($try: manual review guide)
+│       ├── check/             ($check: prove the done-whens, $check guide: manual review guide)
 │       ├── audit/             ($audit: code quality review)
 │       ├── complete/          ($complete: commit, merge, and log)
 │       ├── release/           ($release: Render or Vercel readiness)
@@ -567,7 +567,7 @@ between tools.
 Use the native invocation style for your tool:
 
 - Codex: `$onboard`, `$doctor`, `$adopt`, `$overview`, `$brief`, `$feature`,
-  `$fix`, `$tests`, `$implement`, `$check`, `$try`, `$audit`, `$complete`,
+  `$fix`, `$tests`, `$implement`, `$check`, `$check guide`, `$audit`, `$complete`,
   `$release`, `$prototype`, `$status`, or plain language like "run the overview."
   Experimental: `$autopilot`.
 - Claude Code: `/onboard`, `/doctor`, `/adopt`, `/overview`, `/brief`,
