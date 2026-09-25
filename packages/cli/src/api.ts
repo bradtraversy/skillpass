@@ -18,7 +18,11 @@ export function parseSkillRef(ref: string): { slug: string; version?: string } {
 	return at === -1 ? { slug: ref } : { slug: ref.slice(0, at), version: ref.slice(at + 1) };
 }
 
-export type FetchOutcome<T> = { ok: true; data: T } | { ok: false; notFound: boolean; message: string };
+export type FetchOutcome<T> =
+	| { ok: true; data: T }
+	// status and apiError are present when the API answered; callers can word
+	// specific statuses without changing the generic message.
+	| { ok: false; notFound: boolean; message: string; status?: number; apiError?: string };
 
 // Structural subset of a zod schema, so the CLI needs no direct zod dependency.
 export interface ContractSchema<T> {
@@ -40,7 +44,12 @@ export async function getParsed<T>(
 	try {
 		body = await res.json();
 	} catch {
-		return { ok: false, notFound: false, message: `unexpected response from the API (${res.status})` };
+		return {
+			ok: false,
+			notFound: false,
+			message: `unexpected response from the API (${res.status})`,
+			status: res.status,
+		};
 	}
 	if (
 		typeof body !== 'object' ||
@@ -48,9 +57,17 @@ export async function getParsed<T>(
 		!('success' in body) ||
 		(body as { success: boolean }).success !== true
 	) {
+		const error = (body as { error?: unknown } | null)?.error;
+		const apiError = typeof error === 'string' ? { apiError: error } : {};
 		return res.status === 404
-			? { ok: false, notFound: true, message: 'not found' }
-			: { ok: false, notFound: false, message: `the API returned an error (${res.status})` };
+			? { ok: false, notFound: true, message: 'not found', status: 404, ...apiError }
+			: {
+					ok: false,
+					notFound: false,
+					message: `the API returned an error (${res.status})`,
+					status: res.status,
+					...apiError,
+				};
 	}
 	const parsed = schema.safeParse((body as unknown as { data: unknown }).data);
 	if (!parsed.success) {

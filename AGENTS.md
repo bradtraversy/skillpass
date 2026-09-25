@@ -263,7 +263,7 @@ proxy into `apps/web`.
 - Verify: `pnpm verify` (lint, format check, typecheck, tests, then build; the one
   command the pre-push hook and GitHub Actions run)
 - Test (watch): `pnpm test:watch`
-- Skills CLI: `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
+- Skills CLI: `pnpm cli search [query] [--ai]` / `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
   `pnpm cli add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]` /
   `pnpm cli remove <slug> [--target <tool> [--global] | --dir <path>]` /
   `pnpm cli update <slug>[@version]` / `pnpm cli outdated` /

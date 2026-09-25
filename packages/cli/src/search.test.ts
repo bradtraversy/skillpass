@@ -161,3 +161,61 @@ describe('runSearch', () => {
 		expect(network.lines[0]).toContain('cannot reach the API');
 	});
 });
+
+describe('runSearch --ai', () => {
+	const RANKED = [SKILLS[2], SKILLS[1], SKILLS[0]];
+	function aiStub(status = 200, body: unknown = { success: true, data: RANKED }) {
+		return vi.fn(async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+	}
+
+	it('calls the search endpoint with the encoded query and keeps the server order', async () => {
+		const fetchImpl = aiStub();
+		const result = await runSearch({ ai: true, query: 'edit a PDF & more', fetchImpl });
+		expect(result.exitCode).toBe(0);
+		const url = String((fetchImpl as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+		expect(url).toBe('https://api.skillpass.dev/skills/search?q=edit%20a%20PDF%20%26%20more');
+		expect(result.lines[0]).toMatch(/^ai-blueprint/);
+		expect(result.lines[1]).toMatch(/^pdf/);
+		expect(result.lines.at(-1)).toBe('3 skills by meaning - skillpass report <slug> shows the passport');
+	});
+
+	it('applies the filters without re-sorting', async () => {
+		const result = await runSearch({
+			ai: true,
+			query: 'docs',
+			target: 'claude-code',
+			category: undefined,
+			fetchImpl: aiStub(),
+		});
+		expect(result.lines.filter((l) => l !== '').length).toBe(4);
+		const packsOnly = await runSearch({ ai: true, query: 'docs', packs: true, json: true, fetchImpl: aiStub() });
+		const parsed = JSON.parse(packsOnly.lines.join('\n')) as PublicSkillSummary[];
+		expect(parsed.map((s) => s.slug)).toEqual(['ai-blueprint']);
+	});
+
+	it('reports an empty answer with exit 0', async () => {
+		const result = await runSearch({ ai: true, query: 'nothing', fetchImpl: aiStub(200, { success: true, data: [] }) });
+		expect(result.exitCode).toBe(0);
+		expect(result.lines).toEqual(['No skills match by meaning - try other words']);
+	});
+
+	it('needs a query and never hits the network without one', async () => {
+		const fetchImpl = aiStub();
+		const result = await runSearch({ ai: true, query: '   ', fetchImpl });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toContain('search --ai needs a query');
+		expect(fetchImpl).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[429, { success: false, error: 'Too many requests, slow down.' }, 'rate limited'],
+		[503, { success: false, error: 'AI search is not configured' }, 'not configured'],
+		[502, { success: false, error: 'AI search is temporarily unavailable' }, 'temporarily unavailable'],
+		[400, { success: false, error: 'q must be 1-500 characters' }, 'q must be 1-500 characters'],
+		[500, { success: false, error: 'boom' }, 'the API returned an error (500)'],
+	])('words a %s answer plainly', async (status, body, expected) => {
+		const result = await runSearch({ ai: true, query: 'x', fetchImpl: aiStub(status, body) });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines[0]).toContain(expected);
+	});
+});

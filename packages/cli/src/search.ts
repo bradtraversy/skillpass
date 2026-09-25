@@ -1,5 +1,5 @@
 import { CATEGORY_SLUGS, TARGETS, publicSkillListSchema, type PublicSkillSummary } from 'skill-schema';
-import { getParsed, resolveApiUrl } from './api';
+import { getParsed, resolveApiUrl, type FetchOutcome } from './api';
 import { riskColor } from './render';
 import type { CommandResult } from './scan';
 import { PLAIN, type Styler } from './style';
@@ -9,6 +9,8 @@ export interface SearchOptions {
 	target?: string;
 	category?: string;
 	packs?: boolean;
+	// Search by meaning through the directory's AI search endpoint.
+	ai?: boolean;
 	json?: boolean;
 	// Terminal width when stdout is a TTY; absent (piped) means full rows.
 	width?: number;
@@ -125,18 +127,18 @@ export async function runSearch(opts: SearchOptions = {}): Promise<CommandResult
 
 	const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
 	const apiUrl = resolveApiUrl(opts.apiUrl);
+	if (opts.ai) {
+		return runAiSearch(opts, fetchImpl, apiUrl);
+	}
 	const fetched = await getParsed(fetchImpl, `${apiUrl}/skills`, publicSkillListSchema);
 	if (!fetched.ok) {
 		return { lines: [`error: ${fetched.message}`], exitCode: 2 };
 	}
 
 	const query = (opts.query ?? '').trim().toLowerCase();
-	const matches = fetched.data.filter((skill) => {
-		if (opts.target && !(skill.targets as string[]).includes(opts.target)) return false;
-		if (opts.category && (skill.category ?? null) !== opts.category) return false;
-		if (opts.packs && (skill.packSkills?.length ?? 0) === 0) return false;
-		return query === '' || matchesQuery(skill, query);
-	});
+	const matches = fetched.data.filter(
+		(skill) => matchesFilters(skill, opts) && (query === '' || matchesQuery(skill, query)),
+	);
 
 	if (opts.json) {
 		return { lines: [JSON.stringify(matches, null, 2)], exitCode: 0 };
@@ -151,6 +153,58 @@ export async function runSearch(opts: SearchOptions = {}): Promise<CommandResult
 			...renderRows(matches, opts.width, st),
 			'',
 			st.dim(`${matches.length} of ${fetched.data.length} skills - skillpass report <slug> shows the passport`),
+		],
+		exitCode: 0,
+	};
+}
+
+function matchesFilters(skill: PublicSkillSummary, opts: SearchOptions): boolean {
+	if (opts.target && !(skill.targets as string[]).includes(opts.target)) return false;
+	if (opts.category && (skill.category ?? null) !== opts.category) return false;
+	if (opts.packs && (skill.packSkills?.length ?? 0) === 0) return false;
+	return true;
+}
+
+const AI_ERRORS: Record<number, string> = {
+	429: 'AI search is rate limited (20 requests a minute per address); try again in a moment',
+	503: 'AI search is not configured on this API',
+	502: 'AI search is temporarily unavailable; try again shortly',
+};
+
+function aiErrorMessage(outcome: Extract<FetchOutcome<unknown>, { ok: false }>): string {
+	if (outcome.status !== undefined && AI_ERRORS[outcome.status]) return AI_ERRORS[outcome.status];
+	if (outcome.status === 400 && outcome.apiError) return outcome.apiError;
+	return outcome.message;
+}
+
+// Results arrive ranked by the server; filters narrow them without re-sorting,
+// the same way the site applies its sidebar filters to AI results.
+async function runAiSearch(opts: SearchOptions, fetchImpl: typeof fetch, apiUrl: string): Promise<CommandResult> {
+	const query = (opts.query ?? '').trim();
+	if (query === '') {
+		return { lines: ['error: search --ai needs a query (describe what you need)'], exitCode: 2 };
+	}
+	const fetched = await getParsed(
+		fetchImpl,
+		`${apiUrl}/skills/search?q=${encodeURIComponent(query)}`,
+		publicSkillListSchema,
+	);
+	if (!fetched.ok) {
+		return { lines: [`error: ${aiErrorMessage(fetched)}`], exitCode: 2 };
+	}
+	const matches = fetched.data.filter((skill) => matchesFilters(skill, opts));
+	if (opts.json) {
+		return { lines: [JSON.stringify(matches, null, 2)], exitCode: 0 };
+	}
+	if (matches.length === 0) {
+		return { lines: ['No skills match by meaning - try other words'], exitCode: 0 };
+	}
+	const st = opts.style ?? PLAIN;
+	return {
+		lines: [
+			...renderRows(matches, opts.width, st),
+			'',
+			st.dim(`${matches.length} skills by meaning - skillpass report <slug> shows the passport`),
 		],
 		exitCode: 0,
 	};
