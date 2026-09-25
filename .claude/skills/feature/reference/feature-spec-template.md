@@ -49,11 +49,14 @@ session reads which boxes are ticked and resumes from the first unchecked step.
 ## Data / contracts
 
 - Schema, types, or API shapes involved, or "none yet."
-- For every material field or result, record the required type, format,
-  generation source, uniqueness, default, lifecycle, and error behavior that
-  implementation or later features must preserve.
-- For security-sensitive work, record the trusted actor source, tenant scope,
-  atomicity, idempotency, and redaction rules that apply.
+- For established persisted-data or external API boundaries, record only the
+  material type, format, generation source, uniqueness, default, lifecycle, and
+  error behavior that implementation or later features must preserve.
+- For established security, tenant, concurrency, destructive-operation, payment,
+  or sensitive-data boundaries, record the trusted actor source,
+  repository-first tenant scope, atomicity, idempotency, and redaction rules
+  that apply.
+- Do not create contracts or machinery for hypothetical future boundaries.
 
 ## Testing
 

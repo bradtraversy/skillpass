@@ -115,12 +115,10 @@ Core skills:
 - `feature` - turn a build-plan item into a spec, or propose a reviewed plan addition for a genuinely new feature
 - `debug` - reproduce and isolate a failure without editing code, then hand the evidence to `fix` or `implement`
 - `fix` - document an ad-hoc bug or change into `blueprint/context/current-feature.md`
-- `tests` - add or normalize unit testing and turn on the test gate
-- `browser-tests` - explicitly add or normalize a repeatable browser test harness and document its command
+- `tests` - add or normalize unit testing and turn on the test gate; `tests browser` explicitly adds or normalizes a repeatable browser test harness and documents its command
 - `ci` - explicitly set up one project-specific Verify command and matching automatic GitHub checks, with an optional local pre-push hook
 - `implement` - build the current spec one small, reviewed step at a time
-- `check` - prove the current spec against the running app
-- `try` - read-only manual review guide: where to go, what to click, what to expect
+- `check` - prove the current spec against the running app; `check guide` is the read-only manual review guide: where to go, what to click, what to expect
 - `audit` - branch-aware or full-project review across all concerns or a focused quality, security, performance, or tests lens; `audit independent current` prepares an immutable checkpoint for a fresh reviewer session or configured isolated reviewer child; records findings in `blueprint/context/findings.md` and independent receipts in `blueprint/context/review.md`, where blocking findings or stale review state stop `complete`
 - `rollback` - plan a safe reversal of a completed feature from its archive and exact git commit, with later-dependency review before code changes
 - `complete` - run the final safety pass, log features, fixes, or rollbacks under `blueprint/history/`, then merge with approval
@@ -164,10 +162,10 @@ Git, and never part of a feature commit.
 
 Commands with meaningful progress or a durable handoff should write it when the
 state directory exists: `onboard`, `adopt`, `discovery`, `overview`, `feature`,
-`fix`, `rollback`, `implement`, `debug`, `check`, `audit`, `tests`,
-`browser-tests`, `ci`, `prototype`, `autopilot`, `continuous`, `complete`, and
-`release`. Short orientation commands such as `brief`, `try`, `status`, and
-`doctor` do not need activity state. Doctor's optional approved reset removes
+`fix`, `rollback`, `implement`, `debug`, `check`, `audit`, `tests`, `ci`,
+`prototype`, `autopilot`, `continuous`, `complete`, and `release`. Short
+orientation commands such as `brief`, `check guide`, `status`, and `doctor` do
+not need activity state. Doctor's optional approved reset removes
 malformed activity instead of recording another run.
 
 Writing the initial activity record is the first action of a tracked command,

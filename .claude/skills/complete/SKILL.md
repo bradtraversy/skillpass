@@ -71,18 +71,19 @@ Use `qualityGates.regular` for this work item:
   when a done-when needs observed runtime behavior such as a click, request, CLI
   command, download, background job, or multi-screen flow; `always` runs for
   every work item.
-- **Try guide:** `manual` runs only when explicitly requested;
+- **Try guide (`qualityGates.regular.tryGuide`):** use `/check guide`.
+  `manual` runs only when explicitly requested;
   `when-user-facing` generates a guide when the change affects UI, navigation,
   copy, a public API or CLI, output, or another workflow a person directly uses;
   `always` generates one for every work item.
 
-Apply automatic gates in this order: `/check`, review, then `/try`. When
+Apply automatic gates in this order: `/check`, review, then `/check guide`. When
 independent review is selected, follow the independent execution flow below and
 continue only after a fresh reviewer writes a current passing receipt. Otherwise
 run `/audit current` when Audit is selected.
 Reuse adequate evidence produced during the current work item instead of
-repeating it. A required gate that cannot run is a blocker. `/try` only generates
-instructions for human review; never claim the user performed them. P0 and P1
+repeating it. A required gate that cannot run is a blocker. `/check guide` only
+generates instructions for human review; never claim the user performed them. P0 and P1
 finding blockers remain enforced regardless of these settings.
 
 ### Independent review execution
@@ -151,7 +152,11 @@ Before logging or committing, run a short safety pass and report blockers only:
   adapters exist
 - no P0 or P1 finding in `blueprint/context/findings.md` is `open` or `fixed`.
   `fixed` still blocks on purpose: the repair exists but no review has looked at
-  it - run `/audit` to close it. The only waivers are `accepted` (the user's
+  it - run `/audit` to close it. While the current spec is active, append the
+  repair as a new checklist step and run `/implement`; do not start a separate
+  `/fix`. After the repair passes its focused check and the finding is marked
+  `fixed`, run `/audit current` to re-review the updated code, close the finding,
+  and then retry `/complete`. The only waivers are `accepted` (the user's
   explicit decision in the current chat, reason recorded; never set it for
   them) or `invalid` (an `/audit` re-examination verdict with recorded
   evidence, or the user's explicit call). A missing ledger file means no
@@ -327,7 +332,7 @@ Then point the user at `/feature`, `/fix`, or `/rollback` for the next thing.
 Finish with a concise **How to try it** note for the completed work. For a
 rollback, explain how to confirm the removed behavior is gone and name one
 unaffected regression path. If the
-manual path is more than a couple of steps, tell the user to run `/try latest`;
+manual path is more than a couple of steps, tell the user to run `/check guide latest`;
 that command can read the archived feature after `current-feature.md` is reset.
 
 ## Rules

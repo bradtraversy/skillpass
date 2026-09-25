@@ -297,7 +297,10 @@ expectations. Apply only the selected lens or lenses:
 
 - **Quality:** duplicated logic, dead or unused code, unreachable paths,
   oversized modules, abstractions that do not pay for themselves, risky missing
-  abstractions, inconsistent patterns, and drift from the standards or spec.
+  abstractions, speculative dependencies, services, configuration surfaces,
+  compatibility layers or security machinery, inconsistent patterns, and drift
+  from the standards or spec. Untuned stack-specific template defaults are not
+  established requirements.
 - **Security:** missing authentication or authorization, client-controlled
   ownership, injection, unsafe parsing or deserialization, sensitive-data
   exposure, secret handling, insecure defaults, and trust-boundary mistakes.
@@ -315,6 +318,13 @@ expectations. Apply only the selected lens or lenses:
 
 Do not nitpick harmless style differences unless they signal drift from the local
 patterns. Prefer a short list of real findings over a broad list of guesses.
+
+For a proportionality finding, state in **Suggested fix** what can be deleted,
+which existing, standard-library, native-platform, or installed mechanism
+replaces it, and which current requirement would be lost. Use `None` when no
+current requirement would be lost. If the suggested fix removes or changes
+shipped behavior, require an explicit user decision and never describe it as an
+automatic repair.
 
 Do not broaden a focused pass because another category might be interesting.
 Do not report or call out non-critical concerns from omitted lenses, even as
@@ -414,6 +424,9 @@ Use P0 or P1 only when a concrete code path, violated contract or security
 boundary, failing command or test, or reproducible behavior confirms the risk. If
 the evidence is incomplete, list it under `Unverified risks` with the missing
 validation instead of presenting it as a confirmed high-severity finding.
+An otherwise pure proportionality finding is P2 or P3. Raise it to P0 or P1 only
+when the unnecessary machinery causes a concrete reachable defect or violates an
+established security or data-integrity boundary.
 
 If there are no findings, say that clearly for the selected lens and name any
 remaining risk or missing signal, such as "no test command declared" or

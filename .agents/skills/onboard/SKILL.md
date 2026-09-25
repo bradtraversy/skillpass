@@ -143,6 +143,9 @@ Include only commands that exist or are intentionally available:
 If no test command exists, say so explicitly. Do not claim tests are a gate until
 a real test command is configured.
 
+Follow and preserve the proportional-engineering contract in `AGENTS.md` when
+adapting commands, standards, and context to the detected project.
+
 If `CLAUDE.md` exists and still has the placeholder `# Project Name`, replace it
 with the detected project name. Keep `@AGENTS.md`. Remove direct imports of
 `project-overview.md`, `current-feature.md`, `coding-standards.md`, and

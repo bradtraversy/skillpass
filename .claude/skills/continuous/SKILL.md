@@ -138,6 +138,7 @@ plans.
 
 Do not invent an unanswered product, data, architecture, auth, billing, or visual
 decision. Stop with the exact decision needed.
+Follow the proportional-engineering contract in `AGENTS.md` throughout this run.
 
 ### 2.2 Create or resume the feature branch
 
@@ -194,7 +195,8 @@ Use `qualityGates.continuous`, not the regular or Autopilot gates:
   when a done-when needs observed runtime behavior such as a click, request, CLI
   command, download, background job, or multi-screen flow; `always` checks
   every feature.
-- **Try guide:** `manual` skips automatic generation; `when-user-facing`
+- **Try guide (`qualityGates.continuous.tryGuide`):** use `/check guide`.
+  `manual` skips automatic generation; `when-user-facing`
   generates a guide for UI, navigation, copy, public API or CLI, output, or
   another workflow a person directly uses; `always` generates one for every
   feature.
@@ -210,9 +212,10 @@ blockers always apply even when audit is manual.
 ### 2.5 Repair and re-review findings
 
 Validate audit findings before editing. Repair confirmed P0 and P1 findings only
-when the repair stays within feature scope and needs no user decision. Use
-`continuous.maxRepairAttempts` as the maximum attempts for the same failing
-check or finding; `0` disables automatic repair.
+when the repair stays within feature scope, needs no user decision, and does not
+remove or change shipped behavior. Use `continuous.maxRepairAttempts` as the
+maximum attempts for the same failing check or finding; `0` disables automatic
+repair.
 
 After a repair, rerun affected verification and acceptance evidence, then
 re-audit the repaired area. Move `fixed` to `closed` only when the audit

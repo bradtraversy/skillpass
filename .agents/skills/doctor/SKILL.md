@@ -102,6 +102,18 @@ Gather these, then summarize. Do not dump file contents.
      not token counts. Recommend Claude Code's `/context all` for the live token
      breakdown.
 3. **Commands and project setup**
+   - Read existing `AGENTS.md` for substantive proportional-engineering guidance,
+     under `## Proportional engineering` or equivalent customized wording.
+     Accept equivalent guidance anywhere in the file; do not require exact prose.
+     Look for current requirements over hypothetical scale, reuse before new
+     machinery, smaller reversible defaults, questions for material unknowns,
+     and trust boundaries grounded in actual reachability. Simplicity must
+     preserve real validation, data-loss prevention, accessibility, security,
+     configured tests, and project rules; stack-specific standards apply only
+     to the project's stack. A heading or a single slogan is not sufficient.
+     If guidance is missing or incomplete, identify the missing substance as a
+     warning, not a setup blocker. The updater preserves existing `AGENTS.md`,
+     so updating Blueprint alone does not repair this warning.
    - Check whether root `README.md` is still the copied Blueprint workflow doc
      by looking for `# AI Coding Blueprint` or opening text that describes the
      Blueprint workflow instead of the app. If so, warn that `/onboard` should
@@ -144,6 +156,9 @@ Gather these, then summarize. Do not dump file contents.
    - Check whether `blueprint/project-plan.md` and `blueprint/build-plan.md` look
      filled in or still template-like. Treat obvious TODO, TBD, example-only text,
      or empty required sections as not ready.
+   - Follow the proportional-engineering contract in `AGENTS.md`: treat a blank
+     or template-only optional Usage model and constraints section as healthy
+     unknown context, not an incomplete requirement.
    - Check whether `blueprint/build-plan.md` is a numbered checkbox list. Raw
      bullets are allowed as a first draft, but they should be normalized by
      `/overview` before the build loop starts.
@@ -225,6 +240,12 @@ Choose the repair order in this priority:
   `ai-interaction.md` that are present in `CLAUDE.md`, then rerun `/doctor`. The
   files stay in the project and workflow skills still read them on demand.
 - Onboarding incomplete -> run `/onboard`.
+- Proportional-engineering guidance missing or incomplete -> review the current
+  Blueprint template's `AGENTS.md` Proportional engineering section and manually
+  merge only the missing guidance into the project's `AGENTS.md`. Preserve
+  existing project rules and equivalent customized wording. In local-only mode,
+  keep `AGENTS.md` public-safe without adding hidden workflow paths or skill lists.
+  Doctor must not edit or replace `AGENTS.md`.
 - Root README is still the Blueprint workflow doc -> run `/onboard` to replace
   it with a project README before publishing.
 - Local-only visibility selected but ignored Blueprint files are missing ->

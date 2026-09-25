@@ -1,29 +1,25 @@
----
-name: try
-description: Generate a read-only manual try guide for current or recent work with commands, locations, actions, expected results, and failure signs. Use for /try, how to test manually, where to click, how to see a change, or a human review path.
-disable-model-invocation: true
----
-
-# try - manual review guide
+# Check guide - manual review guide
 
 **Context reuse:** Reuse any required file already loaded in project instructions or the current session. Read it again only if absent, changed, or exact current bytes or line references are needed.
 
 Where this sits in the workflow:
 
-    /implement or /complete  ->  [try]  ->  human review
+    /implement or /complete  ->  [check guide]  ->  human review
     (work exists)                (manual   (where to go,
                                   path)     what to click)
 
-`/check` proves behavior from the agent side. `/try` gives the user a practical
+`/check` proves behavior from the agent side. `/check guide` gives the user a practical
 manual walkthrough: start this command, open this route, click these controls,
 expect this result, and watch for these failure signs.
 
-It is always read-only. It does not edit files, install dependencies, commit,
-merge, push, or run destructive commands.
+It is always read-only. Do not edit files, write activity state, update spec
+status, run checks or the app, install dependencies, commit, merge, push, or
+produce verification receipts. Reading files and git status is allowed. A guide
+never counts as acceptance evidence or proof that any check passed.
 
 The quality-gate config controls when another workflow generates this guide
-automatically. An explicit `/try` or `$try` request always runs. A generated guide
-never counts as evidence that the user performed the walkthrough.
+automatically. An explicit `/check guide` or `$check guide` request always runs.
+A generated guide never counts as evidence that the user performed the walkthrough.
 
 ## Input
 
@@ -54,8 +50,9 @@ Read:
   feature is reset
 - git branch and working tree status
 
-Prefer the active spec. If `current-feature.md` is the reset stub, use the most
-recent archived feature, fix, or rollback by filename or modification time and
+For `latest`, use the most recent archive even when an active spec exists.
+Otherwise prefer the active spec. If `current-feature.md` is the reset stub, use
+the most recent archived feature, fix, or rollback by filename or modification time and
 say that is what you used.
 
 Do not dump the spec. Pull out the routes, commands, UI surfaces, CLI commands,
@@ -115,7 +112,9 @@ such as an API response, CLI output, log line, or unit test command.
 ## Rules
 
 - Read-only only. Do not edit, commit, merge, push, install, or delete.
-- Do not run the app unless the user explicitly asks you to try it for them.
+- Do not run the app or verification commands in guide mode. If the user asks
+  you to try it for them, leave guide mode and explicitly route to `/check`
+  verification, following its activity and authorization rules.
 - Do not pretend a path is known when the spec does not say it. Give the best
   likely path and label uncertainty.
 - Keep the guide short enough to follow while the app is open.

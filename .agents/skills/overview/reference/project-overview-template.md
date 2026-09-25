@@ -14,6 +14,14 @@ sentences: what's broken today and why it matters.
 Who this is for, from project-plan.md section 2. A short list of user types and
 what each one needs. Note any access tiers (e.g. anonymous vs signed-in).
 
+## Usage model
+
+Confirmed scale, reachability, trust, tenancy, security, compliance,
+availability, audit constraints, and explicit non-requirements from
+the usage-model section (section 9 in the shipped worksheet), when present. Omit
+this section when the plan establishes none of these facts. Never turn worksheet
+prompts or blank fields into requirements.
+
 ## Features
 
 The MVP feature set, in build-plan.md order - one line of purpose each. This is
