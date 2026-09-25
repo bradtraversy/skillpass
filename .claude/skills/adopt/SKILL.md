@@ -200,6 +200,8 @@ the normal loop.
 - **Reflect reality, don't prescribe.** `coding-standards.md` must match the code
   that exists. A project using Zustand and REST routes should not be handed
   standards about Server Actions and Prisma just because that's the default.
+- Follow and preserve the proportional-engineering contract in `AGENTS.md`;
+  record only established usage or trust constraints and leave unknowns blank.
 - **Never invent intent.** Ask for the why and the roadmap; mark anything inferred
   with `> TODO (confirm)`. Silent guesses about purpose are the main failure mode.
 - **Don't clobber owned work.** If the plans already have real content, confirm

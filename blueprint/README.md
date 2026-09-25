@@ -158,7 +158,7 @@ The core build loop is:
 /feature -> review spec -> /implement -> /check -> /complete
 ```
 
-Use `/try` when you want a manual review path, `/audit` when you want a read-only
+Use `/check guide` when you want a manual review path, `/audit` when you want a read-only
 code quality pass before closing the work, and `/release` after a completed
 feature or milestone when you want Render or Vercel deployment prep.
 
@@ -210,7 +210,7 @@ flowchart TD
     FX --> CF
     CF --> IM(["/implement<br/>build + iterate, reviewed"])
     IM -.->|prove done-whens| CK(["/check"])
-    IM -.->|manual path| TRY(["/try"])
+    IM -.->|manual path| TRY(["/check guide"])
     IM -.->|quality pass| AU(["/audit"])
     CK -.->|fails| IM
     TRY -.->|issues| IM
@@ -280,7 +280,7 @@ Then repeat the build loop for each feature:
 3. Run **`/implement`**. It branches, builds one step, shows the diff, proves the
    done-when, and waits for approval before moving on.
 4. Run **`/check`** when you want an outside proof pass against the real app.
-5. Run **`/try`** when you want the manual review path: where to go, what to
+5. Run **`/check guide`** when you want the manual review path: where to go, what to
    click or run, and what to expect.
 6. Run **`/complete`** when the feature is done. It archives the spec, checks off
    the build plan, commits the finished work, and squash-merges with your
@@ -317,7 +317,7 @@ Then continue with `/implement`, `/check`, and `/complete`. Fixes are logged to
 | **/tests** | when you want unit tests added | Adds or normalizes the stack-native unit test setup, adds one example test, updates `AGENTS.md`, and runs build plus tests. |
 | **/implement** | after reviewing a spec | Builds the current spec one small, reviewed step at a time, then ends with a compact review packet. |
 | **/check** | before wrapping up, or any time you want proof | Runs the real app and reports pass/fail against the spec's done-whens. |
-| **/try** | when you want to review manually | Gives a human walkthrough: what to start, where to go, what to click or run, what to expect, and what would count as wrong. |
+| **/check guide** | when you want to review manually | Gives a human walkthrough: what to start, where to go, what to click or run, what to expect, and what would count as wrong. |
 | **/audit** | before closing a feature, or any time quality feels suspect | Runs a read-only code quality audit for duplication, dead code, DRY issues, standards drift, missing tests, and maintainability risks. |
 | **/complete** | when work is built and reviewed | Runs a final safety pass, archives the spec, commits the finished work, and merges with your approval. Pushes main only after a separate yes. |
 | **/release** | after a completed feature or milestone | Prepares Render or Vercel deployment readiness, local config, env var review, and smoke-test steps. Never deploys or changes remote services without a separate yes. |
@@ -395,14 +395,15 @@ separate `/fix`.
 
 ## Manual try guides
 
-`/check` is the agent proof pass. `/try` is the human review path.
+`/check` is the agent proof pass. `/check guide` is the human review path.
 
-Run `/try` when you want to know what to start, where to go, what to click or
+Run `/check guide` when you want to know what to start, where to go, what to click or
 run, what to expect, and what would count as wrong. It reads the active feature
 spec when a feature is in progress, or the latest archived feature after
 `/complete`.
 
-`/try` is read-only. It does not run the app unless you explicitly ask for that.
+`/check guide` is read-only. It never runs the app or verification commands. When
+you want the agent to run the app and prove behavior, use `/check` instead.
 
 ## Deployment readiness
 
@@ -462,8 +463,7 @@ step in `current-feature.md`.
 │       ├── fix/               ($fix: document an ad-hoc fix)
 │       ├── tests/             ($tests: add unit testing)
 │       ├── implement/         ($implement: build the current spec)
-│       ├── check/             ($check: prove the done-whens)
-│       ├── try/               ($try: manual review guide)
+│       ├── check/             ($check: prove the done-whens, $check guide: manual review guide)
 │       ├── audit/             ($audit: code quality review)
 │       ├── complete/          ($complete: commit, merge, and log)
 │       ├── release/           ($release: Render or Vercel readiness)
@@ -481,8 +481,7 @@ step in `current-feature.md`.
 │       ├── fix/               (/fix: document an ad-hoc fix)
 │       ├── tests/             (/tests: add unit testing)
 │       ├── implement/         (/implement: build the current spec)
-│       ├── check/             (/check: prove the done-whens)
-│       ├── try/               (/try: manual review guide)
+│       ├── check/             (/check: prove the done-whens, /check guide: manual review guide)
 │       ├── audit/             (/audit: code quality review)
 │       ├── complete/          (/complete: commit, merge, and log)
 │       ├── release/           (/release: Render or Vercel readiness)
@@ -568,11 +567,11 @@ between tools.
 Use the native invocation style for your tool:
 
 - Codex: `$onboard`, `$doctor`, `$adopt`, `$overview`, `$brief`, `$feature`,
-  `$fix`, `$tests`, `$implement`, `$check`, `$try`, `$audit`, `$complete`,
+  `$fix`, `$tests`, `$implement`, `$check`, `$check guide`, `$audit`, `$complete`,
   `$release`, `$prototype`, `$status`, or plain language like "run the overview."
   Experimental: `$autopilot`.
 - Claude Code: `/onboard`, `/doctor`, `/adopt`, `/overview`, `/brief`,
-  `/feature`, `/fix`, `/tests`, `/implement`, `/check`, `/try`, `/audit`,
+  `/feature`, `/fix`, `/tests`, `/implement`, `/check`, `/check guide`, `/audit`,
   `/complete`, `/release`, `/prototype`, `/status`. Experimental: `/autopilot`.
 - Other tools: ask the agent to follow the matching `SKILL.md`.
 

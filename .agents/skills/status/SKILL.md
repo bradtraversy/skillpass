@@ -127,7 +127,7 @@ End with a single suggested next action, chosen in this order:
 - The overview is missing or stale and no feature is in progress -> `/overview`.
 - A spec is in progress with unchecked steps -> `/implement` and name the step.
 - A spec is in progress and all implementation steps are checked -> `/check` if
-  proof is not recorded, `/try` if the user wants a manual review path,
+  proof is not recorded, `/check guide` if the user wants a manual review path,
   `/implement` when a P0 or P1 finding is still `open` (the repair is an extra
   reviewed step), `/audit` when one is `fixed` and awaiting re-review (both
   block `/complete`), `/audit independent current` when independent review is

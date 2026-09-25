@@ -50,7 +50,12 @@ lighter than a feature spec:
   stamp makes the repair traceable: `/implement` marks that finding `fixed`
   when the repairing step lands, and `/audit` re-reviews it before it closes.
 - **The problem** - what's wrong or what needs to change, and where.
-- **The fix** - the approach, and anything it must not break.
+- **The fix** - the root-cause repair, and anything it must not break. Do not add
+  an abstraction, dependency, service, configuration surface, compatibility
+  layer, or security mechanism unless the defect is in that layer or an
+  established repository requirement needs it now. Adding a missing
+  authorization, ownership, validation, escaping, or redaction check is a
+  root-cause repair, not new machinery.
 - **Build steps** - usually one small step; split only if the diff would be too
   big to read. Each ends with an observable "done when".
 - **Verify** - how to confirm it's fixed (what to click or test).

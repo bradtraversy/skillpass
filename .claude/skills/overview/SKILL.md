@@ -33,7 +33,7 @@ context.
 The two planning docs, already written:
 
 - `blueprint/project-plan.md` - problem, users, features, data, tech,
-  monetization, UI/UX, deployment
+  monetization, UI/UX, deployment, and optional usage model
 - `blueprint/build-plan.md` - the ordered, one-line-per-feature list; bullets,
   numbered lists, and clearly separated feature lines are accepted
 
@@ -133,6 +133,12 @@ time this skill regenerates the overview.
 - **Carry deployment constraints forward.** If the plan names Render, Vercel,
   build commands, env vars, health checks, or provider constraints, include them
   in a short Deployment section. If deployment is unknown, mark it `> TODO`.
+- **Carry confirmed usage constraints forward.** Preserve established scale,
+  reachability, trust, tenancy, security, compliance, availability, audit
+  constraints, and explicit non-requirements in a compact Usage model section.
+  Omit it when the usage-model section, section 9 in the shipped worksheet, is
+  absent, unanswered, or contains only worksheet prompts. Never turn missing
+  usage facts into enterprise, hostile, multi-tenant, or single-user requirements.
 - **Stay faithful.** Don't add features, data, or stack choices that aren't in
   the plans. If something is underspecified, leave a clearly marked `> TODO`
   rather than inventing an answer.
