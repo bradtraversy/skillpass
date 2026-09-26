@@ -163,6 +163,19 @@ describe('fetchRepoFiles', () => {
 		});
 	});
 
+	it('reports a body stream that errors mid-download instead of throwing', async () => {
+		const broken = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				controller.error(new Error('terminated'));
+			},
+		});
+		const fetchImpl = vi.fn(async () => new Response(broken, { status: 200 })) as unknown as typeof fetch;
+		expect(await fetchRepoFiles(fetchImpl, TARGET, SHA)).toEqual({
+			ok: false,
+			message: 'the repository archive download was interrupted; nothing was installed',
+		});
+	});
+
 	it.each([
 		[404, 'no archive for the pinned commit'],
 		[502, 'GitHub archive download failed (502)'],

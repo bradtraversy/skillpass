@@ -104,7 +104,12 @@ export async function fetchRepoFiles(
 	if (!res.ok || !res.body) {
 		return { ok: false, message: `GitHub archive download failed (${res.status})` };
 	}
-	const body = await readCapped(res.body, maxArchiveBytes);
+	let body: Uint8Array | undefined;
+	try {
+		body = await readCapped(res.body, maxArchiveBytes);
+	} catch {
+		return { ok: false, message: 'the repository archive download was interrupted; nothing was installed' };
+	}
 	if (!body) {
 		return {
 			ok: false,

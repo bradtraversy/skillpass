@@ -126,6 +126,11 @@ checkpoint commits disabled. Independent review runs only if the
   what unlisted means (validated locally, no directory listing, no maintainer check, no AI
   review), the receipt marker, and that `update` and `outdated` do not track it. Done when:
   `pnpm build` passes and the rendered CLI docs page shows the section; `pnpm verify` is green.
+- [x] 7. **Repair F-01: interrupted archive download** - in `github.ts`, await `readCapped`
+  inside try/catch and return `{ ok: false, message }` so a body stream that errors mid-download
+  (timeout firing, connection drop after the headers) reports through the CLI's own error line
+  instead of escaping `runAdd`. Done when: `github.test.ts` proves a stubbed body stream that
+  errors on its first pull returns the not-ok result; `pnpm test` is green.
 
 ## Files / areas
 
