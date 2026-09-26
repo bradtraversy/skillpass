@@ -313,4 +313,29 @@ describe('runUpdate', () => {
 		expect(result.exitCode).toBe(2);
 		expect(result.lines[0]).toContain('more than one place');
 	});
+
+	it('refuses to replace an unlisted install with the directory skill of the same name', async () => {
+		const cwd = mkdtempSync(join(tmpdir(), 'skillpass-update-unlisted-'));
+		const home = mkdtempSync(join(tmpdir(), 'skillpass-update-home-'));
+		const area = join(cwd, '.claude', 'skills');
+		mkdirSync(join(area, 'demo'), { recursive: true });
+		writeFileSync(join(area, 'demo', 'SKILL.md'), '# my own demo\n');
+		recordReceipt(area, 'demo', {
+			version: 'abcdef0',
+			sourceHash: 'sha256:mine',
+			installedAt: '2026-09-25T12:00:00.000Z',
+			unlisted: { repo: 'o/r', commit: 'abcdef0'.padEnd(40, '0') },
+		});
+		const fetchImpl = stubFetch();
+		const result = await runUpdate('demo', { cwd, home, fetchImpl });
+		expect(result.exitCode).toBe(2);
+		expect(result.lines.join('\n')).toContain(
+			'demo in ' +
+				join(area, 'demo') +
+				' was installed from github:o/r, not the directory; remove it and add it again to refresh it',
+		);
+		expect(fetchImpl).not.toHaveBeenCalled();
+		expect(readFileSync(join(area, 'demo', 'SKILL.md'), 'utf8')).toBe('# my own demo\n');
+		expect(readReceipts(area).demo.unlisted?.repo).toBe('o/r');
+	});
 });

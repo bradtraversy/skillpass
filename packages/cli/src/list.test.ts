@@ -68,4 +68,22 @@ describe('runList', () => {
 		expect(result.exitCode).toBe(0);
 		expect(result.lines).toEqual(['No skills installed in the known install areas.']);
 	});
+
+	it('marks unlisted installs with their origin', () => {
+		const cwd = temp('skillpass-list-cwd-');
+		const home = temp('skillpass-list-home-');
+		const area = join(cwd, '.claude', 'skills');
+		mkdirSync(join(area, 'notes'), { recursive: true });
+		recordReceipt(area, 'notes', {
+			version: 'abc1234',
+			sourceHash: 'sha256:abc',
+			installedAt: '2026-09-25T12:00:00.000Z',
+			unlisted: { repo: 'o/r', subpath: 'skills/notes', commit: 'abc1234'.padEnd(40, '0') },
+		});
+		const result = runList({ cwd, home });
+		expect(result.lines).toEqual([
+			`${join('.claude', 'skills')} (project) - claude-code`,
+			'  notes  abc1234  unlisted (o/r/skills/notes)',
+		]);
+	});
 });

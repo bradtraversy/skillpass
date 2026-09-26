@@ -1,22 +1,28 @@
 import { strFromU8, unzipSync } from 'fflate';
 import { existsSync, mkdirSync, readdirSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
-import type { PublicPreflight, PublicSkillDetail, SkillEntry, Target } from 'skill-schema';
-import { loadPackageFromFiles, type PackageFile } from 'validator';
+import { dirname, join, resolve } from 'node:path';
+import { slugForSkill, type RiskLevel, type SkillEntry, type Target } from 'skill-schema';
+import { loadPackageFromFiles, validateLoadedPackage, type PackageFile } from 'validator';
 import { fetchPreflight, resolveApiUrl } from './api';
+import { fetchRepoFiles, resolveCommit } from './github';
 import {
+	cappedFilter,
 	confirmRisk,
 	createOutput,
 	GLOBAL_NEEDS_TARGET,
 	isOccupied,
+	MAX_ZIP_BYTES,
+	OversizedArchiveError,
 	planMembers,
 	receiptFor,
 	TARGET_OR_DIR,
+	unsafeEntryPath,
 	type Push,
 } from './install';
 import { resolvePackMembers } from './pack';
-import { recordReceipt } from './receipts';
-import { renderPreflightReport } from './render';
+import { originLabel, recordReceipt, type Receipt, type UnlistedOrigin } from './receipts';
+import { renderLocalPreflight, renderPreflightReport } from './render';
+import { isRepoRef, packageNameFor, parseRepoRef } from './repo';
 import type { CommandResult } from './scan';
 import type { Styler } from './style';
 import { declaresTool, knownAreas, mappableDeclaredTargets, resolveArea, type KnownArea } from './targets';
@@ -38,19 +44,6 @@ export interface AddOptions {
 	// pre-flight report, not before it. Lines are still returned for tests.
 	emit?: (text: string) => void;
 }
-
-function unsafeEntryPath(path: string): boolean {
-	return isAbsolute(path) || path.split('/').includes('..') || path.includes('\\');
-}
-
-// Mirror the server snapshot caps (apps/api/src/github/snapshot.ts) so the CLI
-// never trusts an oversized response, even from an overridden SKILLPASS_API.
-const MAX_FILES = 500;
-const MAX_FILE_BYTES = 1024 * 1024;
-const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
-const MAX_ZIP_BYTES = 20 * 1024 * 1024;
-
-class OversizedDownloadError extends Error {}
 
 export type Download = { ok: true; files: PackageFile[] } | { ok: false; message: string };
 
@@ -79,20 +72,9 @@ export async function downloadVerified(
 	}
 	let entries: Record<string, Uint8Array>;
 	try {
-		let fileCount = 0;
-		let totalBytes = 0;
-		entries = unzipSync(body, {
-			filter: (info) => {
-				fileCount += 1;
-				totalBytes += info.originalSize;
-				if (fileCount > MAX_FILES || info.originalSize > MAX_FILE_BYTES || totalBytes > MAX_TOTAL_BYTES) {
-					throw new OversizedDownloadError();
-				}
-				return true;
-			},
-		});
+		entries = unzipSync(body, { filter: cappedFilter() });
 	} catch (err) {
-		if (err instanceof OversizedDownloadError) {
+		if (err instanceof OversizedArchiveError) {
 			return { ok: false, message: 'the download exceeds the size caps; nothing was installed' };
 		}
 		return { ok: false, message: 'the download was not a valid zip' };
@@ -174,16 +156,19 @@ function packChoices(declared: Target[], slug: string, count: number, cwd: strin
 	return choices;
 }
 
-// Everything a single install strategy needs once the pre-flight has passed.
+// Everything an install strategy needs once the pre-flight has passed, from
+// either source: the directory (verified download) or a repo (local validation).
 interface AddContext {
 	push: Push;
 	done: (exitCode: number) => CommandResult;
-	fetchImpl: typeof fetch;
-	apiUrl: string;
 	cwd: string;
 	home?: string;
 	slug: string;
-	preflight: PublicPreflight;
+	targets: Target[];
+	files: () => Promise<Download>;
+	receipt: (packSlug?: string) => Receipt;
+	// Closing line after a successful install.
+	verifiedLine: string;
 }
 
 // A known area plus the tool name the user asked for, for messages.
@@ -210,36 +195,31 @@ type PackLocation = { area: KnownArea } | { dir: string };
 // the raw source in ./<slug> and tip the fan-out install.
 async function choosePackLocation(
 	ctx: AddContext,
-	detail: PublicSkillDetail,
 	memberCount: number,
 	prompt: Prompt | undefined,
 ): Promise<PackLocation> {
 	if (prompt) {
-		const choices = packChoices(detail.targets, ctx.slug, memberCount, ctx.cwd, ctx.home);
+		const choices = packChoices(ctx.targets, ctx.slug, memberCount, ctx.cwd, ctx.home);
 		ctx.push('', 'Install location:');
 		choices.forEach((choice, i) => ctx.push(`  ${i + 1}) ${choice.label}`));
 		const chosen = choices[await promptIndex(prompt, choices.length, ctx.push)];
 		return chosen.area ? { area: chosen.area } : { dir: ctx.slug };
 	}
-	const mappable = mappableDeclaredTargets(detail.targets);
+	const mappable = mappableDeclaredTargets(ctx.targets);
 	if (mappable.length > 0) {
 		ctx.push('', `tip: --target ${mappable[0]} installs the ${memberCount} skills into the tool's skills folder`);
 	}
 	return { dir: ctx.slug };
 }
 
-async function chooseSingleLocation(
-	ctx: AddContext,
-	detail: PublicSkillDetail,
-	prompt: Prompt | undefined,
-): Promise<string> {
-	const choices = installChoices(detail.targets, ctx.slug, ctx.cwd, ctx.home);
+async function chooseSingleLocation(ctx: AddContext, prompt: Prompt | undefined): Promise<string> {
+	const choices = installChoices(ctx.targets, ctx.slug, ctx.cwd, ctx.home);
 	if (prompt && choices.length > 1) {
 		ctx.push('', 'Install location:');
 		choices.forEach((choice, i) => ctx.push(`  ${i + 1}) ${choice.label}`));
 		return choices[await promptIndex(prompt, choices.length, ctx.push)].dir;
 	}
-	const mappable = mappableDeclaredTargets(detail.targets);
+	const mappable = mappableDeclaredTargets(ctx.targets);
 	if (mappable.length > 0) {
 		ctx.push('', `tip: --target ${mappable[0]} installs into the tool's skills folder`);
 	}
@@ -249,7 +229,7 @@ async function chooseSingleLocation(
 // Fan a pack out into each area, one folder per member the area's layout
 // supports. Every destination is checked before the single download.
 async function installPack(ctx: AddContext, members: SkillEntry[], targets: AreaTarget[]): Promise<CommandResult> {
-	const { push, done, slug, preflight } = ctx;
+	const { push, done, slug } = ctx;
 	const resolved = targets.map(({ area, tool }) => ({ area, tool, ...resolvePackMembers(members, area.layout) }));
 	const unsupported = resolved.find((r) => r.installs.length === 0);
 	if (unsupported) {
@@ -265,7 +245,7 @@ async function installPack(ctx: AddContext, members: SkillEntry[], targets: Area
 		);
 		return done(2);
 	}
-	const download = await downloadVerified(ctx.fetchImpl, ctx.apiUrl, slug, preflight.version, preflight.sourceHash);
+	const download = await ctx.files();
 	if (!download.ok) {
 		push('', `error: ${download.message}`);
 		return done(2);
@@ -292,7 +272,7 @@ async function installPack(ctx: AddContext, members: SkillEntry[], targets: Area
 				writeTree(plan.files, join(r.area.dir, plan.name));
 				written.push(plan.name);
 				// Receipt per member as it lands, so a later failure leaves nothing unaccounted for.
-				recordReceipt(r.area.dir, plan.name, receiptFor(preflight, slug));
+				recordReceipt(r.area.dir, plan.name, ctx.receipt(slug));
 			}
 		} catch {
 			const before = [...landed, ...(written.length > 0 ? [describe(r.area.dir, written)] : [])];
@@ -306,14 +286,14 @@ async function installPack(ctx: AddContext, members: SkillEntry[], targets: Area
 		landed.push(describe(r.area.dir, written));
 		push('', `Installed ${written.length} skills to ${r.area.dir}`, `  ${written.join(', ')}`);
 	}
-	push('Source hash verified against the Skill Passport.');
+	push(ctx.verifiedLine);
 	return done(0);
 }
 
 // Install one skill (or a pack's raw source) into each folder. Every
 // destination is checked before the single download.
 async function installSingle(ctx: AddContext, targetDirs: string[]): Promise<CommandResult> {
-	const { push, done, slug, preflight } = ctx;
+	const { push, done, slug } = ctx;
 	const targets = targetDirs.map((dir) => resolve(ctx.cwd, dir));
 	for (const target of targets) {
 		if (!existsSync(target)) continue;
@@ -326,7 +306,7 @@ async function installSingle(ctx: AddContext, targetDirs: string[]): Promise<Com
 			return done(2);
 		}
 	}
-	const download = await downloadVerified(ctx.fetchImpl, ctx.apiUrl, slug, preflight.version, preflight.sourceHash);
+	const download = await ctx.files();
 	if (!download.ok) {
 		push('', `error: ${download.message}`);
 		return done(2);
@@ -348,17 +328,106 @@ async function installSingle(ctx: AddContext, targetDirs: string[]): Promise<Com
 		landed.push(target);
 		const area = areas.find((a) => a.dir === dirname(target));
 		if (area) {
-			recordReceipt(area.dir, slug, receiptFor(preflight));
+			recordReceipt(area.dir, slug, ctx.receipt());
 		}
 		push('', `Installed ${download.files.length} file(s) to ${target}`);
 	}
-	push('Source hash verified against the Skill Passport.');
+	push(ctx.verifiedLine);
 	return done(0);
 }
 
+// What a source hands to the install strategies once its report is on screen.
+interface Source extends Pick<AddContext, 'slug' | 'targets' | 'files' | 'receipt' | 'verifiedLine'> {
+	members: SkillEntry[];
+	riskLevel: RiskLevel;
+	blocked: boolean;
+	// Names the install in the confirmation question.
+	label: string;
+}
+
+type SourceResult = { ok: true; source: Source } | { ok: false; exitCode: number };
+
+async function directorySource(
+	ref: string,
+	opts: AddOptions,
+	fetchImpl: typeof fetch,
+	push: Push,
+): Promise<SourceResult> {
+	const apiUrl = resolveApiUrl(opts.apiUrl);
+	const fetched = await fetchPreflight(fetchImpl, apiUrl, ref);
+	if (!fetched.ok) {
+		push(...fetched.result.lines);
+		return { ok: false, exitCode: fetched.result.exitCode };
+	}
+	const { slug, detail, preflight } = fetched;
+	push(...renderPreflightReport(detail, preflight, opts.style));
+	return {
+		ok: true,
+		source: {
+			slug,
+			targets: detail.targets,
+			members: detail.packMembers ?? [],
+			riskLevel: preflight.riskLevel,
+			blocked: preflight.blocked,
+			label: `${slug}@${preflight.version}`,
+			files: () => downloadVerified(fetchImpl, apiUrl, slug, preflight.version, preflight.sourceHash),
+			receipt: (packSlug) => receiptFor(preflight, packSlug),
+			verifiedLine: 'Source hash verified against the Skill Passport.',
+		},
+	};
+}
+
+// A repo that is not on the directory: pin, fetch, validate here, and never
+// call the SkillPass API. The files in memory are the ones the hash covers.
+async function repoSource(ref: string, opts: AddOptions, fetchImpl: typeof fetch, push: Push): Promise<SourceResult> {
+	const parsed = parseRepoRef(ref);
+	if (!parsed.ok) {
+		push(`error: ${parsed.message}`);
+		return { ok: false, exitCode: 2 };
+	}
+	const { target } = parsed;
+	const commit = await resolveCommit(fetchImpl, target);
+	if (!commit.ok) {
+		push(`error: ${commit.message}`);
+		return { ok: false, exitCode: 2 };
+	}
+	const fetched = await fetchRepoFiles(fetchImpl, target, commit.sha);
+	if (!fetched.ok) {
+		push(`error: ${fetched.message}`);
+		return { ok: false, exitCode: 2 };
+	}
+	const pkg = loadPackageFromFiles(fetched.snapshot.files, packageNameFor(target), fetched.snapshot.binaries);
+	const report = await validateLoadedPackage(pkg);
+	const manifest = pkg.manifest.state === 'ok' ? pkg.manifest.data : undefined;
+	const slug = manifest?.name ?? slugForSkill(packageNameFor(target));
+	const origin: UnlistedOrigin = {
+		repo: `${target.owner}/${target.repo}`,
+		...(target.subpath ? { subpath: target.subpath } : {}),
+		commit: commit.sha,
+	};
+	push(...renderLocalPreflight(slug, origin, pkg, report, opts.style));
+	const shortSha = commit.sha.slice(0, 7);
+	const version = manifest?.version ?? shortSha;
+	const files = pkg.files;
+	return {
+		ok: true,
+		source: {
+			slug,
+			targets: manifest?.targets ?? [],
+			members: manifest?.skills ?? [],
+			riskLevel: report.riskLevel,
+			blocked: report.status === 'failed',
+			label: `${slug} from ${originLabel(origin)}, unlisted`,
+			files: async () => ({ ok: true, files }),
+			receipt: (packSlug) => receiptFor({ version, sourceHash: report.sourceHash }, packSlug, origin),
+			verifiedLine: `Validated locally from ${origin.repo}@${shortSha}; this install is unlisted.`,
+		},
+	};
+}
+
 // Exit codes are contract: 0 installed, 1 blocked, 2 refused (confirmation,
-// verification, target, network). Nothing touches disk until the downloaded
-// bytes re-verify against the pinned source hash.
+// verification, target, network). Nothing touches disk until the files to
+// install are proven to match the hash the report was made from.
 export async function runAdd(ref: string, opts: AddOptions = {}): Promise<CommandResult> {
 	const { push, done } = createOutput(opts.emit);
 	const tools = [...new Set([opts.target ?? []].flat())];
@@ -373,20 +442,18 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 	}
 	const cwd = opts.cwd ?? process.cwd();
 	const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
-	const apiUrl = resolveApiUrl(opts.apiUrl);
-	const fetched = await fetchPreflight(fetchImpl, apiUrl, ref);
-	if (!fetched.ok) {
-		push(...fetched.result.lines);
-		return done(fetched.result.exitCode);
+	const loaded = isRepoRef(ref)
+		? await repoSource(ref, opts, fetchImpl, push)
+		: await directorySource(ref, opts, fetchImpl, push);
+	if (!loaded.ok) {
+		return done(loaded.exitCode);
 	}
-	const { slug, detail, preflight } = fetched;
-	push(...renderPreflightReport(detail, preflight, opts.style));
-
-	if (preflight.blocked) {
+	const { source } = loaded;
+	if (source.blocked) {
 		return done(1);
 	}
 
-	const members = detail.packMembers ?? [];
+	const { slug, members } = source;
 	const isPack = members.length > 0;
 
 	const targets: AreaTarget[] = [];
@@ -402,28 +469,38 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 			continue;
 		}
 		targets.push({ area: resolved.area, tool });
-		if (!declaresTool(detail.targets, tool)) {
+		if (!declaresTool(source.targets, tool)) {
 			push('', `warning: this skill does not declare ${tool} as a target`);
 		}
 	}
 
 	const confirmed = await confirmRisk(
-		preflight,
+		source,
 		opts,
-		`Install ${slug}@${preflight.version} (${preflight.riskLevel} risk)? [y/N] `,
+		`Install ${source.label} (${source.riskLevel} risk)? [y/N] `,
 		'Install aborted.',
 		push,
 	);
 	if (!confirmed) return done(2);
 
-	const ctx: AddContext = { push, done, fetchImpl, apiUrl, cwd, home: opts.home, slug, preflight };
+	const ctx: AddContext = {
+		push,
+		done,
+		cwd,
+		home: opts.home,
+		slug,
+		targets: source.targets,
+		files: source.files,
+		receipt: source.receipt,
+		verifiedLine: source.verifiedLine,
+	};
 
 	if (isPack) {
 		if (targets.length > 0) {
 			return installPack(ctx, members, targets);
 		}
 		if (opts.dir === undefined) {
-			const location = await choosePackLocation(ctx, detail, members.length, opts.promptImpl);
+			const location = await choosePackLocation(ctx, members.length, opts.promptImpl);
 			return 'area' in location
 				? installPack(ctx, members, [{ area: location.area, tool: location.area.tools[0] }])
 				: installSingle(ctx, [location.dir]);
@@ -440,5 +517,5 @@ export async function runAdd(ref: string, opts: AddOptions = {}): Promise<Comman
 			targets.map((t) => join(t.area.dir, slug)),
 		);
 	}
-	return installSingle(ctx, [opts.dir ?? (await chooseSingleLocation(ctx, detail, opts.promptImpl))]);
+	return installSingle(ctx, [opts.dir ?? (await chooseSingleLocation(ctx, opts.promptImpl))]);
 }

@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { readReceipts } from './receipts';
+import { originLabel, readReceipts } from './receipts';
 import type { CommandResult } from './scan';
 import { knownAreas } from './targets';
 
@@ -35,8 +35,9 @@ export function runList(opts: ListOptions = {}): CommandResult {
 		lines.push(area.label);
 		const receipts = readReceipts(area.dir);
 		for (const name of names) {
-			const version = receipts[name]?.version;
-			lines.push(version ? `  ${name}  ${version}` : `  ${name}`);
+			const receipt = receipts[name];
+			const origin = receipt?.unlisted ? `  unlisted (${originLabel(receipt.unlisted)})` : '';
+			lines.push(receipt ? `  ${name}  ${receipt.version}${origin}` : `  ${name}`);
 		}
 	}
 	if (lines.length === 0) {

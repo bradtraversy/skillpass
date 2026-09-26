@@ -60,6 +60,27 @@ skillpass add ai-blueprint --target codex                # a pack: every member 
 		<strong>pack</strong> fans every member skill out into the tool's skills area using that tool's variant files.
 	</p>
 
+	<h2>Install from any repo</h2>
+	<pre><code>skillpass add github:owner/repo --target claude-code          # the repo root is the skill (or a pack)
+skillpass add github:owner/repo/skills/pdf --target cursor    # one folder of a monorepo
+skillpass add github:owner/repo&#64;v1.2.0 --target claude-code   # pin a branch, tag, or commit
+skillpass add https://github.com/owner/repo/tree/main/skills/pdf --target agents</code></pre>
+	<p>
+		A skill does not have to be on the directory to go through the gate. The CLI pins the reference to a commit,
+		downloads that commit's archive from GitHub, runs the same validator on it locally, and shows the same pre-flight:
+		status, risk, permissions, findings, and source hash, plus the repo and commit it came from. A failed report blocks
+		the install and medium+ risk asks for confirmation, then the same atomic install path runs with every flag, pack
+		fan-out, and the location picker.
+	</p>
+	<p>
+		These installs are <strong>unlisted</strong>: validated on your machine, never submitted or listed, with no
+		maintainer ownership check and no AI review behind them. The receipt records the repo and commit and marks the
+		install unlisted, so <code>list</code> shows the origin, <code>outdated</code> leaves it out of the update count,
+		and <code>update</code> refuses it rather than replace it with a same-named directory skill. To refresh one,
+		<code>remove</code> it and <code>add</code> it again. Public repositories only; <code>add github:...</code> never
+		contacts the directory.
+	</p>
+
 	<h2>Track: list and outdated</h2>
 	<pre><code>skillpass list        # installed skills with versions, offline
 skillpass outdated    # compares to the directory; exits 1 when updates exist</code></pre>
@@ -75,7 +96,8 @@ skillpass update ai-blueprint  # packs: members swap, new ones add, dropped ones
 	<p>
 		An update re-runs the whole trust gate and shows the{' '}
 		<strong>permission diff against the version you actually have installed</strong> - not just the previous publish.
-		The swap is atomic: a failure mid-replace restores what you had.
+		The swap is atomic: a failure mid-replace restores what you had. Unlisted installs are refused here; remove and add
+		them again instead.
 	</p>
 
 	<h2>Remove</h2>

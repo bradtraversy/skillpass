@@ -4,8 +4,11 @@ import {
 	type PublicPreflight,
 	type PublicSkillDetail,
 	type ReportFinding,
+	type ValidationReport,
 	type ValidationStatus,
 } from 'skill-schema';
+import type { LoadedPackage } from 'validator';
+import { originLabel, type UnlistedOrigin } from './receipts';
 import { PLAIN, type Styler } from './style';
 
 export function statusLabel(status: ValidationStatus): string {
@@ -99,4 +102,41 @@ function renderDiff(diff: PublicPreflight['diff']): string[] {
 		...added.map((key) => `  + ${key} (new)`),
 		...removed.map((key) => `  - ${key} (no longer requested)`),
 	];
+}
+
+export const LOCAL_BLOCKED_REASON = 'validation failed; failed skills cannot be installed';
+
+// The pre-flight for a repo validated on this machine: the hosted layout, plus
+// where it came from and a plain unlisted marker. No diff, nothing to compare.
+export function renderLocalPreflight(
+	name: string,
+	origin: UnlistedOrigin,
+	pkg: LoadedPackage,
+	report: ValidationReport,
+	st: Styler = PLAIN,
+): string[] {
+	const manifest = pkg.manifest.state === 'ok' ? pkg.manifest.data : undefined;
+	const members = manifest?.skills ?? [];
+	const lines = [
+		`Skill     ${st.bold(name)} ${st.yellow('(unlisted - validated locally, not on the directory)')}`,
+		...(members.length > 0 ? [`Pack      ${members.length} skills: ${members.map((m) => m.name).join(', ')}`] : []),
+		`Repo      github.com/${originLabel(origin)}`,
+		`Commit    ${origin.commit}`,
+		`Version   ${manifest?.version ?? 'none declared'}`,
+		`Status    ${statusColor(st, report.status)(statusLabel(report.status))}`,
+		`Risk      ${riskColor(st, report.riskLevel)(report.riskLevel)}`,
+		`Source    ${report.sourceHash} ${st.green('(validated locally)')}`,
+		`Engine    ${report.engineVersion}`,
+		`Validated ${report.createdAt.slice(0, 10)}`,
+		'',
+		...renderPermissions(report.permissionsDeclared, report.permissionsDetected),
+		'',
+		'Changes   not tracked for unlisted installs',
+	];
+	const failures = renderFindings('Failures', report.failures);
+	const warnings = renderFindings('Warnings', report.warnings);
+	if (failures.length > 0) lines.push('', ...failures);
+	if (warnings.length > 0) lines.push('', ...warnings);
+	if (report.status === 'failed') lines.push('', st.red(`BLOCKED: ${LOCAL_BLOCKED_REASON}`));
+	return lines;
 }

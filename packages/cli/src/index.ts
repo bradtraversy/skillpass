@@ -27,6 +27,10 @@ export const USAGE = [
 	'  skillpass report <slug>[@version] [--json]  fetch the hosted passport pre-flight',
 	'  skillpass add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]',
 	'                                             install a skill through the pre-flight gate',
+	'  skillpass add github:<owner>/<repo>[/<path>][@<ref>] [same flags]',
+	'                                             install from any public GitHub repo: the validator',
+	'                                             runs locally, the install is unlisted (a',
+	'                                             https://github.com/... URL works too)',
 	'  skillpass remove <slug> [--target <tool> [--global] | --dir <path>]',
 	'                                             remove an installed skill',
 	'  skillpass list                              show installed skills in the known areas',
@@ -50,7 +54,8 @@ export const USAGE = [
 	'  --version print the CLI version',
 	'  --help    show this message',
 	'',
-	'The search, report, and add commands read the API base URL from SKILLPASS_API.',
+	'The search, report, and add commands read the API base URL from SKILLPASS_API;',
+	'add github:... never contacts the directory.',
 	'Exit codes: 0 ok/warning, 1 failed or blocked, 2 usage/load/network errors',
 	'(outdated exits 1 when updates are available).',
 ].join('\n');
@@ -245,7 +250,7 @@ export async function run(argv: string[]): Promise<CommandResult> {
 	if (args.command === 'add') {
 		const [ref] = args.positional;
 		if (!ref) {
-			return { lines: ['error: add needs a skill slug', '', USAGE], exitCode: 2 };
+			return { lines: ['error: add needs a skill slug or a github: reference', '', USAGE], exitCode: 2 };
 		}
 		const tty = Boolean(process.stdin.isTTY);
 		return runAdd(ref, {
