@@ -1,12 +1,43 @@
+import type { UnzipFileFilter } from 'fflate';
 import { existsSync, readdirSync, statSync } from 'node:fs';
+import { isAbsolute } from 'node:path';
 import type { PublicPreflight } from 'skill-schema';
 import type { PackageFile } from 'validator';
 import type { PackMemberInstall } from './pack';
-import type { Receipt } from './receipts';
+import type { Receipt, UnlistedOrigin } from './receipts';
 import type { CommandResult } from './scan';
 
 export const GLOBAL_NEEDS_TARGET = 'error: --global needs --target (e.g. --target claude-code)';
 export const TARGET_OR_DIR = 'error: pass --target or --dir, not both';
+
+// Mirror the server snapshot caps (apps/api/src/github/snapshot.ts) so the CLI
+// never trusts an oversized archive, from the API or straight from GitHub.
+export const MAX_FILES = 500;
+export const MAX_FILE_BYTES = 1024 * 1024;
+export const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
+export const MAX_ZIP_BYTES = 20 * 1024 * 1024;
+
+export class OversizedArchiveError extends Error {}
+
+export function unsafeEntryPath(path: string): boolean {
+	return isAbsolute(path) || path.split('/').includes('..') || path.includes('\\');
+}
+
+// An unzip filter that keeps the entries `keep` accepts and throws
+// OversizedArchiveError the moment those entries exceed the caps.
+export function cappedFilter(keep: (name: string) => boolean = () => true): UnzipFileFilter {
+	let fileCount = 0;
+	let totalBytes = 0;
+	return (info) => {
+		if (!keep(info.name)) return false;
+		fileCount += 1;
+		totalBytes += info.originalSize;
+		if (fileCount > MAX_FILES || info.originalSize > MAX_FILE_BYTES || totalBytes > MAX_TOTAL_BYTES) {
+			throw new OversizedArchiveError();
+		}
+		return true;
+	};
+}
 
 // A streamed command emits each block as it lands and still returns the full
 // transcript; a buffered one returns it for main to print.
@@ -28,12 +59,17 @@ export function isOccupied(path: string): boolean {
 	return existsSync(path) && (!statSync(path).isDirectory() || readdirSync(path).length > 0);
 }
 
-export function receiptFor(preflight: Pick<PublicPreflight, 'version' | 'sourceHash'>, packSlug?: string): Receipt {
+export function receiptFor(
+	source: Pick<PublicPreflight, 'version' | 'sourceHash'>,
+	packSlug?: string,
+	unlisted?: UnlistedOrigin,
+): Receipt {
 	return {
-		version: preflight.version,
-		sourceHash: preflight.sourceHash,
+		version: source.version,
+		sourceHash: source.sourceHash,
 		installedAt: new Date().toISOString(),
-		...(packSlug ? { pack: { slug: packSlug, version: preflight.version } } : {}),
+		...(packSlug ? { pack: { slug: packSlug, version: source.version } } : {}),
+		...(unlisted ? { unlisted } : {}),
 	};
 }
 

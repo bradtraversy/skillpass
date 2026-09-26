@@ -7,7 +7,7 @@ import {
 import { loadPackage } from 'validator';
 import { getParsed, resolveApiUrl } from './api';
 import { installedIn } from './list';
-import { readReceipts } from './receipts';
+import { originLabel, readReceipts } from './receipts';
 import type { CommandResult } from './scan';
 import { knownAreas } from './targets';
 import { join } from 'node:path';
@@ -79,6 +79,20 @@ export async function runOutdated(opts: OutdatedOptions = {}): Promise<CommandRe
 
 		for (const name of names) {
 			const receipt = receipts[name];
+			if (receipt?.unlisted) {
+				// Installed from a repo, not the directory: a same-named listing is a
+				// different skill, so there is nothing to compare it to.
+				const family = receipt.pack?.slug;
+				if (family !== undefined) {
+					if (seenPacks.has(family)) continue;
+					seenPacks.add(family);
+				}
+				tracked += 1;
+				rows.push(
+					`  ${family ?? name}  ${receipt.pack?.version ?? receipt.version}  unlisted (${originLabel(receipt.unlisted)}) - not tracked by the directory`,
+				);
+				continue;
+			}
 			if (receipt?.pack) {
 				if (seenPacks.has(receipt.pack.slug)) {
 					continue;

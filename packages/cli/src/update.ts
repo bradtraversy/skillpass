@@ -6,7 +6,7 @@ import { confirmRisk, createOutput, GLOBAL_NEEDS_TARGET, isOccupied, planMembers
 import { resolvePackMembers } from './pack';
 import { fetchPreflight, getParsed, parseSkillRef, resolveApiUrl } from './api';
 import { identifyByHash } from './outdated';
-import { readReceipts, recordReceipt, removeReceipt } from './receipts';
+import { originLabel, readReceipts, recordReceipt, removeReceipt, type UnlistedOrigin } from './receipts';
 import { renderPreflightReport } from './render';
 import type { CommandResult } from './scan';
 import { PLAIN, type Styler } from './style';
@@ -30,6 +30,7 @@ interface Located {
 	dir: string;
 	installedVersion?: string;
 	packSlug?: string;
+	unlisted?: UnlistedOrigin;
 }
 
 async function locate(slug: string, opts: UpdateOptions, fetchImpl: typeof fetch, apiUrl: string): Promise<Located[]> {
@@ -49,13 +50,20 @@ async function locate(slug: string, opts: UpdateOptions, fetchImpl: typeof fetch
 				dir,
 				installedVersion: receipt.version,
 				packSlug: receipt.pack?.slug,
+				unlisted: receipt.unlisted,
 			});
 			continue;
 		}
 		const packMember = Object.values(receipts).find((r) => r.pack?.slug === slug);
 		if (packMember?.pack) {
 			// The ref names a pack: its install is the member family in this area.
-			hits.push({ area, dir: area.dir, installedVersion: packMember.pack.version, packSlug: slug });
+			hits.push({
+				area,
+				dir: area.dir,
+				installedVersion: packMember.pack.version,
+				packSlug: slug,
+				unlisted: packMember.unlisted,
+			});
 			continue;
 		}
 		if (existsSync(dir)) {
@@ -143,6 +151,13 @@ export async function runUpdate(ref: string, opts: UpdateOptions = {}): Promise<
 		return done(2);
 	}
 	const installed = hits[0];
+	if (installed.unlisted) {
+		// A directory listing with the same name is a different skill; never swap one for the other.
+		push(
+			`error: ${slug} in ${installed.dir} was installed from github:${originLabel(installed.unlisted)}, not the directory; remove it and add it again to refresh it`,
+		);
+		return done(2);
+	}
 
 	const fetched = await fetchPreflight(fetchImpl, apiUrl, ref);
 	if (!fetched.ok) {

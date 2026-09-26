@@ -130,6 +130,11 @@ describe('run', () => {
 		expect(result.lines[0]).toBe(USAGE);
 	});
 
+	it('documents the repo install form in usage', () => {
+		expect(USAGE).toContain('skillpass add github:<owner>/<repo>[/<path>][@<ref>]');
+		expect(USAGE).toContain('add github:... never contacts the directory');
+	});
+
 	it('prints usage and exits 0 with --help', async () => {
 		const result = await run(['--help']);
 		expect(result.exitCode).toBe(0);

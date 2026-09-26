@@ -1,12 +1,25 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+// Where an install that is not on the directory came from; commit is the full sha.
+export interface UnlistedOrigin {
+	repo: string;
+	subpath?: string;
+	commit: string;
+}
+
 export interface Receipt {
 	version: string;
 	sourceHash: string;
 	installedAt: string;
 	// Present on pack members, so pack-level update/remove can find the family.
 	pack?: { slug: string; version: string };
+	// Present on installs validated locally from a repo (never on directory installs).
+	unlisted?: UnlistedOrigin;
+}
+
+export function originLabel(origin: UnlistedOrigin): string {
+	return origin.subpath ? `${origin.repo}/${origin.subpath}` : origin.repo;
 }
 
 export type ReceiptIndex = Record<string, Receipt>;

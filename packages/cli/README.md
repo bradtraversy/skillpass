@@ -24,6 +24,7 @@ skillpass search [query] [--ai] [--target <tool>] [--category <slug>] [--packs] 
 skillpass scan <path> [--json]
 skillpass report <slug>[@version] [--json]
 skillpass add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]
+skillpass add github:<owner>/<repo>[/<path>][@<ref>] [same flags]
 skillpass remove <slug> [--target <tool> [--global] | --dir <path>]
 skillpass update <slug>[@version] [--target <tool> [--global]] [--yes]
 skillpass outdated
@@ -73,6 +74,32 @@ tool's skills area using that tool's variant files -
 `skillpass add ai-blueprint --target claude-code` installs 19 individual
 skills in one verified step.
 
+### Install from any repo
+
+A skill does not have to be on the directory to go through the gate:
+
+```
+skillpass add github:owner/repo --target claude-code          # the repo root is the skill (or a pack)
+skillpass add github:owner/repo/skills/pdf --target cursor    # one folder of a monorepo
+skillpass add github:owner/repo@v1.2.0 --target claude-code   # pin a branch, tag, or commit
+skillpass add https://github.com/owner/repo/tree/main/skills/pdf --target agents
+```
+
+The CLI pins the reference to a commit, downloads that commit's archive from
+GitHub, runs the same validator on it locally, and shows the same pre-flight
+(status, risk, permissions, findings, source hash) plus the repo and commit
+it came from. A failed report blocks the install; medium+ risk asks for
+confirmation. Then the same atomic install path runs, so `--target`,
+`--global`, `--dir`, packs, and the location picker all work.
+
+These installs are **unlisted**: validated on your machine, never submitted
+or listed, with no maintainer ownership check and no AI review behind them.
+The receipt records the repo and commit and marks the install `unlisted`;
+`list` shows the origin, `outdated` leaves it out of the update count, and
+`update` refuses it so a same-named directory skill can never replace it.
+To refresh an unlisted install, `remove` it and `add` it again. Public
+repositories only; `add github:...` never contacts the directory.
+
 ### Manage
 
 Installs into the known skills areas are recorded in a per-area
@@ -85,7 +112,7 @@ version - your own hand-made skills in the same folders are left alone.
 - `skillpass update <slug>` re-runs the whole trust gate - including a
   permission diff against the version you currently have - then swaps the
   install atomically; updating a pack swaps, adds, and removes members as
-  the pack changed
+  the pack changed (unlisted installs are refused: remove and add again)
 - `skillpass remove <slug>` deletes an installed skill (a pack removes its
   whole family); it refuses anything that does not look like an installed
   skill, so a stray `--dir` can never wipe a real folder

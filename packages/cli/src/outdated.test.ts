@@ -209,4 +209,27 @@ describe('runOutdated', () => {
 		expect(result.exitCode).toBe(2);
 		expect(result.lines[0]).toContain('cannot reach the API');
 	});
+
+	it('never compares an unlisted install to a same-named directory listing', async () => {
+		const cwd = temp('skillpass-outdated-');
+		const home = temp('skillpass-outdated-home-');
+		const area = join(cwd, '.claude', 'skills');
+		installDir(area, 'pdf');
+		installDir(area, 'adopt');
+		installDir(area, 'audit');
+		const unlisted = { repo: 'o/r', commit: 'f'.repeat(40) };
+		recordReceipt(area, 'pdf', { ...RECEIPT, version: 'fffffff', unlisted });
+		recordReceipt(area, 'adopt', { ...RECEIPT, version: 'fffffff', pack: { slug: 'r', version: 'fffffff' }, unlisted });
+		recordReceipt(area, 'audit', { ...RECEIPT, version: 'fffffff', pack: { slug: 'r', version: 'fffffff' }, unlisted });
+		const fetchImpl = listFetch([summary('pdf', '9.9.9'), summary('r', '9.9.9')]);
+		const result = await runOutdated({ cwd, home, fetchImpl });
+		expect(result.exitCode).toBe(0);
+		const text = result.lines.join('\n');
+		expect(text).toContain('pdf  fffffff  unlisted (o/r) - not tracked by the directory');
+		expect(text).toContain('r  fffffff  unlisted (o/r) - not tracked by the directory');
+		expect(text).not.toContain('9.9.9');
+		expect(result.lines.at(-1)).toBe('Everything is current.');
+		const urls = vi.mocked(fetchImpl).mock.calls.map((c) => String(c[0]));
+		expect(urls.every((u) => u.endsWith('/skills'))).toBe(true);
+	});
 });
