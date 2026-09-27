@@ -14,7 +14,7 @@ services:
     # Node service (not static) so the per-entity skill/profile pages render on
     # demand via @astrojs/node. Starter so it never spins down.
     plan: starter
-    buildCommand: corepack enable && corepack prepare pnpm@11.9.0 --activate && pnpm install --frozen-lockfile && pnpm build
+    buildCommand: corepack enable && corepack prepare pnpm@11.11.0 --activate && pnpm install --frozen-lockfile && pnpm build
     startCommand: cd apps/web && node ./dist/server/entry.mjs
     envVars:
       - key: NODE_VERSION
@@ -31,7 +31,7 @@ services:
   - type: web
     name: skillpass-api
     runtime: node
-    buildCommand: corepack enable && corepack prepare pnpm@11.9.0 --activate && pnpm install --frozen-lockfile
+    buildCommand: corepack enable && corepack prepare pnpm@11.11.0 --activate && pnpm install --frozen-lockfile
     preDeployCommand: cd apps/api && pnpm db:migrate
     startCommand: cd apps/api && node --import tsx src/index.ts
     healthCheckPath: /health

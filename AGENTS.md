@@ -241,7 +241,7 @@ checks do not make the Blueprint unusable.
 
 ## Commands
 
-pnpm monorepo (pnpm 11.9.0, Node >= 22.12). Run these from the repo root; they
+pnpm monorepo (pnpm 11.11.0, Node >= 22.12). Run these from the repo root; they
 proxy into `apps/web`.
 
 - Dev server: `pnpm dev` (http://localhost:4321) - file-watch polling on, safe on VM/network filesystems
