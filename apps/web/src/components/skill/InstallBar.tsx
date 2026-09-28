@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Distribution } from 'skill-schema';
+import { installPrompt, installRef } from '../../lib/install-prompt';
 import CopyBox from '../ui/CopyBox';
 import { DownloadIcon } from '../ui/icons';
 import PreflightPanel from './PreflightPanel';
@@ -11,7 +12,17 @@ interface Props {
 	install?: string;
 	homepage?: string;
 	githubRepoUrl: string | null;
+	pinned: boolean;
 }
+
+type InstallMode = 'cli' | 'prompt';
+const MODES: { id: InstallMode; label: string }[] = [
+	{ id: 'cli', label: 'CLI' },
+	{ id: 'prompt', label: 'Prompt' },
+];
+const TAB = 'cursor-pointer rounded-sm border px-[10px] py-[4px] font-mono text-[11px] uppercase tracking-[0.08em]';
+const TAB_ON = 'border-border-2 bg-bg-well text-text';
+const TAB_OFF = 'border-transparent text-faint hover:text-text';
 
 const BTN =
 	'inline-flex cursor-pointer items-center gap-[7px] rounded-sm bg-accent px-[15px] py-[9px] text-[13px] font-semibold text-accent-ink hover:bg-accent-hover';
@@ -37,24 +48,50 @@ function ExternalIcon() {
 	);
 }
 
-export default function InstallBar({ slug, version, distribution, install, homepage, githubRepoUrl }: Props) {
+export default function InstallBar({ slug, version, distribution, install, homepage, githubRepoUrl, pinned }: Props) {
 	const [preflightOpen, setPreflightOpen] = useState(false);
+	const [mode, setMode] = useState<InstallMode>('cli');
 	const repoUrl = githubRepoUrl ?? homepage ?? null;
 
-	// A downloadable skill: install command + the download/pre-flight flow.
+	// A downloadable skill: install command or agent prompt + the download/pre-flight flow.
 	if (distribution === 'skill') {
+		const ref = installRef(slug, version, pinned);
 		return (
 			<>
 				<div className="rounded-md border border-border bg-surface p-[14px]">
-					<div className="flex items-center gap-3">
-						<CopyBox value={`skillpass add ${slug}`} label="Copy command" prefix="$" />
-						<button type="button" onClick={() => setPreflightOpen((open) => !open)} className={BTN}>
-							<DownloadIcon />
-							Download &amp; pre-flight
-						</button>
+					<div className="mb-[10px] flex gap-[4px]" role="tablist" aria-label="Install method">
+						{MODES.map((m) => (
+							<button
+								key={m.id}
+								type="button"
+								role="tab"
+								aria-selected={mode === m.id}
+								onClick={() => setMode(m.id)}
+								className={`${TAB} ${mode === m.id ? TAB_ON : TAB_OFF}`}
+							>
+								{m.label}
+							</button>
+						))}
 					</div>
+					{mode === 'cli' ? (
+						<div className="flex items-center gap-3">
+							<CopyBox value={`skillpass add ${ref}`} label="Copy command" prefix="$" />
+							<button type="button" onClick={() => setPreflightOpen((open) => !open)} className={BTN}>
+								<DownloadIcon />
+								Download &amp; pre-flight
+							</button>
+						</div>
+					) : (
+						<CopyBox value={installPrompt({ slug, version, pinned })} label="Copy prompt" multiline />
+					)}
 					<p className="mt-[10px] text-[12px] text-faint">
-						Needs the CLI: <code className="font-mono text-muted">npm install -g skillpass</code>
+						{mode === 'cli' ? (
+							<>
+								Needs the CLI: <code className="font-mono text-muted">npm install -g skillpass</code>
+							</>
+						) : (
+							'Paste this into your agent. It runs the same CLI install, pre-flight first, and stops for you on medium or higher risk.'
+						)}
 					</p>
 				</div>
 				{preflightOpen && <PreflightPanel slug={slug} version={version} onClose={() => setPreflightOpen(false)} />}
