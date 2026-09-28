@@ -3,6 +3,7 @@ import type { PublicSkillDetail } from 'skill-schema';
 import { getSkill } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
 import AiReview from './AiReview';
+import BadgeSnippet from './BadgeSnippet';
 import DetailHeader from './DetailHeader';
 import InstallBar from './InstallBar';
 import Passport from './Passport';
@@ -121,6 +122,11 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 						</a>
 					))}
 				</div>
+			</section>
+
+			<section className="mt-[26px]">
+				<h2 className={SECTION_HEADING}>README badge</h2>
+				<BadgeSnippet slug={detail.slug} />
 			</section>
 
 			<section className="mt-[26px]">

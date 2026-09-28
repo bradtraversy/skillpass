@@ -10,6 +10,7 @@ import {
 import { loadPackageFromFiles } from 'validator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
+import { renderBadge } from '../badge/render';
 import { createAbuseReport, findOpenReportBySkillAndReporter } from '../db/abuse';
 import { recordDownload } from '../db/downloads';
 import { findAiReviewByHash } from '../db/reviews';
@@ -395,6 +396,44 @@ describe('GET /skills/:slug', () => {
 		expect(text).not.toContain('snapshotKey');
 		expect(text).not.toContain('githubId');
 		expect(text).not.toContain('submissionId');
+	});
+});
+
+describe('GET /skills/:slug/badge.svg', () => {
+	it('404s an unknown or unpublished slug with the JSON envelope', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(undefined);
+		const res = await app.request('/skills/nope/badge.svg');
+		expect(res.status).toBe(404);
+		expect(await res.json()).toEqual({ success: false, error: 'not found' });
+		expect(vi.mocked(findVersionWithPassport)).not.toHaveBeenCalled();
+	});
+
+	it('answers the latest passport as a cacheable svg, with no session', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		const res = await app.request('/skills/smoke-clean/badge.svg');
+		expect(res.status).toBe(200);
+		expect(res.headers.get('content-type')).toBe('image/svg+xml; charset=utf-8');
+		expect(res.headers.get('cache-control')).toBe('public, max-age=300, s-maxage=300');
+		expect(await res.text()).toBe(renderBadge({ validationStatus: 'passed', riskLevel: 'low' }));
+		expect(findPublishedSkillBySlug).toHaveBeenCalledWith(expect.anything(), 'smoke-clean');
+	});
+
+	it('takes badge.svg for the badge, never for a version', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue(record);
+		const res = await app.request('/skills/smoke-clean/badge.svg');
+		expect(res.headers.get('content-type')).not.toContain('json');
+		expect(vi.mocked(findVersionWithPassport)).not.toHaveBeenCalled();
+		expect(vi.mocked(listVersionsWithPassports)).not.toHaveBeenCalled();
+	});
+
+	it('renders the passport verdict and risk it was given', async () => {
+		vi.mocked(findPublishedSkillBySlug).mockResolvedValue({
+			...record,
+			passport: { ...passport, validationStatus: 'warning', riskLevel: 'medium' },
+		});
+		const svg = await (await app.request('/skills/smoke-clean/badge.svg')).text();
+		expect(svg).toContain('aria-label="skillpass: warning, medium risk"');
+		expect(svg).not.toContain('smoke-clean');
 	});
 });
 

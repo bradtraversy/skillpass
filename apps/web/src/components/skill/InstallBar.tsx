@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Distribution } from 'skill-schema';
+import CopyBox from '../ui/CopyBox';
 import { DownloadIcon } from '../ui/icons';
 import PreflightPanel from './PreflightPanel';
 
@@ -36,63 +37,6 @@ function ExternalIcon() {
 	);
 }
 
-function CopyBox({ command }: { command: string }) {
-	const [copied, setCopied] = useState(false);
-	async function copy() {
-		try {
-			await navigator.clipboard.writeText(command);
-			setCopied(true);
-			window.setTimeout(() => setCopied(false), 1200);
-		} catch {
-			// Clipboard unavailable (insecure context or denied); the command stays visible.
-		}
-	}
-	return (
-		<div className="flex flex-1 items-center gap-[10px] rounded-sm border border-border-2 bg-bg-well px-3 py-[9px]">
-			<span className="font-mono text-accent">$</span>
-			<span className="flex-1 truncate font-mono text-[12.5px]">{command}</span>
-			<button
-				type="button"
-				onClick={copy}
-				aria-label="Copy command"
-				className="grid cursor-pointer place-items-center text-faint hover:text-text"
-			>
-				{copied ? (
-					<svg
-						className="text-pass"
-						width="15"
-						height="15"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						aria-hidden="true"
-					>
-						<path d="M20 6 9 17l-5-5" />
-					</svg>
-				) : (
-					<svg
-						width="15"
-						height="15"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						aria-hidden="true"
-					>
-						<rect x="9" y="9" width="13" height="13" rx="2" />
-						<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-					</svg>
-				)}
-			</button>
-		</div>
-	);
-}
-
 export default function InstallBar({ slug, version, distribution, install, homepage, githubRepoUrl }: Props) {
 	const [preflightOpen, setPreflightOpen] = useState(false);
 	const repoUrl = githubRepoUrl ?? homepage ?? null;
@@ -103,7 +47,7 @@ export default function InstallBar({ slug, version, distribution, install, homep
 			<>
 				<div className="rounded-md border border-border bg-surface p-[14px]">
 					<div className="flex items-center gap-3">
-						<CopyBox command={`skillpass add ${slug}`} />
+						<CopyBox value={`skillpass add ${slug}`} label="Copy command" prefix="$" />
 						<button type="button" onClick={() => setPreflightOpen((open) => !open)} className={BTN}>
 							<DownloadIcon />
 							Download &amp; pre-flight
@@ -123,7 +67,7 @@ export default function InstallBar({ slug, version, distribution, install, homep
 		return (
 			<div className="flex items-center gap-3 rounded-md border border-border bg-surface p-[14px]">
 				{install ? (
-					<CopyBox command={install} />
+					<CopyBox value={install} label="Copy command" prefix="$" />
 				) : (
 					<span className="flex-1 text-[13px] text-muted">Install from the repository.</span>
 				)}

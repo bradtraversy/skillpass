@@ -9,6 +9,7 @@ import {
 } from 'skill-schema';
 import { loadPackageFromFiles, type PackageFile } from 'validator';
 import { readSessionUserId, requireAuth, type AuthVariables } from '../auth/middleware';
+import { renderBadge } from '../badge/render';
 import type { Db } from '../db/client';
 import { createAbuseReport, findOpenReportBySkillAndReporter } from '../db/abuse';
 import { recordDownload } from '../db/downloads';
@@ -198,6 +199,22 @@ export function skillRoutes(env: Env, db: Db) {
 		}
 		const records = await searchSkillsByEmbedding(db, embedded.data[0]);
 		return c.json({ success: true, data: records.map(publicSkillSummary) });
+	});
+
+	// Registered before the /:slug/:version routes so "badge.svg" is never taken
+	// for a version. README views arrive through GitHub's image proxy, and five
+	// minutes of caching keeps that to one query per proxy node.
+	routes.get('/:slug/badge.svg', async (c) => {
+		const record = await findPublishedSkillBySlug(db, c.req.param('slug'));
+		if (!record) return notFound(c);
+		const svg = renderBadge({
+			validationStatus: record.passport.validationStatus,
+			riskLevel: record.passport.riskLevel,
+		});
+		return c.body(svg, 200, {
+			'Content-Type': 'image/svg+xml; charset=utf-8',
+			'Cache-Control': 'public, max-age=300, s-maxage=300',
+		});
 	});
 
 	routes.get('/:slug/:version/preflight', async (c) => {
