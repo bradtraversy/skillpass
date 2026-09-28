@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ProgressStep, ProgressStepState, PublicValidation, ReportFinding } from 'skill-schema';
 import { getValidation, publishSubmission } from '../../lib/api';
+import { badgeUrl } from '../../lib/badge';
 
 const POLL_MS = 2000;
 const MAX_POLLS = 60;
@@ -127,9 +128,17 @@ function PublishButton({ submissionId }: { submissionId: number }) {
 
 	if (state.phase === 'published') {
 		return (
-			<p className="mt-3 text-[13px] font-semibold text-pass">
-				Published as {state.slug} v{state.version}
-			</p>
+			<div className="mt-3">
+				<p className="text-[13px] font-semibold text-pass">
+					Published as {state.slug} v{state.version}
+				</p>
+				<p className="mt-2 flex flex-wrap items-center gap-3 text-[13px] text-muted">
+					<img src={badgeUrl(state.slug)} alt="SkillPass badge" height={20} className="flex-none" />
+					<a href={`/skills/${state.slug}`} className="text-accent hover:text-accent-hover">
+						Add the badge to your README
+					</a>
+				</p>
+			</div>
 		);
 	}
 	return (

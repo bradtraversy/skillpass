@@ -1,3 +1,7 @@
+---
+import { badgeUrl } from '../../lib/badge';
+---
+
 <aside class="mt-16 text-[13px] leading-relaxed text-muted">
 	<section>
 		<h2 class="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">What we expect</h2>
@@ -72,4 +76,15 @@ your-pack/
 			</p>
 		</section>
 	</div>
+
+	<section class="mt-10">
+		<h2 class="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">What you get</h2>
+		<div class="mt-3 flex flex-wrap items-center gap-4 rounded-lg border border-border bg-surface p-4">
+			<img src={badgeUrl('ai-blueprint')} alt="SkillPass badge" height="20" class="flex-none" />
+			<p class="min-w-0 flex-1">
+				A live README badge with your latest version's validation status and risk level, linking back to its passport.
+				The markdown snippet is on your skill page once it publishes.
+			</p>
+		</div>
+	</section>
 </aside>

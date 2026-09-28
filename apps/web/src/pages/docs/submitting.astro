@@ -1,5 +1,6 @@
 ---
 import DocsShell from '../../components/docs/DocsShell.astro';
+import { API_URL } from '../../lib/api';
 ---
 
 <DocsShell
@@ -90,6 +91,18 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 	<p>
 		Anyone can flag a listing with "Report this skill" on its page. Reports go to the admin queue, and a report never
 		changes a passport.
+	</p>
+
+	<h2 id="readme-badge">README badge</h2>
+	<p>
+		Show the passport where people find the skill. The badge is an SVG the API renders from the latest published
+		version's validation status and risk level; it links back to the skill page and never shows install counts:
+	</p>
+	<pre><code>[![SkillPass]({API_URL}/skills/your-skill/badge.svg)](https://skillpass.dev/skills/your-skill)</code></pre>
+	<p>
+		Every skill page has this snippet with the slug filled in and a copy button, under "README badge". GitHub caches
+		badge images for a few minutes, so a new version shows up shortly after it publishes. Unlisting a skill takes the
+		badge with it: the image stops resolving until you relist.
 	</p>
 
 	<h2>Zip fallback</h2>
