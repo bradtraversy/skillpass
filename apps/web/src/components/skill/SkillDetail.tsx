@@ -64,6 +64,7 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 				install={detail.passport.install}
 				homepage={detail.passport.homepage}
 				githubRepoUrl={detail.githubRepoUrl}
+				pinned={Boolean(version)}
 			/>
 			<Passport detail={detail} />
 			<AiReview review={detail.aiReview} />

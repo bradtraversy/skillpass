@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { API_URL } from './api';
-import { SITE_URL, badgeMarkdown, badgeUrl } from './badge';
+import { badgeMarkdown, badgeUrl } from './badge';
+import { SITE_URL } from './site';
 
 describe('badgeUrl', () => {
 	it('points at the API badge route for the slug', () => {
@@ -19,9 +20,5 @@ describe('badgeMarkdown', () => {
 
 	it('encodes the slug in both URLs', () => {
 		expect(badgeMarkdown('a b')).toBe(`[![SkillPass](${API_URL}/skills/a%20b/badge.svg)](${SITE_URL}/skills/a%20b)`);
-	});
-
-	it('falls back to the public site with no trailing slash', () => {
-		expect(SITE_URL).toBe('https://skillpass.dev');
 	});
 });
