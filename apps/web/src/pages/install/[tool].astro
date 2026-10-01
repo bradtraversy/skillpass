@@ -16,7 +16,7 @@ const shared = sharedWith(tool).map((other) => other.name);
 const sharedNames =
 	shared.length > 1 ? `${shared.slice(0, -1).join(', ')}, and ${shared[shared.length - 1]}` : shared[0];
 const title = `Install skills in ${tool.name}`;
-const description = `Where ${tool.name} reads skills, the skillpass add command for it, and a prompt to paste into ${tool.name}. Every SkillPass skill installs into ${tool.name}.`;
+const description = `Where ${tool.name} reads skills, the skillpass add command for it, and a prompt to paste into ${tool.name}. Every downloadable SkillPass skill installs into ${tool.name}.`;
 const commands = [
 	'npm install -g skillpass',
 	`skillpass add <slug> --target ${tool.slug}`,
@@ -28,9 +28,9 @@ const prompt = toolPrompt(tool);
 
 <DocsShell title={title} description={description}>
 	<p>
-		Every skill on SkillPass installs into {tool.name}. The <a href="/docs/cli">skillpass CLI</a> writes the skill's
-		files where {tool.name} reads them, after the Skill Passport pre-flight has shown you what the skill asks an agent
-		to do.
+		Every downloadable skill on SkillPass installs into {tool.name}. The <a href="/docs/cli">skillpass CLI</a> writes
+		the skill's files where {tool.name} reads them, after the Skill Passport pre-flight has shown you what the skill
+		asks an agent to do.
 	</p>
 
 	<h2>Where {tool.name} reads skills</h2>
@@ -92,13 +92,14 @@ const prompt = toolPrompt(tool);
 	</p>
 	<pre><code>{prompt}</code></pre>
 	<p>
-		Every skill page has a <strong>Prompt</strong> tab with the slug already filled in.
+		Every downloadable skill's page has a <strong>Prompt</strong> tab with the slug already filled in.
 	</p>
 
 	<h2>Find a skill</h2>
 	<p>
-		The whole <a href="/">directory</a> works with {tool.name}: every listing installs into the folders above, and every
-		listing carries a Skill Passport you can read before you install. The <a href="/docs/cli">CLI guide</a> covers
-		search, updates, and removal.
+		The whole <a href="/">directory</a> works with {tool.name}: every downloadable skill installs into the folders
+		above, and every listing carries a Skill Passport you can read before you install. CLI tools and workflow systems
+		are listed too; their pages link to their own install command or repository instead. The{' '}
+		<a href="/docs/cli">CLI guide</a> covers search, updates, and removal.
 	</p>
 </DocsShell>
