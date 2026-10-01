@@ -60,14 +60,14 @@ export default function CopyBox({ value, label, prefix, multiline }: Props) {
 	);
 	if (multiline) {
 		return (
-			<div className="flex flex-1 items-start gap-[10px] rounded-sm border border-border-2 bg-bg-well px-3 py-[9px]">
+			<div className="flex min-w-0 flex-1 items-start gap-[10px] rounded-sm border border-border-2 bg-bg-well px-3 py-[9px]">
 				<pre className="min-w-0 flex-1 font-mono text-[12px] leading-[1.6] whitespace-pre-wrap">{value}</pre>
 				{button}
 			</div>
 		);
 	}
 	return (
-		<div className="flex flex-1 items-center gap-[10px] rounded-sm border border-border-2 bg-bg-well px-3 py-[9px]">
+		<div className="flex min-w-0 flex-1 items-center gap-[10px] rounded-sm border border-border-2 bg-bg-well px-3 py-[9px]">
 			{prefix && <span className="font-mono text-accent">{prefix}</span>}
 			<span className="flex-1 truncate font-mono text-[12.5px]">{value}</span>
 			{button}
