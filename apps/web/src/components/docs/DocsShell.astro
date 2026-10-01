@@ -14,7 +14,10 @@ const pages = [
 	{ href: '/docs/validation', label: 'Validation & permissions' },
 	{ href: '/docs/submitting', label: 'Submitting a skill' },
 	{ href: '/docs/cli', label: 'The skillpass CLI' },
+	{ href: '/install', label: 'Install by agent' },
 ];
+// Only the install guides have child pages that should keep their entry lit.
+const isActive = (href: string) => path === href || (href === '/install' && path.startsWith('/install/'));
 ---
 
 <BaseLayout title={`${title} - SkillPass docs`} description={description}>
@@ -27,7 +30,7 @@ const pages = [
 						<a
 							href={page.href}
 							class={`rounded-sm px-3 py-[7px] ${
-								path === page.href ? 'bg-surface font-medium text-text' : 'text-muted hover:text-text'
+								isActive(page.href) ? 'bg-surface font-medium text-text' : 'text-muted hover:text-text'
 							}`}
 						>
 							{page.label}

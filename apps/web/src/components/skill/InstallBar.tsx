@@ -88,6 +88,10 @@ export default function InstallBar({ slug, version, distribution, install, homep
 						{mode === 'cli' ? (
 							<>
 								Needs the CLI: <code className="font-mono text-muted">npm install -g skillpass</code>
+								{' · '}
+								<a href="/install" className="text-muted hover:text-text">
+									Install guide for your agent
+								</a>
 							</>
 						) : (
 							'Paste this into your agent. It runs the same CLI install, pre-flight first, and stops for you on medium or higher risk.'

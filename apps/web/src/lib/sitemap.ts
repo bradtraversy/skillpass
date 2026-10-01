@@ -1,4 +1,15 @@
-export const STATIC_ROUTES = ['/', '/submit', '/docs', '/docs/validation', '/docs/submitting', '/docs/cli'];
+import { INSTALL_TOOLS } from './install-tools';
+
+export const STATIC_ROUTES = [
+	'/',
+	'/submit',
+	'/docs',
+	'/docs/validation',
+	'/docs/submitting',
+	'/docs/cli',
+	'/install',
+	...INSTALL_TOOLS.map((tool) => `/install/${tool.slug}`),
+];
 
 const XML_ESCAPES: Record<string, string> = {
 	'<': '&lt;',

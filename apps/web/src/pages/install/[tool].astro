@@ -1,0 +1,105 @@
+---
+import DocsShell from '../../components/docs/DocsShell.astro';
+import { toolPrompt } from '../../lib/install-prompt';
+import { INSTALL_TOOLS, sharedWith, type InstallTool } from '../../lib/install-tools';
+
+export function getStaticPaths() {
+	return INSTALL_TOOLS.map((tool) => ({ params: { tool: tool.slug }, props: { tool } }));
+}
+
+interface Props {
+	tool: InstallTool;
+}
+
+const { tool } = Astro.props;
+const shared = sharedWith(tool).map((other) => other.name);
+const sharedNames =
+	shared.length > 1 ? `${shared.slice(0, -1).join(', ')}, and ${shared[shared.length - 1]}` : shared[0];
+const title = `Install skills in ${tool.name}`;
+const description = `Where ${tool.name} reads skills, the skillpass add command for it, and a prompt to paste into ${tool.name}. Every downloadable SkillPass skill installs into ${tool.name}.`;
+const commands = [
+	'npm install -g skillpass',
+	`skillpass add <slug> --target ${tool.slug}`,
+	`skillpass add <slug> --target ${tool.slug} --global`,
+].join('\n');
+const oneOff = `npx skillpass@latest add <slug> --target ${tool.slug}`;
+const prompt = toolPrompt(tool);
+---
+
+<DocsShell title={title} description={description}>
+	<p>
+		Every downloadable skill on SkillPass installs into {tool.name}. The <a href="/docs/cli">skillpass CLI</a> writes
+		the skill's files where {tool.name} reads them, after the Skill Passport pre-flight has shown you what the skill
+		asks an agent to do.
+	</p>
+
+	<h2>Where {tool.name} reads skills</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Scope</th>
+				<th>Folder</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>This project</td>
+				<td>
+					<code>{tool.project}/</code>
+				</td>
+			</tr>
+			<tr>
+				<td>Every project (user-level)</td>
+				<td>
+					<code>{tool.user}/</code>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	{shared.length > 0 ? (
+		<p>
+			{tool.name} reads the shared <code>.agents/skills</code> folder that {sharedNames} read too, so one install serves
+			all of them.
+		</p>
+	) : tool.layout === 'claude-code' ? (
+		<p>
+			{tool.name} has its own folder layout; a pack installs its {tool.name} variant files here.
+		</p>
+	) : (
+		<p>
+			{tool.name} keeps its own folders rather than the shared <code>.agents/skills</code> one, in the same{' '}
+			<code>.agents</code> layout.
+		</p>
+	)}
+
+	<h2>Install a skill</h2>
+	<pre><code>{commands}</code></pre>
+	<p>
+		<code>&lt;slug&gt;</code> is the name on the skill's SkillPass page. <code>--global</code> installs into{' '}
+		<code>{tool.user}/</code> for every project instead of <code>{tool.project}/</code> in this one. Nothing installed
+		yet? <code>{oneOff}</code> runs the same install once.
+	</p>
+	<p>
+		The pre-flight report shows first: validation status, risk level, declared versus detected permissions, and
+		findings. Medium or higher risk asks before anything is written, the download is verified against the pinned source
+		hash, and the write is atomic. A <strong>pack</strong> installs every member skill in the files {tool.name} reads.
+	</p>
+
+	<h2>Or paste a prompt into {tool.name}</h2>
+	<p>
+		Replace <code>&lt;slug&gt;</code> and hand this to {tool.name}. It runs the same install through the CLI, pre-flight
+		first, and stops for you when the risk is medium or higher.
+	</p>
+	<pre><code>{prompt}</code></pre>
+	<p>
+		Every downloadable skill's page has a <strong>Prompt</strong> tab with the slug already filled in.
+	</p>
+
+	<h2>Find a skill</h2>
+	<p>
+		The whole <a href="/">directory</a> works with {tool.name}: every downloadable skill installs into the folders
+		above, and every listing carries a Skill Passport you can read before you install. CLI tools and workflow systems
+		are listed too; their pages link to their own install command or repository instead. The{' '}
+		<a href="/docs/cli">CLI guide</a> covers search, updates, and removal.
+	</p>
+</DocsShell>
