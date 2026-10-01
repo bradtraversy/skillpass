@@ -10,6 +10,13 @@ describe('buildSitemap', () => {
 		expect(xml.match(/<url>/g)).toHaveLength(STATIC_ROUTES.length);
 	});
 
+	it('includes the per-agent install guides', () => {
+		const xml = buildSitemap('https://skillpass.dev', []);
+		expect(xml).toContain('<loc>https://skillpass.dev/install</loc>');
+		expect(xml).toContain('<loc>https://skillpass.dev/install/cursor</loc>');
+		expect(xml).toContain('<loc>https://skillpass.dev/install/claude-code</loc>');
+	});
+
 	it('appends a url per skill slug', () => {
 		const xml = buildSitemap('https://skillpass.dev', ['alpha', 'beta']);
 		expect(xml).toContain('<loc>https://skillpass.dev/skills/alpha</loc>');

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PROMPT_TOOLS, installPrompt, installRef } from './install-prompt';
+import { findInstallTool } from './install-tools';
+import { PROMPT_TOOLS, installPrompt, installRef, toolPrompt } from './install-prompt';
 import { SITE_URL } from './site';
 
 describe('installRef', () => {
@@ -62,5 +63,29 @@ describe('installPrompt', () => {
 		const out = installPrompt({ slug: 'a b', version: '1.0.0-rc.1+x', pinned: true });
 		expect(out).toContain(`${SITE_URL}/skills/a%20b/1.0.0-rc.1%2Bx`);
 		expect(out).toContain('add a b@1.0.0-rc.1+x --target');
+	});
+});
+
+describe('toolPrompt', () => {
+	const cursor = findInstallTool('cursor');
+	if (!cursor) throw new Error('missing cursor');
+	const out = toolPrompt(cursor);
+
+	it('fixes the target and leaves the slug for the reader', () => {
+		expect(out).toContain('npx skillpass@latest add <slug> --target cursor');
+		expect(out).toContain('skill "<slug>" (latest version)');
+		expect(out).not.toContain('<tool>');
+		expect(out).toContain('--global');
+	});
+
+	it('keeps the same pre-flight and report steps as the skill-page prompt', () => {
+		const skill = installPrompt({ slug: 'pdf', version: '1.0.0', pinned: false });
+		const steps = (text: string) => text.split('\n').filter((line) => /^[23]\. /.test(line));
+		expect(steps(out)).toEqual(steps(skill));
+		expect(out).not.toMatch(/add <slug>[^\n]*--yes/);
+	});
+
+	it('ends with the placeholder passport link', () => {
+		expect(out.endsWith(`Passport: ${SITE_URL}/skills/<slug>`)).toBe(true);
 	});
 });

@@ -5,7 +5,7 @@ import AccountMenu from './AccountMenu';
 
 const path = Astro.url.pathname.replace(/\/$/, '');
 const cliActive = path === '/docs/cli';
-const docsActive = path.startsWith('/docs') && !cliActive;
+const docsActive = (path.startsWith('/docs') || path.startsWith('/install')) && !cliActive;
 const link = (active: boolean) => `text-[13.5px] ${active ? 'text-text' : 'text-muted hover:text-text'}`;
 ---
 

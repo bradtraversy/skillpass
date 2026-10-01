@@ -1,0 +1,28 @@
+---
+import DocsShell from '../../components/docs/DocsShell.astro';
+import { INSTALL_TOOLS } from '../../lib/install-tools';
+---
+
+<DocsShell
+	title="Install by agent"
+	description="Pick your agent: where it reads skills, the skillpass add command that installs there, and a prompt to paste in. Every SkillPass skill works with every listed tool."
+>
+	<p>
+		Every skill on SkillPass installs into every tool below. Pick yours for the folders it reads, the exact{' '}
+		<code>skillpass add</code> command, and a prompt you can paste into the agent instead of running the CLI yourself.
+	</p>
+	<ul>
+		{INSTALL_TOOLS.map((tool) => (
+			<li>
+				<a href={`/install/${tool.slug}`}>{tool.name}</a> - <code>{tool.project}/</code>
+			</li>
+		))}
+	</ul>
+
+	<h2>Another tool</h2>
+	<p>
+		Anything that reads the shared <code>.agents/skills</code> folder installs with <code>--target agents</code>. For
+		any other location, <code>skillpass add &lt;slug&gt; --dir &lt;path&gt;</code> writes the skill exactly where you
+		point it. The <a href="/docs/cli">CLI guide</a> has the full command reference.
+	</p>
+</DocsShell>
