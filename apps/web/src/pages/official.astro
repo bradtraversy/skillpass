@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BackLink from '../components/nav/BackLink.astro';
+import Nav from '../components/nav/Nav.astro';
+import { getSkills } from '../lib/api';
+import { SECTION_HEADING } from '../lib/classes';
+import { groupOfficial } from '../lib/official';
+import { metaDescription } from '../lib/seo';
+import { headFetch } from '../lib/ssr';
+
+// Rendered on demand so a newly curated vendor skill counts without a build.
+// One list fetch per request; on failure the shell still serves and says so.
+export const prerender = false;
+
+const skills = await headFetch(Astro.response, (init) => getSkills(init));
+const groups = skills ? groupOfficial(skills) : [];
+const total = groups.reduce((n, group) => n + group.count, 0);
+const intro =
+	'Skills published by the companies and projects that build the technology, from Anthropic and Google to Stripe and Neon. Every one is validated and stamped with a Skill Passport like the rest of the directory.';
+---
+
+<BaseLayout title="Official AI Agent Skills from the Makers - SkillPass" description={metaDescription(intro)}>
+	<Nav />
+	<main class="mx-auto max-w-[760px] px-6">
+		<BackLink href="/">Skills</BackLink>
+		<header class="pt-[34px] pb-[30px]">
+			<h1 class="text-[28px] font-bold tracking-[-0.02em]">Official skills</h1>
+			<p class="mt-[10px] max-w-[64ch] text-[14.5px] leading-[1.55] text-muted">{intro}</p>
+		</header>
+
+		{!skills ? (
+			<p class="py-[14px] text-[13px] text-muted">Can't reach the API right now. Try again in a moment.</p>
+		) : groups.length === 0 ? (
+			<p class="py-[14px] text-[13px] text-muted">No official skills are published yet.</p>
+		) : (
+			<section>
+				<h2 class={SECTION_HEADING}>
+					{groups.length} makers, {total} skills
+				</h2>
+				<div>
+					{groups.map((group) => (
+						<a
+							href={`https://github.com/${group.login}`}
+							target="_blank"
+							rel="noreferrer"
+							class="grid grid-cols-[38px_1fr_auto] items-center gap-4 rounded-md border-b border-border px-3 py-[13px] hover:bg-surface"
+						>
+							<img
+								src={`https://github.com/${group.login}.png?size=76`}
+								alt=""
+								class="size-[38px] flex-none rounded-full"
+								loading="lazy"
+							/>
+							<span class="min-w-0">
+								<b class="block truncate font-semibold tracking-[-0.01em]">{group.name}</b>
+								<span class="mt-[2px] block text-[12.5px] text-faint">{group.login}</span>
+							</span>
+							<span class="text-right font-mono text-[12.5px] text-muted">
+								{group.count} {group.count === 1 ? 'skill' : 'skills'}
+							</span>
+						</a>
+					))}
+				</div>
+			</section>
+		)}
+	</main>
+</BaseLayout>
