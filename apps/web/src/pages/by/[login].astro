@@ -1,0 +1,78 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BackLink from '../../components/nav/BackLink.astro';
+import Nav from '../../components/nav/Nav.astro';
+import Row from '../../components/skill/Row';
+import { getSkills } from '../../lib/api';
+import { SECTION_HEADING } from '../../lib/classes';
+import { skillsByOwner } from '../../lib/owner';
+import { headFetch } from '../../lib/ssr';
+
+// Rendered on demand so a newly published skill lists under its owner at once.
+// One list fetch per request; on failure the shell still serves and says so.
+export const prerender = false;
+
+const { login } = Astro.params;
+if (!login) return new Response(null, { status: 404 });
+
+const skills = await headFetch(Astro.response, (init) => getSkills(init));
+const owner = skills ? skillsByOwner(skills, login) : null;
+if (skills && !owner) Astro.response.status = 404;
+
+const heading = owner?.name ?? owner?.login ?? login;
+const count = owner?.skills.length ?? 0;
+const description = owner
+	? `${count} validated AI agent ${count === 1 ? 'skill' : 'skills'} by ${heading} (${owner.login}) on SkillPass, each stamped with a Skill Passport.`
+	: undefined;
+---
+
+<BaseLayout
+	title={`${heading} AI Agent Skills - SkillPass`}
+	description={description}
+	canonicalPath={owner ? `/by/${encodeURIComponent(owner.login)}` : undefined}
+	noindex={!owner}
+>
+	<Nav />
+	<main class="mx-auto max-w-[760px] px-6">
+		<BackLink href="/official">Official</BackLink>
+		{!owner ? (
+			<>
+				<header class="pt-[34px] pb-[30px]">
+					<h1 class="text-[22px] font-bold tracking-[-0.01em]">{login}</h1>
+				</header>
+				<p class="py-[14px] text-[13px] text-muted">
+					{skills ? `No published skills by ${login}.` : "Can't reach the API right now. Try again in a moment."}
+				</p>
+			</>
+		) : (
+			<>
+				<header class="flex items-center gap-[18px] pt-[34px] pb-[30px]">
+					<img
+						src={`https://github.com/${owner.login}.png?size=144`}
+						alt=""
+						class="size-[72px] flex-none rounded-full"
+					/>
+					<div class="min-w-0">
+						<h1 class="text-[22px] font-bold tracking-[-0.01em]">{heading}</h1>
+						<div class="mt-[3px] text-[13px] text-muted">
+							<a href={`https://github.com/${owner.login}`} target="_blank" rel="noreferrer" class="hover:text-text">
+								github.com/{owner.login}
+							</a>
+						</div>
+						<div class="mt-[7px] text-[12.5px] text-faint">
+							{count} {count === 1 ? 'skill' : 'skills'}
+						</div>
+					</div>
+				</header>
+				<section>
+					<h2 class={SECTION_HEADING}>Published skills ({count})</h2>
+					<div>
+						{owner.skills.map((skill, i) => (
+							<Row skill={skill} rank={i + 1} />
+						))}
+					</div>
+				</section>
+			</>
+		)}
+	</main>
+</BaseLayout>

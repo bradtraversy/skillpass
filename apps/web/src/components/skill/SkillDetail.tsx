@@ -140,13 +140,16 @@ export default function SkillDetail({ slug, version }: { slug: string; version?:
 							className="size-[38px] flex-none rounded-full"
 						/>
 						<div>
+							<a href={`/by/${encodeURIComponent(detail.attributedTo)}`} className="font-semibold hover:underline">
+								{detail.attributedTo}
+							</a>
 							<a
 								href={`https://github.com/${detail.attributedTo}`}
 								target="_blank"
 								rel="noreferrer"
-								className="font-semibold hover:underline"
+								className="ml-[8px] text-[12px] text-faint hover:text-text"
 							>
-								{detail.attributedTo}
+								GitHub
 							</a>
 							<div className="mt-[2px] text-[12px] text-faint">
 								curated by{' '}

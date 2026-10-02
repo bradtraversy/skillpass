@@ -40,9 +40,7 @@ const intro =
 				<div>
 					{groups.map((group) => (
 						<a
-							href={`https://github.com/${group.login}`}
-							target="_blank"
-							rel="noreferrer"
+							href={`/by/${encodeURIComponent(group.login)}`}
 							class="grid grid-cols-[38px_1fr_auto] items-center gap-4 rounded-md border-b border-border px-3 py-[13px] hover:bg-surface"
 						>
 							<img
