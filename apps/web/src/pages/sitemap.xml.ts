@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getSkills } from '../lib/api';
+import { ownerLogins } from '../lib/owner';
 import { buildSitemap } from '../lib/sitemap';
 
 // Rendered on demand so new publishes appear without a rebuild; degrades to
@@ -8,8 +9,9 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ site }) => {
 	const result = await getSkills({ signal: AbortSignal.timeout(4000) });
-	const slugs = result.success ? result.data.map((skill) => skill.slug) : [];
-	return new Response(buildSitemap(String(site ?? 'https://skillpass.dev'), slugs), {
+	const skills = result.success ? result.data : [];
+	const slugs = skills.map((skill) => skill.slug);
+	return new Response(buildSitemap(String(site ?? 'https://skillpass.dev'), slugs, ownerLogins(skills)), {
 		headers: {
 			'Content-Type': 'application/xml; charset=utf-8',
 			// Crawlers re-fetch often; an hour of staleness is fine for new publishes.

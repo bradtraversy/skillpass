@@ -29,6 +29,18 @@ describe('buildSitemap', () => {
 		expect(xml.match(/<url>/g)).toHaveLength(STATIC_ROUTES.length + 2);
 	});
 
+	it('appends a url per owner login', () => {
+		const xml = buildSitemap('https://skillpass.dev', ['alpha'], ['anthropics', 'MicrosoftDocs']);
+		expect(xml).toContain('<loc>https://skillpass.dev/by/anthropics</loc>');
+		expect(xml).toContain('<loc>https://skillpass.dev/by/MicrosoftDocs</loc>');
+		expect(xml.match(/<url>/g)).toHaveLength(STATIC_ROUTES.length + 3);
+	});
+
+	it('encodes owner logins', () => {
+		const xml = buildSitemap('https://skillpass.dev', [], ['a b']);
+		expect(xml).toContain('/by/a%20b</loc>');
+	});
+
 	it('escapes xml-unsafe characters in slugs', () => {
 		const xml = buildSitemap('https://skillpass.dev', ['a&b']);
 		expect(xml).toContain('/skills/a%26b</loc>');
