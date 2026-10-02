@@ -7,6 +7,7 @@ export const STATIC_ROUTES = [
 	'/docs/validation',
 	'/docs/submitting',
 	'/docs/cli',
+	'/official',
 	'/install',
 	...INSTALL_TOOLS.map((tool) => `/install/${tool.slug}`),
 ];

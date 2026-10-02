@@ -17,6 +17,11 @@ describe('buildSitemap', () => {
 		expect(xml).toContain('<loc>https://skillpass.dev/install/claude-code</loc>');
 	});
 
+	it('includes the official page', () => {
+		const xml = buildSitemap('https://skillpass.dev', []);
+		expect(xml).toContain('<loc>https://skillpass.dev/official</loc>');
+	});
+
 	it('appends a url per skill slug', () => {
 		const xml = buildSitemap('https://skillpass.dev', ['alpha', 'beta']);
 		expect(xml).toContain('<loc>https://skillpass.dev/skills/alpha</loc>');
