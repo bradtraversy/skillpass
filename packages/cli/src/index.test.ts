@@ -209,6 +209,15 @@ describe('run', () => {
 		expect(VERSION).toBe(pkg.version);
 	});
 
+	it('lets init take one name and no flags', async () => {
+		const extra = await run(['init', 'one', 'two']);
+		expect(extra.exitCode).toBe(2);
+		expect(extra.lines[0]).toBe('error: init takes one skill name');
+		const json = await run(['init', 'one', '--json']);
+		expect(json.lines[0]).toBe('error: init does not take --json');
+		expect(USAGE).toContain('skillpass init [name]');
+	});
+
 	it('rejects positional arguments to list', async () => {
 		const result = await run(['list', 'extra']);
 		expect(result.exitCode).toBe(2);

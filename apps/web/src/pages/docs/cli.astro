@@ -34,6 +34,15 @@ skillpass report pdf&#64;1.0.0 --json</code></pre>
 		permission diff against the previous version, and the pinned source hash. Failed versions are blocked from download.
 	</p>
 
+	<h2>Author: init</h2>
+	<pre><code>skillpass init my-skill</code></pre>
+	<p>
+		Scaffolds <code>./my-skill/</code> with a <code>SKILL.md</code> and a <code>skill.json</code> that pass the
+		validator as written, then scans it so you see the passport status and risk before you write a line. In a terminal
+		it asks for a description and the permissions the skill will need, and declares them in <code>skill.json</code>; the
+		<a href="/docs/validation">permission taxonomy</a> explains each one. It never overwrites an existing folder.
+	</p>
+
 	<h2>Validate: scan</h2>
 	<pre><code>skillpass scan ./my-skill</code></pre>
 	<p>
