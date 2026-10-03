@@ -1,3 +1,4 @@
+import { ENGINE_VERSION } from 'validator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Db } from '../db/client';
 import type { ProgressStep, SubmissionRow, ValidationJobRow } from '../db/schema';
@@ -115,7 +116,7 @@ describe('processValidationJob', () => {
 				submissionId: 1,
 				status: 'passed',
 				riskLevel: 'low',
-				engineVersion: '0.3.0',
+				engineVersion: ENGINE_VERSION,
 				sourceHash: expect.stringMatching(/^sha256:/),
 			}),
 		);

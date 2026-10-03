@@ -23,6 +23,27 @@ function pkgWith(content: string, permissions: PermissionKey[] = []): LoadedPack
 
 const detectedKeys = (content: string) => detectPermissions(pkgWith(content).files);
 
+describe('the manifest is not evidence', () => {
+	const manifestText = JSON.stringify({ permissions: ['network.fetch', 'external.deploy'] }, null, 2);
+
+	it('ignores declared key names in the root skill.json', () => {
+		expect(detectPermissions([{ path: 'skill.json', content: manifestText }])).toEqual([]);
+	});
+
+	it('still detects the same words in the skill files', () => {
+		expect(
+			detectPermissions([
+				{ path: 'skill.json', content: manifestText },
+				{ path: 'SKILL.md', content: 'Fetch the release notes, then deploy the site.' },
+			]),
+		).toEqual(['network.fetch', 'external.deploy']);
+	});
+
+	it('scans a nested skill.json like any other file', () => {
+		expect(detectPermissions([{ path: 'skills/demo/skill.json', content: 'deploy' }])).toEqual(['external.deploy']);
+	});
+});
+
 describe('permission signals', () => {
 	it.each([
 		['network.fetch', 'Fetch the latest release notes from the website.'],

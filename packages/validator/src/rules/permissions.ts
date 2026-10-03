@@ -63,10 +63,12 @@ const PERMISSION_SIGNALS: readonly PermissionSignal[] = [
 ];
 
 // Permission keys whose signal fires anywhere in the package, each once, in
-// first-seen order.
+// first-seen order. The root skill.json is skipped: it is where permissions are
+// declared, and key names like network.fetch would otherwise detect themselves.
 export function detectPermissions(files: PackageFile[]): PermissionKey[] {
 	const detected = new Set<PermissionKey>();
 	for (const file of files) {
+		if (file.path === 'skill.json') continue;
 		for (const line of file.content.split('\n')) {
 			for (const signal of PERMISSION_SIGNALS) {
 				if (!detected.has(signal.permission) && signal.pattern.test(line)) {
