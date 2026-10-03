@@ -55,9 +55,10 @@ import DocsShell from '../../components/docs/DocsShell.astro';
 
 	<h2>The permission taxonomy</h2>
 	<p>
-		Permissions describe what a skill's instructions ask an agent to do. The validator detects them from the files (a
-		skill also may declare them in its manifest - the passport shows both, and the gap between declared and detected is
-		itself a signal). This table renders from the same definitions the validator uses, so it cannot drift:
+		Permissions describe what a skill's instructions ask an agent to do. The validator detects them from the skill's
+		files, never from <code>skill.json</code> itself (a skill also may declare them in its manifest - the passport shows
+		both, and the gap between declared and detected is itself a signal). This table renders from the same definitions
+		the validator uses, so it cannot drift:
 	</p>
 	<table>
 		<thead>

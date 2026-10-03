@@ -84,7 +84,7 @@ describe('report assembly', () => {
 	it('stamps the injected clock, engine version, and source hash', async () => {
 		const report = await validatePackage(fixture('clean-skill'), { now: NOW });
 		expect(report.createdAt).toBe('2026-07-03T12:00:00.000Z');
-		expect(report.engineVersion).toBe('0.3.0');
+		expect(report.engineVersion).toBe('0.3.1');
 		expect(report.sourceHash).toMatch(/^sha256:/);
 	});
 
