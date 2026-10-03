@@ -1,0 +1,151 @@
+---
+import DocsShell from '../../components/docs/DocsShell.astro';
+import FieldTable from '../../components/docs/FieldTable.astro';
+import {
+	API_BASE,
+	DETAIL_FIELDS,
+	EXAMPLE_DETAIL,
+	EXAMPLE_PASSPORT,
+	EXAMPLE_PREFLIGHT,
+	EXAMPLE_SUMMARY,
+	json,
+	PASSPORT_FIELDS,
+	PREFLIGHT_FIELDS,
+	SUMMARY_FIELDS,
+	VERSION_FIELDS,
+} from '../../lib/api-docs';
+
+const errors = [
+	{ status: '400', when: 'Search q is missing or longer than 500 characters', error: 'q must be 1-500 characters' },
+	{ status: '404', when: 'The slug is not a published skill, or the version does not exist', error: 'not found' },
+	{ status: '429', when: 'More than 20 searches in a minute from one IP', error: 'Too many requests, slow down.' },
+	{ status: '500', when: 'Unexpected server error', error: 'internal error' },
+	{
+		status: '502',
+		when: 'Pre-flight could not read the stored snapshot',
+		error: 'could not fetch the source snapshot; try again',
+	},
+	{ status: '502', when: 'Search could not embed the query', error: 'AI search is temporarily unavailable' },
+	{ status: '503', when: 'AI search is not configured on the server', error: 'AI search is not configured' },
+];
+---
+
+<DocsShell
+	title="Public API"
+	description="The SkillPass public read API: the Skill Passport JSON, list, detail, version, pre-flight, and search endpoints, response fields, errors, and rate limits. No auth required."
+>
+	<p>
+		Everything the directory and the <a href="/docs/cli">CLI</a> show comes from a public, read-only JSON API. No
+		account and no key are needed. The base URL is:
+	</p>
+	<pre><code>{API_BASE}</code></pre>
+	<p>
+		Every response is an envelope. A success carries <code>"success": true</code> and the payload in <code>data</code>;
+		a failure carries <code>"success": false</code> and a message in <code>error</code>, with a matching HTTP status.
+	</p>
+	<pre><code>{`{ "success": true, "data": <payload> }
+{ "success": false, "error": "not found" }`}</code></pre>
+	<p>
+		The API only answers browser requests from skillpass.dev, so another site's front end cannot call it directly. Call
+		it from a server, a script, or the CLI.
+	</p>
+
+	<h2>The Skill Passport</h2>
+	<p>
+		The passport is the public, immutable validation record generated for each published version. It arrives as
+		<code>data.passport</code> on the skill and version endpoints below. Permission keys are listed with their meanings
+		in the <a href="/docs/validation">permission taxonomy</a>.
+	</p>
+	<FieldTable fields={PASSPORT_FIELDS} />
+	<p>An example passport, from the pdf skill:</p>
+	<pre><code>{json(EXAMPLE_PASSPORT)}</code></pre>
+
+	<h2>List skills</h2>
+	<pre><code>{`GET /skills
+
+curl ${API_BASE}/skills`}</code></pre>
+	<p>
+		Every published skill in one array, with no pagination. Featured listings come first in their curated order, then
+		everything else, newest first. Each item is a summary:
+	</p>
+	<FieldTable fields={SUMMARY_FIELDS} />
+	<pre><code>{json({ success: true, data: [EXAMPLE_SUMMARY] })}</code></pre>
+
+	<h2>Get a skill</h2>
+	<pre><code>{`GET /skills/:slug
+
+curl ${API_BASE}/skills/pdf`}</code></pre>
+	<p>The latest published version: every summary field above, plus these. A slug that is not published returns 404.</p>
+	<FieldTable fields={DETAIL_FIELDS} />
+	<p>
+		Each <code>versions</code> entry:
+	</p>
+	<FieldTable fields={VERSION_FIELDS} />
+	<pre><code>{json({ success: true, data: EXAMPLE_DETAIL })}</code></pre>
+
+	<h2>Get a pinned version</h2>
+	<pre><code>{`GET /skills/:slug/:version
+
+curl ${API_BASE}/skills/pdf/1.0.0`}</code></pre>
+	<p>
+		The same shape as the skill endpoint, with the version, status, risk, and passport of the requested version instead
+		of the latest. An unknown version returns 404.
+	</p>
+
+	<h2>Pre-flight</h2>
+	<pre><code>{`GET /skills/:slug/:version/preflight
+
+curl ${API_BASE}/skills/pdf/1.0.0/preflight`}</code></pre>
+	<p>
+		The check the CLI runs before every install: the pinned verdict, the source hash re-verified against the stored
+		snapshot, and the permission changes since the previous version.
+	</p>
+	<FieldTable fields={PREFLIGHT_FIELDS} />
+	<pre><code>{json({ success: true, data: EXAMPLE_PREFLIGHT })}</code></pre>
+
+	<h2>Search</h2>
+	<pre><code>{`GET /skills/search?q=<query>
+
+curl -G ${API_BASE}/skills/search --data-urlencode "q=fill in a PDF form"`}</code></pre>
+	<p>
+		Semantic search: the query is embedded and matched against every published skill. <code>q</code> must be 1 to 500
+		characters. The response is the same summary array as the list endpoint, up to 20 skills ordered by similarity.
+		There is no relevance cutoff, so the 20 closest skills come back even when none is a strong match.
+	</p>
+
+	<h2>Errors and rate limits</h2>
+	<p>
+		Of these endpoints, only search is rate limited, at 20 requests per minute per client IP. Every failure uses the
+		envelope above with one of these statuses:
+	</p>
+	<div class="overflow-x-auto">
+		<table>
+			<thead>
+				<tr>
+					<th>Status</th>
+					<th>When</th>
+					<th>error</th>
+				</tr>
+			</thead>
+			<tbody>
+				{errors.map((row) => (
+					<tr>
+						<td>
+							<code>{row.status}</code>
+						</td>
+						<td>{row.when}</td>
+						<td>
+							<code>{row.error}</code>
+						</td>
+					</tr>
+				))}
+			</tbody>
+		</table>
+	</div>
+
+	<h2>Compatibility</h2>
+	<p>
+		New fields can appear in any response, so ignore keys you do not recognize. Fields marked optional can be missing
+		entirely. Fields typed with <code>null</code> are always present but can be null.
+	</p>
+</DocsShell>
