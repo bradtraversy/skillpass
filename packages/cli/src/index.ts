@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
 import { runAdd } from './add';
+import { runInit } from './init';
 import { runList } from './list';
 import { runOutdated } from './outdated';
 import { runRemove } from './remove';
@@ -23,6 +24,7 @@ export const USAGE = [
 	'Usage:',
 	'  skillpass search [query] [--ai] [--target <tool>] [--category <slug>] [--packs] [--json]',
 	'                                             find skills in the directory',
+	'  skillpass init [name]                       scaffold a skill package that passes scan, then scan it',
 	'  skillpass scan <path> [--json]              run the validator on a local skill package',
 	'  skillpass report <slug>[@version] [--json]  fetch the hosted passport pre-flight',
 	'  skillpass add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]',
@@ -81,6 +83,7 @@ export interface ParsedArgs {
 }
 
 const COMMAND_FLAGS: Record<string, string[]> = {
+	init: [],
 	scan: ['--json'],
 	report: ['--json'],
 	add: ['--yes', '--target', '--dir', '--global'],
@@ -196,6 +199,15 @@ export async function run(argv: string[]): Promise<CommandResult> {
 			ai: args.ai,
 			json: args.json,
 			width: process.stdout.isTTY ? process.stdout.columns : undefined,
+			style: styler(Boolean(process.stdout.isTTY)),
+		});
+	}
+	if (args.command === 'init') {
+		if (args.positional.length > 1) {
+			return { lines: ['error: init takes one skill name', '', USAGE], exitCode: 2 };
+		}
+		return runInit(args.positional[0], {
+			promptImpl: process.stdin.isTTY ? promptViaTty : undefined,
 			style: styler(Boolean(process.stdout.isTTY)),
 		});
 	}

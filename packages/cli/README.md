@@ -21,6 +21,7 @@ Requires Node 20 or newer. No runtime dependencies.
 
 ```
 skillpass search [query] [--ai] [--target <tool>] [--category <slug>] [--packs] [--json]
+skillpass init [name]
 skillpass scan <path> [--json]
 skillpass report <slug>[@version] [--json]
 skillpass add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]
@@ -99,6 +100,15 @@ The receipt records the repo and commit and marks the install `unlisted`;
 `update` refuses it so a same-named directory skill can never replace it.
 To refresh an unlisted install, `remove` it and `add` it again. Public
 repositories only; `add github:...` never contacts the directory.
+
+### Author
+
+`skillpass init my-skill` scaffolds `./my-skill/` with a `SKILL.md` and a
+`skill.json` that pass `skillpass scan` as written. In a terminal it asks for
+the name (when you leave it off), a description, and the permissions the skill
+will need, so they are declared up front; then it runs the scan and shows the
+result. Outside a terminal it takes the name argument only and writes a
+placeholder description. It never overwrites an existing folder.
 
 ### Manage
 

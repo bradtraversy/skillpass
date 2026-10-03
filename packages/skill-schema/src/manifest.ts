@@ -3,7 +3,7 @@ import { targetSchema, type Target } from './enums';
 import { permissionKeySchema } from './permissions';
 import { parseWith, type ParseResult } from './result';
 
-const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+export const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 const slugSchema = z.string().regex(SLUG_RE, 'must be a kebab-case slug');
