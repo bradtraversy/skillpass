@@ -36,7 +36,7 @@ maintainer (submit, manage, profile), admin (review queue, manual states).
 
 MVP feature set in build-plan order, one line of purpose each. **Validation (the
 Skill Passport) is the headline feature** - it's what makes this more than a link
-list. Items 1-27 are shipped; 28 and 29 are next.
+list. Items 1-29 are shipped; the build plan is complete.
 
 1. **Static directory shell** - Astro homepage, layout, nav, seeded skills, and search/filter/featured UI on fixture data.
 2. **Skill detail and passport UI** - detail pages with the Skill Passport, permissions summary, install panel, versions, maintainer block, and expandable findings.
@@ -66,7 +66,7 @@ list. Items 1-27 are shipped; 28 and 29 are next.
 26. **Official page** - `/official`, one row per first-party maker (a web-side `OFFICIAL_OWNERS` table plus the `verified` flag) with its skill count, linking to the maker's source-owner page.
 27. **Source-owner pages** - `/by/<login>`, every published skill shown as "by" that GitHub org or user (the maintainer counts only when nothing is attributed).
 28. **Public API docs** - `/docs/api` documenting the existing read endpoints with the passport JSON as the headline. No auth, no new endpoints.
-29. **`skillpass init`** - scaffold a skill package that passes `skillpass scan` out of the box.
+29. **`skillpass init`** - scaffold a skill package (`SKILL.md` plus `skill.json` with prompted permissions) that passes `skillpass scan` out of the box, then scan it.
 
 ## Data model
 
@@ -236,7 +236,7 @@ Astro pages (`apps/web`, names indicative):
 - `/by/[login]` - source-owner page: every published skill shown as "by" that owner
 - `/official` - first-party makers with skill counts, linking to their `/by` pages
 - `/install` + `/install/[tool]` - per-agent install guides
-- `/docs` - validation, submitting, and CLI guides
+- `/docs` - validation, submitting, CLI, and public API (`/docs/api`) guides
 - `/dashboard` - maintainer dashboard widgets
 - `/admin` - holding queue for failed/flagged submissions, manual review states
 
@@ -256,7 +256,7 @@ Node API endpoints (`apps/api`, names indicative):
 - `/validation/:jobId` - job status feeding the inline progress panel
 - `/download/preflight` - current validation, source hash, permissions, diffs
 
-CLI (not a route): `skillpass search`, `scan`, `report`, `add`, `remove`, `list`, `outdated`, `update`.
+CLI (not a route): `skillpass search`, `init`, `scan`, `report`, `add`, `remove`, `list`, `outdated`, `update`.
 
 ## Open questions
 
