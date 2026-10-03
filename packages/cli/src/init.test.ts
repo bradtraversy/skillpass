@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { manifestSchema, PERMISSIONS } from 'skill-schema';
 import { loadPackage, validatePackage } from 'validator';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
 	parsePermissionAnswer,
 	PLACEHOLDER_DESCRIPTION,
@@ -12,6 +12,21 @@ import {
 	runInit,
 	yamlDescription,
 } from './init';
+
+// Delegates to the real module; a test sets failWrite to make one write throw.
+const failWrite = vi.hoisted(() => ({ suffix: undefined as string | undefined }));
+vi.mock('node:fs', async (importOriginal) => {
+	const fs = await importOriginal<typeof import('node:fs')>();
+	return {
+		...fs,
+		writeFileSync: (...args: Parameters<typeof fs.writeFileSync>) => {
+			if (failWrite.suffix && String(args[0]).endsWith(failWrite.suffix)) {
+				throw new Error('ENOSPC: no space left on device');
+			}
+			return fs.writeFileSync(...args);
+		},
+	};
+});
 
 const tempCwd = () => mkdtempSync(join(tmpdir(), 'skillpass-init-'));
 
@@ -110,6 +125,21 @@ describe('runInit', () => {
 		const result = await runInit('My_Skill', { cwd });
 		expect(result.exitCode).toBe(2);
 		expect(readdirSync(cwd)).toEqual([]);
+	});
+
+	afterEach(() => {
+		failWrite.suffix = undefined;
+	});
+
+	it('removes the new folder when a write fails, so a retry starts clean', async () => {
+		const cwd = tempCwd();
+		failWrite.suffix = 'skill.json';
+		await expect(runInit('demo-skill', { cwd })).rejects.toThrow('ENOSPC');
+		expect(existsSync(join(cwd, 'demo-skill'))).toBe(false);
+		failWrite.suffix = undefined;
+		const retry = await runInit('demo-skill', { cwd });
+		expect(retry.exitCode).toBe(0);
+		expect(readdirSync(join(cwd, 'demo-skill')).sort()).toEqual(['SKILL.md', 'skill.json']);
 	});
 
 	it('refuses an existing target and leaves it untouched', async () => {

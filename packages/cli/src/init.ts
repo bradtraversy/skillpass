@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { PERMISSIONS, SLUG_RE, type PermissionKey } from 'skill-schema';
 import { runScan, type CommandResult } from './scan';
@@ -135,8 +135,15 @@ export async function runInit(nameArg: string | undefined, opts: InitOptions = {
 	const draft: SkillDraft = { name, description, permissions };
 
 	mkdirSync(dir);
-	writeFileSync(join(dir, 'SKILL.md'), renderSkillMd(draft));
-	writeFileSync(join(dir, 'skill.json'), renderManifest(draft));
+	try {
+		writeFileSync(join(dir, 'SKILL.md'), renderSkillMd(draft));
+		writeFileSync(join(dir, 'skill.json'), renderManifest(draft));
+	} catch (err) {
+		// The folder is new (existence was refused and mkdirSync is not recursive),
+		// so removing it only undoes this run and lets a retry start clean.
+		rmSync(dir, { recursive: true, force: true });
+		throw err;
+	}
 
 	const st = opts.style ?? PLAIN;
 	const scan = await runScan(relative(process.cwd(), dir), { style: opts.style });
