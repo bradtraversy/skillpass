@@ -42,8 +42,8 @@ Secondary users are skill authors, workflow builders, tool maintainers, and team
 
 ## 5. Tech - What stack are we using?
 
-- **Architecture: static front end plus a separate backend API.** Astro is fully static (SSG), no SSR. A separate Node API/backend service (`apps/api`) handles GitHub OAuth, submissions, validation jobs, and the validation worker. The static site and its React islands call this API for all dynamic data.
-- Astro (static / SSG) for the public web front end (`apps/web`).
+- **Architecture: mostly static front end plus a separate backend API.** Astro pre-renders most pages; a few render on demand through the Node adapter (skill detail and version pages, `/official`, `/by/<login>`, `/u/<username>`, `sitemap.xml`) so crawlers see real names and summaries and new publishes appear without a rebuild. A separate Node API/backend service (`apps/api`) handles GitHub OAuth, submissions, validation jobs, and the validation worker. The on-demand pages and the React islands call this API for all dynamic data.
+- Astro (static by default, on-demand pages through the Node adapter) for the public web front end (`apps/web`).
 - React islands for search filters, upload form, validation progress, account menu, dashboard widgets, and download pre-flight; islands call the Node API for dynamic data.
 - Hono for the Node API/backend (`apps/api`).
 - TypeScript.
