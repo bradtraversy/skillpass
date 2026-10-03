@@ -51,7 +51,7 @@ export default function AccountMenu() {
 				className="flex cursor-pointer items-center gap-2 font-medium text-muted hover:text-text"
 			>
 				<img src={auth.user.avatarUrl} alt="" className="size-6 rounded-full" />
-				{auth.user.username}
+				<span className="sr-only sm:not-sr-only">{auth.user.username}</span>
 			</button>
 			{open && (
 				<div className="absolute right-0 top-[calc(100%+12px)] z-10 min-w-[150px] rounded-sm border border-border-2 bg-surface p-1 shadow-lg">
