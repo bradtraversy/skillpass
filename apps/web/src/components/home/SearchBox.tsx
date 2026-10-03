@@ -51,7 +51,7 @@ export default function SearchBox({
 						? 'Describe what you need, then press Enter...'
 						: 'Search skills, tools, permissions, or maintainers...'
 				}
-				className="flex-1 bg-transparent text-[15.5px] text-text outline-none placeholder:text-faint"
+				className="min-w-0 flex-1 bg-transparent text-[15.5px] text-text outline-none placeholder:text-faint"
 				aria-label="Search skills"
 			/>
 			<div className="flex shrink-0 items-center gap-[3px] rounded-full border border-border-2 p-[3px]">
@@ -69,7 +69,9 @@ export default function SearchBox({
 					</button>
 				))}
 			</div>
-			<kbd className="rounded-[5px] border border-border-2 px-[6px] py-[2px] font-mono text-[11px] text-muted">/</kbd>
+			<kbd className="hidden rounded-[5px] border border-border-2 px-[6px] py-[2px] font-mono text-[11px] text-muted sm:block">
+				/
+			</kbd>
 		</div>
 	);
 }
