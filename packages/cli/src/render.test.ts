@@ -1,6 +1,13 @@
 import { loadPackageFromFiles, validateLoadedPackage } from 'validator';
 import { describe, expect, it } from 'vitest';
-import { findingLine, permissionLine, renderFindings, renderLocalPreflight, renderPermissions } from './render';
+import {
+	findingLine,
+	permissionLine,
+	renderDroppedBinaries,
+	renderFindings,
+	renderLocalPreflight,
+	renderPermissions,
+} from './render';
 
 describe('permissionLine', () => {
 	it('adds the taxonomy label', () => {
@@ -92,5 +99,42 @@ describe('renderLocalPreflight', () => {
 		expect(lines.join('\n')).toContain('Failures (1)');
 		expect(lines.join('\n')).toContain('secret-pattern');
 		expect(lines.at(-1)).toBe('BLOCKED: validation failed; failed skills cannot be installed');
+	});
+});
+
+describe('renderDroppedBinaries', () => {
+	const passport = (paths: string[]) =>
+		({
+			warningsSummary: [
+				{ code: 'prompt-injection', message: 'unrelated', location: { path: 'SKILL.md' } },
+				...paths.map((path) => ({ code: 'binary-dropped', message: 'left out', location: { path } })),
+			],
+		}) as unknown as Parameters<typeof renderDroppedBinaries>[0]['passport'];
+	const repo = 'https://github.com/anthropics/skills/tree/main/skills/canvas-design';
+
+	it('adds nothing when no binary was dropped', () => {
+		expect(renderDroppedBinaries({ passport: passport([]), githubRepoUrl: repo })).toEqual([]);
+	});
+
+	it('names the file and where to get it', () => {
+		expect(renderDroppedBinaries({ passport: passport(['fonts/a.ttf']), githubRepoUrl: repo })).toEqual([
+			'',
+			'Not included  1 binary file(s) the validator cannot read: fonts/a.ttf',
+			`              Get them from ${repo}`,
+		]);
+	});
+
+	it('lists three paths and counts the rest', () => {
+		const lines = renderDroppedBinaries({
+			passport: passport(['a.ttf', 'b.ttf', 'c.ttf', 'd.ttf', 'e.ttf']),
+			githubRepoUrl: repo,
+		});
+		expect(lines[1]).toBe('Not included  5 binary file(s) the validator cannot read: a.ttf, b.ttf, c.ttf, and 2 more');
+	});
+
+	it("falls back to the skill's source without a repo URL", () => {
+		expect(renderDroppedBinaries({ passport: passport(['logo.png']), githubRepoUrl: null })[2]).toBe(
+			"              Get them from the skill's source",
+		);
 	});
 });

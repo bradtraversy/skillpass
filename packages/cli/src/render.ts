@@ -81,11 +81,28 @@ export function renderPreflightReport(
 		...renderPermissions(preflight.permissions.declared, preflight.permissions.detected),
 		'',
 		...renderDiff(preflight.diff),
+		...renderDroppedBinaries(detail),
 	];
 	if (preflight.blocked) {
 		lines.push('', st.red(`BLOCKED: ${preflight.blockedReason ?? 'this version cannot be downloaded'}`));
 	}
 	return lines;
+}
+
+// Snapshots are text-only, so an install never carries these files; say so
+// rather than letting "verified" imply a complete copy.
+export function renderDroppedBinaries(detail: Pick<PublicSkillDetail, 'passport' | 'githubRepoUrl'>): string[] {
+	const paths = detail.passport.warningsSummary
+		.filter((finding) => finding.code === 'binary-dropped')
+		.map((finding) => finding.location?.path ?? '(unknown path)');
+	if (paths.length === 0) return [];
+	const shown = paths.slice(0, 3).join(', ');
+	const more = paths.length > 3 ? `, and ${paths.length - 3} more` : '';
+	return [
+		'',
+		`Not included  ${paths.length} binary file(s) the validator cannot read: ${shown}${more}`,
+		`              Get them from ${detail.githubRepoUrl ?? "the skill's source"}`,
+	];
 }
 
 function renderDiff(diff: PublicPreflight['diff']): string[] {
