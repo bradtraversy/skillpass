@@ -139,7 +139,7 @@ function mockHappyPath() {
 	vi.mocked(findById).mockResolvedValue(userRow);
 	vi.mocked(verifySubmitPermission).mockResolvedValue({ success: true, data: null });
 	vi.mocked(resolveCommit).mockResolvedValue({ success: true, data: 'abc123' });
-	vi.mocked(fetchSnapshot).mockResolvedValue({ success: true, data: FILES });
+	vi.mocked(fetchSnapshot).mockResolvedValue({ success: true, data: { files: FILES, binaries: [] } });
 	vi.mocked(putJson).mockResolvedValue({ success: true, data: null });
 	vi.mocked(putBytes).mockResolvedValue({ success: true, data: null });
 	vi.mocked(createSubmission).mockResolvedValue(submissionRow);
@@ -195,11 +195,22 @@ describe('POST /submissions', () => {
 		});
 	});
 
+	it('stores the binaries the snapshot left out in the snapshot document', async () => {
+		mockHappyPath();
+		vi.mocked(fetchSnapshot).mockResolvedValue({ success: true, data: { files: FILES, binaries: ['logo.png'] } });
+		const res = await post(
+			{ githubUrl: 'https://github.com/octocat/hello' },
+			await sessionCookie(7, env.SESSION_SECRET),
+		);
+		expect(res.status).toBe(201);
+		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, KEY, { version: 1, files: FILES, binaries: ['logo.png'] });
+	});
+
 	it('reports a missing SKILL.md in detected without failing the draft', async () => {
 		mockHappyPath();
 		vi.mocked(fetchSnapshot).mockResolvedValue({
 			success: true,
-			data: [{ path: 'README.md', content: 'not a skill\n' }],
+			data: { files: [{ path: 'README.md', content: 'not a skill\n' }], binaries: [] },
 		});
 		const res = await post(
 			{ githubUrl: 'https://github.com/octocat/hello' },
@@ -221,10 +232,13 @@ describe('POST /submissions', () => {
 		};
 		vi.mocked(fetchSnapshot).mockResolvedValue({
 			success: true,
-			data: [
-				{ path: 'SKILL.md', content: '# Demo\n' },
-				{ path: 'skill.json', content: JSON.stringify(manifest) },
-			],
+			data: {
+				files: [
+					{ path: 'SKILL.md', content: '# Demo\n' },
+					{ path: 'skill.json', content: JSON.stringify(manifest) },
+				],
+				binaries: [],
+			},
 		});
 		const res = await post(
 			{ githubUrl: 'https://github.com/octocat/hello' },
@@ -240,11 +254,14 @@ describe('POST /submissions', () => {
 		const member = (name: string) => `---\nname: ${name}\ndescription: ${name}.\n---\nBody.\n`;
 		vi.mocked(fetchSnapshot).mockResolvedValue({
 			success: true,
-			data: [
-				{ path: '.claude/skills/plan/SKILL.md', content: member('plan') },
-				{ path: '.agents/skills/plan/SKILL.md', content: member('plan') },
-				{ path: '.claude/skills/apply/SKILL.md', content: member('apply') },
-			],
+			data: {
+				files: [
+					{ path: '.claude/skills/plan/SKILL.md', content: member('plan') },
+					{ path: '.agents/skills/plan/SKILL.md', content: member('plan') },
+					{ path: '.claude/skills/apply/SKILL.md', content: member('apply') },
+				],
+				binaries: [],
+			},
 		});
 		const res = await post(
 			{ githubUrl: 'https://github.com/octocat/hello' },
@@ -493,6 +510,18 @@ describe('POST /submissions/zip', () => {
 			sourceHash: HASH,
 			snapshotKey: KEY,
 		});
+	});
+
+	it('stores the binaries a zip left out in the snapshot document', async () => {
+		mockHappyPath();
+		vi.mocked(createSubmission).mockResolvedValue(zipRow);
+		const zip = zipSync({
+			'demo-skill/SKILL.md': strToU8('# Demo\n'),
+			'demo-skill/logo.png': new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01]),
+		});
+		const res = await postZip(new File([zip], 'demo.zip'), await sessionCookie(7, env.SESSION_SECRET));
+		expect(res.status).toBe(201);
+		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, KEY, { version: 1, files: FILES, binaries: ['logo.png'] });
 	});
 
 	it('creates a queued job row and enqueues validation after the zip draft', async () => {

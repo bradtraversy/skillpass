@@ -161,9 +161,9 @@ async function createFromGithub(c: Ctx, { env, db, queue }: Deps): Promise<Respo
 		return c.json({ success: false, error: snapshot.error }, SOURCE_ERROR_STATUS[snapshot.code]);
 	}
 
-	const pkg = loadPackageFromFiles(snapshot.data, packageNameFor(parsed.data));
+	const pkg = loadPackageFromFiles(snapshot.data.files, packageNameFor(parsed.data), snapshot.data.binaries);
 	const key = snapshotKey(pkg.sourceHash);
-	const stored = await putJson(env, key, snapshotDocument(pkg.files));
+	const stored = await putJson(env, key, snapshotDocument(pkg.files, pkg.binaries));
 	if (!stored.success) {
 		return c.json({ success: false, error: 'could not store the snapshot; try again' }, 502);
 	}
@@ -202,14 +202,14 @@ async function createFromZip(c: Ctx, { env, db, queue }: Deps): Promise<Response
 		return c.json({ success: false, error: extracted.error }, SOURCE_ERROR_STATUS[extracted.code]);
 	}
 
-	const pkg = loadPackageFromFiles(extracted.data, nameFromFilename(file.name));
+	const pkg = loadPackageFromFiles(extracted.data.files, nameFromFilename(file.name), extracted.data.binaries);
 	const zipKey = uploadKey(createHash('sha256').update(bytes).digest('hex'));
 	const storedZip = await putBytes(env, zipKey, bytes, 'application/zip');
 	if (!storedZip.success) {
 		return c.json({ success: false, error: 'could not store the upload; try again' }, 502);
 	}
 	const key = snapshotKey(pkg.sourceHash);
-	const storedSnapshot = await putJson(env, key, snapshotDocument(pkg.files));
+	const storedSnapshot = await putJson(env, key, snapshotDocument(pkg.files, pkg.binaries));
 	if (!storedSnapshot.success) {
 		return c.json({ success: false, error: 'could not store the snapshot; try again' }, 502);
 	}

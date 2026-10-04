@@ -20,11 +20,14 @@ describe('extractZip', () => {
 		});
 		expect(extractZip(zip)).toEqual({
 			success: true,
-			data: [
-				{ path: 'SKILL.md', content: '# Demo\n' },
-				{ path: 'docs/notes.md', content: 'notes' },
-				{ path: 'skill.json', content: '{"name":"demo"}' },
-			],
+			data: {
+				files: [
+					{ path: 'SKILL.md', content: '# Demo\n' },
+					{ path: 'docs/notes.md', content: 'notes' },
+					{ path: 'skill.json', content: '{"name":"demo"}' },
+				],
+				binaries: [],
+			},
 		});
 	});
 
@@ -33,10 +36,13 @@ describe('extractZip', () => {
 		const result = extractZip(zip);
 		expect(result).toEqual({
 			success: true,
-			data: [
-				{ path: 'SKILL.md', content: '# Demo' },
-				{ path: 'docs/notes.md', content: 'notes' },
-			],
+			data: {
+				files: [
+					{ path: 'SKILL.md', content: '# Demo' },
+					{ path: 'docs/notes.md', content: 'notes' },
+				],
+				binaries: [],
+			},
 		});
 	});
 
@@ -44,7 +50,7 @@ describe('extractZip', () => {
 		const zip = zipSync({ 'skill/': new Uint8Array(0), 'skill/SKILL.md': strToU8('# Hi') });
 		expect(extractZip(zip)).toEqual({
 			success: true,
-			data: [{ path: 'SKILL.md', content: '# Hi' }],
+			data: { files: [{ path: 'SKILL.md', content: '# Hi' }], binaries: [] },
 		});
 	});
 
@@ -92,12 +98,14 @@ describe('extractZip', () => {
 });
 
 describe('binary entries', () => {
-	it('leaves a binary file out of the extracted package', () => {
+	it('leaves a binary file out of the extracted package and reports its path without the shared root', () => {
 		const zip = zipSync({
-			'SKILL.md': strToU8('# demo'),
-			'logo.png': new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01]),
+			'my-skill-main/SKILL.md': strToU8('# demo'),
+			'my-skill-main/assets/logo.png': new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01]),
 		});
-		const result = extractZip(zip);
-		expect(result.success && result.data.map((f) => f.path)).toEqual(['SKILL.md']);
+		expect(extractZip(zip)).toEqual({
+			success: true,
+			data: { files: [{ path: 'SKILL.md', content: '# demo' }], binaries: ['assets/logo.png'] },
+		});
 	});
 });

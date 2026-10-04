@@ -40,7 +40,7 @@ function happyPath() {
 	vi.mocked(resolveCommit).mockResolvedValue({ success: true, data: 'sha123' });
 	vi.mocked(fetchSnapshot).mockResolvedValue({
 		success: true,
-		data: [{ path: 'SKILL.md', content: '# PDF' }],
+		data: { files: [{ path: 'SKILL.md', content: '# PDF' }], binaries: [] },
 	});
 	vi.mocked(loadPackageFromFiles).mockReturnValue({
 		manifest: {
@@ -49,6 +49,7 @@ function happyPath() {
 			data: { name: 'PDF Tools', description: 'Work with PDFs', targets: ['claude-code'] },
 		},
 		files: [{ path: 'SKILL.md', content: '# PDF' }],
+		binaries: [],
 		sourceHash: 'hash123',
 	} as unknown as ReturnType<typeof loadPackageFromFiles>);
 	vi.mocked(snapshotKey).mockReturnValue('snapshots/hash123.json');
@@ -72,6 +73,18 @@ describe('curateSkill', () => {
 		const result = await curateSkill(env, db, input);
 		expect(result).toEqual({ slug: 'pdf-tools', status: 'published' });
 		expect(publishSubmission).toHaveBeenCalledOnce();
+	});
+
+	it('carries the binaries the snapshot left out into the package and the stored document', async () => {
+		const files = [{ path: 'SKILL.md', content: '# PDF' }];
+		vi.mocked(fetchSnapshot).mockResolvedValue({ success: true, data: { files, binaries: ['logo.png'] } });
+		vi.mocked(loadPackageFromFiles).mockReturnValue({
+			...vi.mocked(loadPackageFromFiles)(files),
+			binaries: ['logo.png'],
+		});
+		await curateSkill(env, db, input);
+		expect(vi.mocked(loadPackageFromFiles).mock.lastCall?.[2]).toEqual(['logo.png']);
+		expect(snapshotDocument).toHaveBeenCalledWith(files, ['logo.png']);
 	});
 
 	it('a name override drives both the slug and the published name', async () => {

@@ -1,7 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadEnv } from '../env';
 import { RAW_TEST_ENV } from '../testing/env';
-import { getJson, getSnapshotDocument, putBytes, putJson, R2_MISSING, snapshotKey, uploadKey } from './r2';
+import {
+	getJson,
+	getSnapshotDocument,
+	putBytes,
+	putJson,
+	R2_MISSING,
+	snapshotDocument,
+	snapshotKey,
+	uploadKey,
+} from './r2';
 
 const env = loadEnv(RAW_TEST_ENV);
 
@@ -10,6 +19,19 @@ afterEach(() => vi.unstubAllGlobals());
 describe('snapshotKey', () => {
 	it('builds a content-addressed key from the source hash', () => {
 		expect(snapshotKey('sha256:abc123')).toBe('snapshots/abc123.json');
+	});
+});
+
+describe('snapshotDocument', () => {
+	const files = [{ path: 'SKILL.md', content: '# hi\n' }];
+
+	it('lists the binaries left out of the snapshot', () => {
+		expect(snapshotDocument(files, ['logo.png'])).toEqual({ version: 1, files, binaries: ['logo.png'] });
+	});
+
+	it('omits the key for a text-only package so its document bytes stay the same', () => {
+		expect(JSON.stringify(snapshotDocument(files))).toBe(JSON.stringify({ version: 1, files }));
+		expect(JSON.stringify(snapshotDocument(files, []))).toBe(JSON.stringify({ version: 1, files }));
 	});
 });
 
@@ -117,6 +139,13 @@ describe('getSnapshotDocument', () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(doc), { status: 200 })));
 		const result = await getSnapshotDocument(env, 'snapshots/abc.json');
 		expect(result).toEqual({ success: true, data: doc });
+	});
+
+	it('reads the binaries list when the document has one', async () => {
+		const withBinaries = { ...doc, binaries: ['fonts/a.ttf', 'logo.png'] };
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(withBinaries), { status: 200 })));
+		const result = await getSnapshotDocument(env, 'snapshots/abc.json');
+		expect(result).toEqual({ success: true, data: withBinaries });
 	});
 
 	it('maps a shape mismatch to an error result', async () => {

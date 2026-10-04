@@ -60,7 +60,7 @@ export async function curateSkill(env: Env, db: Db, input: CurateInput): Promise
 		const snapshot = await fetchSnapshot(env, parsed.data, pinned.data);
 		if (!snapshot.success) return { slug: null, status: 'failed', reason: snapshot.error };
 
-		const pkg = loadPackageFromFiles(snapshot.data, packageNameFor(parsed.data));
+		const pkg = loadPackageFromFiles(snapshot.data.files, packageNameFor(parsed.data), snapshot.data.binaries);
 		if (pkg.manifest.state !== 'ok') {
 			return { slug: null, status: 'failed', reason: `manifest ${pkg.manifest.state}` };
 		}
@@ -73,7 +73,7 @@ export async function curateSkill(env: Env, db: Db, input: CurateInput): Promise
 		if (await findSkillBySlug(db, slug)) return { slug, status: 'skipped' };
 
 		const key = snapshotKey(pkg.sourceHash);
-		const stored = await putJson(env, key, snapshotDocument(pkg.files));
+		const stored = await putJson(env, key, snapshotDocument(pkg.files, pkg.binaries));
 		if (!stored.success) return { slug, status: 'failed', reason: 'snapshot store failed' };
 
 		const submission = await createSubmission(db, {

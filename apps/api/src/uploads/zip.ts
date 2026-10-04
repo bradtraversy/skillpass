@@ -1,7 +1,7 @@
 import { unzipSync, type UnzipFileInfo } from 'fflate';
 import { byPath, isBinary, type PackageFile } from 'validator';
 import { sourceError, type SourceResult } from '../github/errors';
-import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES } from '../github/snapshot';
+import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES, type ExtractedPackage } from '../github/snapshot';
 
 // Thrown from the fflate filter to abort extraction with a typed result.
 class ZipReject extends Error {
@@ -34,7 +34,7 @@ function stripSharedRoot(paths: string[]): (path: string) => string {
 // Same caps and posture as the tarball path; the fflate filter sees each
 // entry's declared sizes before decompression, so a zip bomb is rejected from
 // its headers. Actual byte lengths are re-checked after - headers can lie.
-export function extractZip(bytes: Uint8Array): SourceResult<PackageFile[]> {
+export function extractZip(bytes: Uint8Array): SourceResult<ExtractedPackage> {
 	let entries: Record<string, Uint8Array>;
 	let fileCount = 0;
 	let declaredTotal = 0;
@@ -78,6 +78,7 @@ export function extractZip(bytes: Uint8Array): SourceResult<PackageFile[]> {
 	let actualTotal = 0;
 	const strip = stripSharedRoot(names);
 	const files: PackageFile[] = [];
+	const binaries: string[] = [];
 	for (const name of names) {
 		const data = entries[name];
 		actualTotal += data.length;
@@ -85,11 +86,11 @@ export function extractZip(bytes: Uint8Array): SourceResult<PackageFile[]> {
 			return sourceError('too-large', 'zip contents exceed the declared sizes');
 		}
 		if (isBinary(data)) {
-			console.warn(`zip: dropping binary file ${name}`);
+			binaries.push(strip(name));
 			continue;
 		}
 		files.push({ path: strip(name), content: Buffer.from(data).toString('utf8') });
 	}
 
-	return { success: true, data: files.sort(byPath) };
+	return { success: true, data: { files: files.sort(byPath), binaries: binaries.sort() } };
 }

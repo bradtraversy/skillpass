@@ -43,11 +43,14 @@ describe('extractTarball', () => {
 		const result = await extractTarball(asBody(tar));
 		expect(result).toEqual({
 			success: true,
-			data: [
-				{ path: 'SKILL.md', content: '# Demo\n' },
-				{ path: 'docs/notes.md', content: 'notes' },
-				{ path: 'skill.json', content: '{"name":"demo"}' },
-			],
+			data: {
+				files: [
+					{ path: 'SKILL.md', content: '# Demo\n' },
+					{ path: 'docs/notes.md', content: 'notes' },
+					{ path: 'skill.json', content: '{"name":"demo"}' },
+				],
+				binaries: [],
+			},
 		});
 	});
 
@@ -60,10 +63,13 @@ describe('extractTarball', () => {
 		const result = await extractTarball(asBody(tar), 'skills/plan');
 		expect(result).toEqual({
 			success: true,
-			data: [
-				{ path: 'SKILL.md', content: '# Plan' },
-				{ path: 'helper.md', content: 'help' },
-			],
+			data: {
+				files: [
+					{ path: 'SKILL.md', content: '# Plan' },
+					{ path: 'helper.md', content: 'help' },
+				],
+				binaries: [],
+			},
 		});
 	});
 
@@ -75,7 +81,7 @@ describe('extractTarball', () => {
 		const first = await extractTarball(asBody(tar));
 		const second = await extractTarball(asBody(tar));
 		if (!first.success || !second.success) throw new Error('expected success');
-		expect(loadPackageFromFiles(first.data).sourceHash).toBe(loadPackageFromFiles(second.data).sourceHash);
+		expect(loadPackageFromFiles(first.data.files).sourceHash).toBe(loadPackageFromFiles(second.data.files).sourceHash);
 	});
 
 	it('rejects a path-traversal entry', async () => {
@@ -126,7 +132,7 @@ describe('extractTarball', () => {
 			{ name: 'repo-abc/ignored.md', content: 'z'.repeat(512) },
 		]);
 		const result = await extractTarball(asBody(tar), 'skills/x', 1024 * 1024);
-		expect(result).toEqual({ success: true, data: [{ path: 'SKILL.md', content: '# Keep' }] });
+		expect(result).toEqual({ success: true, data: { files: [{ path: 'SKILL.md', content: '# Keep' }], binaries: [] } });
 	});
 
 	it('rejects an empty repository', async () => {
@@ -158,7 +164,7 @@ describe('fetchSnapshot', () => {
 		vi.stubGlobal('fetch', fn);
 
 		const result = await fetchSnapshot(env, { owner: 'octocat', repo: 'hello' }, 'abc123');
-		expect(result).toEqual({ success: true, data: [{ path: 'SKILL.md', content: '# Demo' }] });
+		expect(result).toEqual({ success: true, data: { files: [{ path: 'SKILL.md', content: '# Demo' }], binaries: [] } });
 		expect(fn.mock.calls[0][0]).toBe('https://codeload.github.com/octocat/hello/tar.gz/abc123');
 	});
 
@@ -176,12 +182,17 @@ describe('fetchSnapshot', () => {
 });
 
 describe('binary entries', () => {
-	it('leaves a binary file out of the snapshot', async () => {
+	it('leaves a binary file out of the snapshot and reports its path under the subpath', async () => {
+		const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01]);
 		const tar = await makeTarGz([
-			{ name: 'repo-abc/SKILL.md', content: '# demo' },
-			{ name: 'repo-abc/logo.png', content: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01]) },
+			{ name: 'repo-abc/other.png', content: png },
+			{ name: 'repo-abc/skills/demo/SKILL.md', content: '# demo' },
+			{ name: 'repo-abc/skills/demo/logo.png', content: png },
 		]);
-		const result = await extractTarball(asBody(tar));
-		expect(result.success && result.data.map((f) => f.path)).toEqual(['SKILL.md']);
+		const result = await extractTarball(asBody(tar), 'skills/demo');
+		expect(result).toEqual({
+			success: true,
+			data: { files: [{ path: 'SKILL.md', content: '# demo' }], binaries: ['logo.png'] },
+		});
 	});
 });
