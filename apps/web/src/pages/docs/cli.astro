@@ -95,6 +95,17 @@ skillpass add https://github.com/owner/repo/tree/main/skills/pdf --target agents
 		contacts the directory.
 	</p>
 
+	<h2>Run once: use</h2>
+	<pre><code>{`claude "$(skillpass use pdf)"      # open Claude Code with the skill loaded
+skillpass use pdf@1.0.0 > prompt.txt  # or save the prompt`}</code></pre>
+	<p>
+		Runs a skill once without installing it. The same pre-flight as <code>add</code> runs first: failed versions are
+		blocked and medium or higher risk asks for a yes (or <code>--yes</code>). The verified files are unpacked to a temp
+		folder, and the command prints a prompt (the skill's instructions plus where its files are) on stdout, so it pipes
+		cleanly. The report and the question go to stderr. Nothing goes into a skills folder and no receipt is written.
+		Packs and <code>github:</code> references are not supported; use <code>add</code> for those.
+	</p>
+
 	<h2>Track: list and outdated</h2>
 	<pre><code>skillpass list        # installed skills with versions, offline
 skillpass outdated    # compares to the directory; exits 1 when updates exist</code></pre>
