@@ -26,6 +26,7 @@ skillpass scan <path> [--json]
 skillpass report <slug>[@version] [--json]
 skillpass add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]
 skillpass add github:<owner>/<repo>[/<path>][@<ref>] [same flags]
+skillpass use <slug>[@version] [--yes]
 skillpass remove <slug> [--target <tool> [--global] | --dir <path>]
 skillpass update <slug>[@version] [--target <tool> [--global]] [--yes]
 skillpass outdated
@@ -100,6 +101,16 @@ The receipt records the repo and commit and marks the install `unlisted`;
 `update` refuses it so a same-named directory skill can never replace it.
 To refresh an unlisted install, `remove` it and `add` it again. Public
 repositories only; `add github:...` never contacts the directory.
+
+### Run once
+
+`skillpass use <slug>` runs a listed skill without installing it: the same
+pre-flight as `add` (failed versions blocked, medium or higher risk
+confirmed), then the verified files are unpacked to a temp folder and a prompt
+with the skill's instructions and that folder is printed on stdout. The report
+and the question go to stderr, so `claude "$(skillpass use pdf)"` opens Claude
+Code with the skill loaded. Nothing goes into a skills folder and no receipt is
+written. Packs and `github:` references are not supported; use `add`.
 
 ### Author
 

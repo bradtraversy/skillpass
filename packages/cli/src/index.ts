@@ -9,6 +9,7 @@ import { runReport } from './report';
 import { runSearch } from './search';
 import { styler } from './style';
 import { runUpdate } from './update';
+import { runUse } from './use';
 import type { CommandResult } from './scan';
 import { runScan } from './scan';
 
@@ -33,6 +34,8 @@ export const USAGE = [
 	'                                             install from any public GitHub repo: the validator',
 	'                                             runs locally, the install is unlisted (a',
 	'                                             https://github.com/... URL works too)',
+	'  skillpass use <slug>[@version] [--yes]      run a listed skill once without installing it: prints a',
+	'                                             prompt on stdout (claude "$(skillpass use <slug>)")',
 	'  skillpass remove <slug> [--target <tool> [--global] | --dir <path>]',
 	'                                             remove an installed skill',
 	'  skillpass list                              show installed skills in the known areas',
@@ -87,6 +90,7 @@ const COMMAND_FLAGS: Record<string, string[]> = {
 	scan: ['--json'],
 	report: ['--json'],
 	add: ['--yes', '--target', '--dir', '--global'],
+	use: ['--yes'],
 	remove: ['--target', '--dir', '--global'],
 	list: [],
 	outdated: [],
@@ -153,8 +157,8 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
 	return parsed;
 }
 
-async function promptViaTty(question: string): Promise<string> {
-	const rl = createInterface({ input: process.stdin, output: process.stdout });
+async function promptViaTty(question: string, output: NodeJS.WritableStream = process.stdout): Promise<string> {
+	const rl = createInterface({ input: process.stdin, output });
 	try {
 		return await rl.question(question);
 	} finally {
@@ -162,8 +166,8 @@ async function promptViaTty(question: string): Promise<string> {
 	}
 }
 
-async function confirmViaTty(question: string): Promise<boolean> {
-	const answer = await promptViaTty(question);
+async function confirmViaTty(question: string, output?: NodeJS.WritableStream): Promise<boolean> {
+	const answer = await promptViaTty(question, output);
 	return ['y', 'yes'].includes(answer.trim().toLowerCase());
 }
 
@@ -258,6 +262,18 @@ export async function run(argv: string[]): Promise<CommandResult> {
 			return { lines: ['error: report needs a skill slug', '', USAGE], exitCode: 2 };
 		}
 		return runReport(ref, { json: args.json, style: styler(Boolean(process.stdout.isTTY)) });
+	}
+	if (args.command === 'use') {
+		if (args.positional.length !== 1) {
+			return { lines: ['error: use needs one skill slug', '', USAGE], exitCode: 2 };
+		}
+		// stdout carries only the prompt, so the report and the question go to stderr.
+		return runUse(args.positional[0], {
+			yes: args.yes,
+			style: styler(Boolean(process.stderr.isTTY)),
+			confirmImpl: process.stdin.isTTY ? (question) => confirmViaTty(question, process.stderr) : undefined,
+			emit: (text) => console.error(text),
+		});
 	}
 	if (args.command === 'add') {
 		const [ref] = args.positional;

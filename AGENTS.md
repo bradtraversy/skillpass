@@ -265,6 +265,7 @@ proxy into `apps/web`.
 - Test (watch): `pnpm test:watch`
 - Skills CLI: `pnpm cli search [query] [--ai]` / `pnpm cli init [name]` / `pnpm cli scan <path>` / `pnpm cli report <slug>[@version]` /
   `pnpm cli add <slug>[@version] [--target <tool>... [--global] | --dir <path>] [--yes]` /
+  `pnpm cli use <slug>[@version] [--yes]` /
   `pnpm cli remove <slug> [--target <tool> [--global] | --dir <path>]` /
   `pnpm cli update <slug>[@version]` / `pnpm cli outdated` /
   `pnpm cli list` / `pnpm cli --version`

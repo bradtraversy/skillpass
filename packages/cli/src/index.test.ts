@@ -209,6 +209,17 @@ describe('run', () => {
 		expect(VERSION).toBe(pkg.version);
 	});
 
+	it('lets use take one slug and only --yes', async () => {
+		const none = await run(['use']);
+		expect(none.exitCode).toBe(2);
+		expect(none.lines[0]).toBe('error: use needs one skill slug');
+		const two = await run(['use', 'a', 'b']);
+		expect(two.lines[0]).toBe('error: use needs one skill slug');
+		const target = await run(['use', 'pdf', '--target', 'claude-code']);
+		expect(target.lines[0]).toBe('error: use does not take --target');
+		expect(USAGE).toContain('skillpass use <slug>[@version] [--yes]');
+	});
+
 	it('lets init take one name and no flags', async () => {
 		const extra = await run(['init', 'one', 'two']);
 		expect(extra.exitCode).toBe(2);

@@ -1,6 +1,6 @@
 # SkillPass - Project Overview
 
-<!-- blueprint:source-hash 04b1d2befca5071e3b11a07447e952cfcc2c864e881dc046f657c2ce617304fe -->
+<!-- blueprint:source-hash 8d5822210e0c2adc8a62bfef34f4d216c5962738fb66a9a5b3a17009569182d1 -->
 
 > A public, validation-first directory of AI agent skills: discover a skill, see
 > which tools it targets, and inspect exactly what it asks an agent to do before
@@ -36,7 +36,7 @@ maintainer (submit, manage, profile), admin (review queue, manual states).
 
 MVP feature set in build-plan order, one line of purpose each. **Validation (the
 Skill Passport) is the headline feature** - it's what makes this more than a link
-list. Items 1-29 are shipped; the build plan is complete.
+list. Items 1-30 are shipped; the build plan is complete.
 
 1. **Static directory shell** - Astro homepage, layout, nav, seeded skills, and search/filter/featured UI on fixture data.
 2. **Skill detail and passport UI** - detail pages with the Skill Passport, permissions summary, install panel, versions, maintainer block, and expandable findings.
@@ -67,6 +67,7 @@ list. Items 1-29 are shipped; the build plan is complete.
 27. **Source-owner pages** - `/by/<login>`, every published skill shown as "by" that GitHub org or user (the maintainer counts only when nothing is attributed).
 28. **Public API docs** - `/docs/api` documenting the existing read endpoints with the passport JSON as the headline. No auth, no new endpoints.
 29. **`skillpass init`** - scaffold a skill package (`SKILL.md` plus `skill.json` with prompted permissions) that passes `skillpass scan` out of the box, then scan it.
+30. **`skillpass use`** - run a listed skill once without installing it: the same pre-flight, the verified snapshot unpacked to a temp folder, and a ready-to-run prompt printed to stdout.
 
 ## Data model
 
@@ -256,7 +257,7 @@ Node API endpoints (`apps/api`, names indicative):
 - `/validation/:jobId` - job status feeding the inline progress panel
 - `/download/preflight` - current validation, source hash, permissions, diffs
 
-CLI (not a route): `skillpass search`, `init`, `scan`, `report`, `add`, `remove`, `list`, `outdated`, `update`.
+CLI (not a route): `skillpass search`, `init`, `scan`, `report`, `add`, `use`, `remove`, `list`, `outdated`, `update`.
 
 ## Open questions
 
