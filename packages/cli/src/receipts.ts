@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // Where an install that is not on the directory came from; commit is the full sha.
@@ -77,5 +77,13 @@ export function removeReceipt(areaDir: string, slug: string): void {
 		return;
 	}
 	delete index[slug];
-	writeReceipts(areaDir, index);
+	if (Object.keys(index).length > 0) {
+		writeReceipts(areaDir, index);
+		return;
+	}
+	try {
+		rmSync(join(areaDir, RECEIPT_FILE), { force: true });
+	} catch {
+		// Same as writeReceipts: the remove itself already succeeded.
+	}
 }
