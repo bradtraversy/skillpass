@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -25,6 +25,21 @@ describe('receipts', () => {
 		recordReceipt(dir, 'other', { ...receipt, version: '2.0.0' });
 		removeReceipt(dir, 'demo');
 		expect(Object.keys(readReceipts(dir))).toEqual(['other']);
+	});
+
+	it('deletes the index file when the last receipt is removed', () => {
+		const dir = temp();
+		recordReceipt(dir, 'demo', receipt);
+		removeReceipt(dir, 'demo');
+		expect(existsSync(join(dir, RECEIPT_FILE))).toBe(false);
+	});
+
+	it('leaves the index file untouched for an untracked slug', () => {
+		const dir = temp();
+		recordReceipt(dir, 'demo', receipt);
+		const before = readFileSync(join(dir, RECEIPT_FILE), 'utf8');
+		removeReceipt(dir, 'other');
+		expect(readFileSync(join(dir, RECEIPT_FILE), 'utf8')).toBe(before);
 	});
 
 	it('reads an absent or corrupt index as empty', () => {
