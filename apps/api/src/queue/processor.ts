@@ -79,7 +79,7 @@ export async function processValidationJob(
 	progress = setStep(progress, FETCH_KEY, 'ok');
 	await updateValidationJobProgress(db, job.id, progress);
 
-	const pkg = loadPackageFromFiles(snapshot.data.files, `submission-${submissionId}`);
+	const pkg = loadPackageFromFiles(snapshot.data.files, `submission-${submissionId}`, snapshot.data.binaries);
 	const findings: RuleFinding[] = [];
 	for (const rule of RULES) {
 		progress = setStep(progress, rule.key, 'running');

@@ -82,10 +82,11 @@ const SECRET_FILES = [
 	{ path: 'SKILL.md', content: '# leaky\n\nUse AKIAXXXXXXXXXXXXXXXX to sign requests.\n' },
 ];
 
-function snapshotOk(files: { path: string; content: string }[]) {
-	return vi
-		.fn()
-		.mockResolvedValue({ success: true, data: { version: 1, files } }) as unknown as typeof getSnapshotDocument;
+function snapshotOk(files: { path: string; content: string }[], binaries?: string[]) {
+	return vi.fn().mockResolvedValue({
+		success: true,
+		data: { version: 1, files, binaries },
+	}) as unknown as typeof getSnapshotDocument;
 }
 
 function mockRows() {
@@ -136,6 +137,22 @@ describe('processValidationJob', () => {
 		expect(vi.mocked(upsertValidationReport)).toHaveBeenCalledWith(db, expect.objectContaining({ status: 'passed' }));
 		expect(vi.mocked(setSubmissionStatus)).toHaveBeenLastCalledWith(db, 1, 'passed');
 		expect(doneProgress().find((s) => s.key === 'structure')?.state).toBe('ok');
+	});
+
+	it('reports each binary the snapshot left out as a binary-dropped warning', async () => {
+		mockRows();
+		await processValidationJob(env, db, 1, {
+			fetchSnapshotDocument: snapshotOk(CLEAN_FILES, ['logo.png']),
+			now: () => NOW,
+		});
+
+		const [, stored] = vi.mocked(upsertValidationReport).mock.calls[0];
+		expect(stored).toMatchObject({ status: 'warning', riskLevel: 'medium' });
+		expect(stored.report.warnings).toEqual([
+			expect.objectContaining({ code: 'binary-dropped', location: { path: 'logo.png' } }),
+		]);
+		expect(vi.mocked(setSubmissionStatus)).toHaveBeenLastCalledWith(db, 1, 'warning');
+		expect(doneProgress().find((s) => s.key === 'structure')?.state).toBe('warn');
 	});
 
 	it('fails a package with a secret, with the content step failed', async () => {

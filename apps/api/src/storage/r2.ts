@@ -7,19 +7,23 @@ import type { Result } from 'skill-schema';
 const R2_TIMEOUT_MS = 30_000;
 
 // The worker validates from this document and the source view renders from
-// it. Files are sorted by path, utf8.
+// it. Files are sorted by path, utf8. `binaries` lists the paths left out
+// because they are not text, so validation can report them; absent when none.
 export interface SnapshotDocument {
 	version: 1;
 	files: PackageFile[];
+	binaries?: string[];
 }
 
 const snapshotDocumentSchema: z.ZodType<SnapshotDocument> = z.object({
 	version: z.literal(1),
 	files: z.array(z.object({ path: z.string(), content: z.string() })),
+	binaries: z.array(z.string()).optional(),
 });
 
-export function snapshotDocument(files: PackageFile[]): SnapshotDocument {
-	return { version: 1, files };
+// Omits an empty `binaries` so text-only documents keep their exact bytes.
+export function snapshotDocument(files: PackageFile[], binaries: string[] = []): SnapshotDocument {
+	return binaries.length > 0 ? { version: 1, files, binaries } : { version: 1, files };
 }
 
 export function snapshotKey(sourceHash: string): string {

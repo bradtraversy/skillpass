@@ -16,7 +16,17 @@ export const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
 // submission legitimately skips far more than the 10 MB kept-files cap allows.
 const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 
-export async function fetchSnapshot(env: Env, target: RepoTarget, sha: string): Promise<SourceResult<PackageFile[]>> {
+// Text files for the snapshot, plus the paths of binary files left out of it.
+export interface ExtractedPackage {
+	files: PackageFile[];
+	binaries: string[];
+}
+
+export async function fetchSnapshot(
+	env: Env,
+	target: RepoTarget,
+	sha: string,
+): Promise<SourceResult<ExtractedPackage>> {
 	const url = `https://codeload.github.com/${target.owner}/${target.repo}/tar.gz/${encodeURIComponent(sha)}`;
 
 	let res: Response;
@@ -44,7 +54,7 @@ export async function extractTarball(
 	body: ReadableStream<Uint8Array>,
 	subpath?: string,
 	maxDownloadBytes = MAX_DOWNLOAD_BYTES,
-): Promise<SourceResult<PackageFile[]>> {
+): Promise<SourceResult<ExtractedPackage>> {
 	// Bridges the DOM-vs-node web-stream generic mismatch; same runtime object.
 	const source = Readable.fromWeb(body as NodeReadableStream<Uint8Array>);
 	const untar = extract();
@@ -54,6 +64,7 @@ export async function extractTarball(
 	});
 
 	const files: PackageFile[] = [];
+	const binaries: string[] = [];
 	let totalBytes = 0;
 	let downloadBytes = 0;
 
@@ -98,7 +109,7 @@ export async function extractTarball(
 			if (keep) {
 				const bytes = Buffer.concat(chunks);
 				// Snapshots hold text; a decoded binary would be written back corrupt.
-				if (isBinary(bytes)) console.warn(`snapshot: dropping binary file ${path}`);
+				if (isBinary(bytes)) binaries.push(path);
 				else files.push({ path, content: bytes.toString('utf8') });
 			}
 		}
@@ -120,5 +131,5 @@ export async function extractTarball(
 				: `no files under "${subpath}" at the pinned commit - point the /tree/ URL at the folder that contains SKILL.md`,
 		);
 	}
-	return { success: true, data: files.sort(byPath) };
+	return { success: true, data: { files: files.sort(byPath), binaries: binaries.sort() } };
 }
