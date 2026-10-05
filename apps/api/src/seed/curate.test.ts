@@ -84,6 +84,7 @@ describe('curateSkill', () => {
 		});
 		await curateSkill(env, db, input);
 		expect(vi.mocked(loadPackageFromFiles).mock.lastCall?.[2]).toEqual(['logo.png']);
+		expect(snapshotKey).toHaveBeenCalledWith('hash123', ['logo.png']);
 		expect(snapshotDocument).toHaveBeenCalledWith(files, ['logo.png']);
 	});
 

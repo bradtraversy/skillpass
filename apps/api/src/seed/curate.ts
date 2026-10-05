@@ -72,7 +72,7 @@ export async function curateSkill(env: Env, db: Db, input: CurateInput): Promise
 		// seeded on a prior run. Skip before any write, so re-runs are no-ops.
 		if (await findSkillBySlug(db, slug)) return { slug, status: 'skipped' };
 
-		const key = snapshotKey(pkg.sourceHash);
+		const key = snapshotKey(pkg.sourceHash, pkg.binaries);
 		const stored = await putJson(env, key, snapshotDocument(pkg.files, pkg.binaries));
 		if (!stored.success) return { slug, status: 'failed', reason: 'snapshot store failed' };
 
