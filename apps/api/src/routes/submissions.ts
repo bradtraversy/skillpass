@@ -162,7 +162,7 @@ async function createFromGithub(c: Ctx, { env, db, queue }: Deps): Promise<Respo
 	}
 
 	const pkg = loadPackageFromFiles(snapshot.data.files, packageNameFor(parsed.data), snapshot.data.binaries);
-	const key = snapshotKey(pkg.sourceHash);
+	const key = snapshotKey(pkg.sourceHash, pkg.binaries);
 	const stored = await putJson(env, key, snapshotDocument(pkg.files, pkg.binaries));
 	if (!stored.success) {
 		return c.json({ success: false, error: 'could not store the snapshot; try again' }, 502);
@@ -208,7 +208,7 @@ async function createFromZip(c: Ctx, { env, db, queue }: Deps): Promise<Response
 	if (!storedZip.success) {
 		return c.json({ success: false, error: 'could not store the upload; try again' }, 502);
 	}
-	const key = snapshotKey(pkg.sourceHash);
+	const key = snapshotKey(pkg.sourceHash, pkg.binaries);
 	const storedSnapshot = await putJson(env, key, snapshotDocument(pkg.files, pkg.binaries));
 	if (!storedSnapshot.success) {
 		return c.json({ success: false, error: 'could not store the snapshot; try again' }, 502);

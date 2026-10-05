@@ -20,6 +20,17 @@ describe('snapshotKey', () => {
 	it('builds a content-addressed key from the source hash', () => {
 		expect(snapshotKey('sha256:abc123')).toBe('snapshots/abc123.json');
 	});
+
+	it('keeps the plain key when no binaries were dropped', () => {
+		expect(snapshotKey('sha256:abc123', [])).toBe('snapshots/abc123.json');
+	});
+
+	it('suffixes the key with a hash of the dropped binaries', () => {
+		const key = snapshotKey('sha256:abc123', ['fonts/a.ttf', 'logo.png']);
+		expect(key).toMatch(/^snapshots\/abc123-[0-9a-f]{64}\.json$/);
+		expect(snapshotKey('sha256:abc123', ['fonts/a.ttf', 'logo.png'])).toBe(key);
+		expect(snapshotKey('sha256:abc123', ['logo.png'])).not.toBe(key);
+	});
 });
 
 describe('snapshotDocument', () => {

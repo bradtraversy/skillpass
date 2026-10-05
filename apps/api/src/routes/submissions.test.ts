@@ -109,6 +109,7 @@ const userRow: UserRow = {
 const FILES = [{ path: 'SKILL.md', content: '# Demo\n' }];
 const HASH = loadPackageFromFiles(FILES).sourceHash;
 const KEY = `snapshots/${HASH.slice('sha256:'.length)}.json`;
+const BINARY_KEY = `snapshots/${HASH.slice('sha256:'.length)}-${createHash('sha256').update('logo.png').digest('hex')}.json`;
 
 const submissionRow: SubmissionRow = {
 	id: 1,
@@ -203,7 +204,15 @@ describe('POST /submissions', () => {
 			await sessionCookie(7, env.SESSION_SECRET),
 		);
 		expect(res.status).toBe(201);
-		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, KEY, { version: 1, files: FILES, binaries: ['logo.png'] });
+		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, BINARY_KEY, {
+			version: 1,
+			files: FILES,
+			binaries: ['logo.png'],
+		});
+		expect(vi.mocked(createSubmission)).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ snapshotKey: BINARY_KEY }),
+		);
 	});
 
 	it('reports a missing SKILL.md in detected without failing the draft', async () => {
@@ -521,7 +530,15 @@ describe('POST /submissions/zip', () => {
 		});
 		const res = await postZip(new File([zip], 'demo.zip'), await sessionCookie(7, env.SESSION_SECRET));
 		expect(res.status).toBe(201);
-		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, KEY, { version: 1, files: FILES, binaries: ['logo.png'] });
+		expect(vi.mocked(putJson)).toHaveBeenCalledWith(env, BINARY_KEY, {
+			version: 1,
+			files: FILES,
+			binaries: ['logo.png'],
+		});
+		expect(vi.mocked(createSubmission)).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ snapshotKey: BINARY_KEY }),
+		);
 	});
 
 	it('creates a queued job row and enqueues validation after the zip draft', async () => {

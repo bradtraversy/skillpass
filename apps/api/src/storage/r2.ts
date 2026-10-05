@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { AwsClient } from 'aws4fetch';
 import type { PackageFile } from 'validator';
 import { z } from 'zod';
@@ -26,8 +27,12 @@ export function snapshotDocument(files: PackageFile[], binaries: string[] = []):
 	return binaries.length > 0 ? { version: 1, files, binaries } : { version: 1, files };
 }
 
-export function snapshotKey(sourceHash: string): string {
-	return `snapshots/${sourceHash.replace(/^sha256:/, '')}.json`;
+// The source hash covers text files only, so a package that dropped binaries
+// also keys on their paths; otherwise two such packages would share a document.
+export function snapshotKey(sourceHash: string, binaries: string[] = []): string {
+	const base = `snapshots/${sourceHash.replace(/^sha256:/, '')}`;
+	if (binaries.length === 0) return `${base}.json`;
+	return `${base}-${createHash('sha256').update(binaries.join('\0')).digest('hex')}.json`;
 }
 
 // Original uploaded zips, content-addressed by the sha256 of the zip bytes.
